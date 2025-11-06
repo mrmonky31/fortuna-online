@@ -36,10 +36,11 @@ export default function LobbyForm({ onCreate, onJoin, onSpectate, error }) {
       </div>
 
       <div className="lobby-field">
-        <label>Nome stanza (codice segreto opzionale)</label>
+        <label>Nome stanza ()</label>
         <input
+        
           type="text"
-          placeholder="ORCHIDEA, NATALE..."
+          
           value={roomName}
           onChange={(e) => setRoomName(e.target.value)}
         />
@@ -61,8 +62,8 @@ export default function LobbyForm({ onCreate, onJoin, onSpectate, error }) {
       <hr />
 
       <div className="lobby-field">
-        <label>Codice stanza</label>
-        <input
+       <label>Codice stanza o invito</label>
+       <input
           type="text"
           placeholder="ABCD o nome"
           value={roomCode}
