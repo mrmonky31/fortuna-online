@@ -8,3 +8,13 @@ ls -l start-avvia.command
 
 
 chmod +x start-avvia.command
+ 
+Comando per upload aggiornamenti 
+
+git add .
+git commit -m "update"
+git push
+
+
+
+ 
