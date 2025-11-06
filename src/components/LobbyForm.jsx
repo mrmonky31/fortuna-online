@@ -1,4 +1,3 @@
-// src/components/LobbyForm.jsx
 import React, { useState } from "react";
 
 export default function LobbyForm({ onCreate, onJoin, onSpectate, error }) {
@@ -12,9 +11,13 @@ export default function LobbyForm({ onCreate, onJoin, onSpectate, error }) {
   };
 
   const handleJoinClick = () => {
-    if (!roomCode) return;
-    onJoin(name || "Giocatore", roomCode);
-  };
+  if (!roomCode) {
+    console.log("❌ Nessun codice stanza inserito");
+    return;
+  }
+  console.log("➡️ Tentativo di ingresso stanza:", roomCode);
+  onJoin(name || "Giocatore", roomCode);
+};
 
   const handleSpectateClick = () => {
     if (!roomCode) return;
@@ -22,11 +25,12 @@ export default function LobbyForm({ onCreate, onJoin, onSpectate, error }) {
   };
 
   return (
-    <div className="lobby-form">
+    <div className="lobby-form" style={{ textAlign: "center", lineHeight: "1.6em" }}>
       <h2>RUOTA DELLA FORTUNA ONLINE</h2>
 
-      <div className="lobby-field">
+      <div className="lobby-field" style={{ marginBottom: "12px" }}>
         <label>Il tuo nome</label>
+        <br />
         <input
           type="text"
           placeholder="Marco, Zia, Kimberly..."
@@ -35,19 +39,20 @@ export default function LobbyForm({ onCreate, onJoin, onSpectate, error }) {
         />
       </div>
 
-      <div className="lobby-field">
-        <label>Nome stanza ()</label>
+      <div className="lobby-field" style={{ marginBottom: "12px" }}>
+        <label>Nome stanza (facoltativo)</label>
+        <br />
         <input
-        
           type="text"
-          
+          placeholder="es. ORCHIDEA o NATALE"
           value={roomName}
           onChange={(e) => setRoomName(e.target.value)}
         />
       </div>
 
-      <div className="lobby-field">
+      <div className="lobby-field" style={{ marginBottom: "15px" }}>
         <label>Round totali</label>
+        <br />
         <input
           type="number"
           min={1}
@@ -57,26 +62,29 @@ export default function LobbyForm({ onCreate, onJoin, onSpectate, error }) {
         />
       </div>
 
-      <button onClick={handleCreateClick}>🌀 Crea stanza</button>
+      <button style={{ marginBottom: "20px" }} onClick={handleCreateClick}>
+        🌀 Crea stanza
+      </button>
 
-      <hr />
+      <hr style={{ margin: "25px 0" }} />
 
-      <div className="lobby-field">
-       <label>Codice stanza o invito</label>
-       <input
+      <div className="lobby-field" style={{ marginBottom: "15px" }}>
+        <label>Codice stanza o invito</label>
+        <br />
+        <input
           type="text"
-          placeholder="ABCD o nome"
+          placeholder="ABCD o nome stanza"
           value={roomCode}
           onChange={(e) => setRoomCode(e.target.value)}
         />
       </div>
 
-      <div className="lobby-buttons-row">
+      <div className="lobby-buttons-row" style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
         <button onClick={handleJoinClick}>🎮 Entra come giocatore</button>
         <button onClick={handleSpectateClick}>👀 Entra come spettatore</button>
       </div>
 
-      {error && <p className="error">{error}</p>}
+      {error && <p className="error" style={{ color: "red", marginTop: "20px" }}>{error}</p>}
     </div>
   );
 }
