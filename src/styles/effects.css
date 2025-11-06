@@ -1,0 +1,6 @@
+.victory-overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; }
+.victory-burst { position: absolute; width: 680px; height: 300px; background: radial-gradient(circle, rgba(255,240,160,.7), rgba(255,240,160,0) 60%); filter: blur(8px); animation: burst .6s ease-out forwards; }
+.victory-text { position: relative; font-size: 48px; font-weight: 900; color: #fff; text-shadow: 0 0 12px rgba(255,255,255,.9), 0 0 18px rgba(255,255,160,.8); animation: pop .5s ease-out forwards; }
+
+@keyframes burst { from { opacity: 0; transform: scale(.8); } to { opacity: 1; transform: scale(1); } }
+@keyframes pop   { from { opacity: 0; transform: scale(.8); } to { opacity: 1; transform: scale(1); } }

@@ -1,0 +1,9 @@
+percorso/della/cartella/laruota
+Apri terminale nella cartella principale 
+
+cd server && npm install
+cd ../client && npm install
+
+Poi 
+chmod +x node_modules/.bin/vite
+chmod +x start-dev.command

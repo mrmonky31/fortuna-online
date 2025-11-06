@@ -1,0 +1,10 @@
+percorso/della/cartella/laruota
+Apri terminale nella cartella principale 
+
+xattr -d com.apple.quarantine start-avvia.command
+
+
+ls -l start-avvia.command
+
+
+chmod +x start-avvia.command

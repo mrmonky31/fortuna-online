@@ -1,0 +1,45 @@
+/* ===== Ruota SVG pulita ===== */
+.wheel-wrap-svg{
+  position: absolute;
+  top: -150px; /* come prima */
+  left: 50%;
+  transform: translateX(-50%);
+  width: 780px; height: 780px;
+}
+.wheel-svg{
+  width: 100%; height: 100%;
+  display: grid; place-items: center;
+  transform-origin: 50% 50%;
+}
+.wheel-pointer-6{
+  position: absolute;
+  left: 50%;
+  bottom: 197px; /* sotto la ruota */
+  transform: translateX(-50%) rotate(180deg); /* ore 6 */
+  width: 0; height: 0;
+  border-left: 10px solid transparent;
+  border-right: 10px solid transparent;
+  border-top: 32px solid #ffcc00;
+  filter: drop-shadow(0 2px 3px rgba(0,0,0,.6));
+  z-index: 5;
+}
+
+
+
+/* ===== MOBILE HALF WHEEL ===== */
+@media (max-width: 768px) {
+  .wheel-wrap-svg{
+    position: absolute;
+    left: 50%;
+    bottom: -35vh; /* metà ruota nascosta fuori dallo schermo */
+    transform: translateX(-50%) rotate(180deg);
+    width: 90vw;
+    height: 90vw;
+  }
+  .wheel-pointer-6{
+    position: absolute;
+    left: 50%;
+    bottom: 16vh;
+    transform: translateX(-50%) rotate(180deg);
+  }
+}

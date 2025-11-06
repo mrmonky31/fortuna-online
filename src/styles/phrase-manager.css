@@ -1,0 +1,57 @@
+/* ========================================== */
+/*   STILE TABELLONE — VERSIONE GLOW VERDE    */
+/* ========================================== */
+
+.pm-board {
+  display: inline-block;
+  padding: 8px;
+  background: #0e0e12;
+  border: 2px solid #000;
+  border-radius: 8px;
+  box-shadow: 0 0 12px rgba(0, 179, 255, 0.873);
+}
+
+/* Ogni riga del tabellone */
+.pm-row {
+  display: grid;
+  grid-template-columns: repeat(14, 50px);
+  gap: 6px;
+  margin: 6px 0;
+  justify-content: center;
+}
+
+/* Ogni singola casella */
+.pm-cell {
+  width: 50px;
+  height: 58px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 26px;
+  border-radius: 8px;
+  box-shadow: 0 3px 6px rgba(5, 169, 251, 0.6);
+}
+
+/* Caselle nere per spazi */
+.pm-cell.space {
+  background: #000;
+}
+
+/* Caselle nascoste */
+.pm-cell:not(.vis):not(.space) {
+  background: #f0f0f0;
+  color: transparent;
+}
+
+/* Caselle rivelate */
+.pm-cell.vis {
+  background: #ffffff;
+  color: #111;
+  transition: filter 0.35s ease, background 0.2s ease;
+}
+
+/* Effetto glow sul reveal */
+.pm-cell.vis.glow {
+  filter: drop-shadow(0 0 6px rgba(5, 251, 70, 0.9));
+}

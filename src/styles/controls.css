@@ -1,0 +1,10 @@
+/* src/styles/controls.css */
+
+.btn-spin { background: #4f8ef7; color: #fff; padding: 10px 14px; border: none; border-radius: 8px; cursor: pointer; font-weight: 800; }
+.last-target { margin-top: 6px; font-size: 13px; color: #cfe8ff; }
+
+.panel-body { display: flex; gap: 8px; align-items: center; }
+.btn-primary { background: #1e88e5; color: #fff; padding: 6px 10px; border-radius: 6px; border: none; cursor: pointer; }
+.btn-secondary { background: transparent; border: 1px solid #444; color: #fff; padding: 6px 10px; border-radius: 6px; cursor: pointer; }
+.btn-accent { background: #ffb300; color: #111; padding: 6px 10px; border-radius: 6px; border: none; cursor: pointer; }
+.input-letter, .input-solution { background: #0f1113; border: 1px solid #333; color: #fff; padding: 6px; border-radius: 6px; }

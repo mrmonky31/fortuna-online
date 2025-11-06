@@ -1,0 +1,10 @@
+.results-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.7); display: flex; align-items: center; justify-content: center; z-index: 4000; }
+.results-box { background: #fff; padding: 20px; border: 3px solid #000; border-radius: 10px; width: 520px; }
+.results-list { margin: 12px 0; }
+.result-row { display: grid; grid-template-columns: 40px 1fr 120px; align-items: center; padding: 6px 8px; border-bottom: 1px solid #ddd; }
+.result-row.first { background: #fff7d1; font-weight: 800; }
+.pos { text-align: center; }
+.name { font-weight: 700; }
+.score { text-align: right; }
+.results-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 12px; }
+.winner-line { margin: 8px 0; font-size: 18px; }

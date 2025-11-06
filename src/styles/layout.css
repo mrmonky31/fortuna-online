@@ -1,0 +1,17 @@
+.app-container {
+  text-align: center;
+  margin-top: 30px;
+  font-family: Arial, sans-serif;
+}
+
+.input-area input {
+  padding: 8px;
+  font-size: 18px;
+  margin-right: 8px;
+}
+
+.input-area button {
+  padding: 8px 16px;
+  font-size: 18px;
+  cursor: pointer;
+}
