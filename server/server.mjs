@@ -6,54 +6,54 @@ import cors from "cors";
 
 const app = express();
 
-// ✅ CORS fissato per Render e Vercel (include header forzati)
-app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Origin", "*");
-  res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
-  next();
-});
-
-// ✅ Middleware cors esplicito
+// ✅ Middleware CORS di base
 app.use(
   cors({
     origin: [
-      "http://localhost:5173",
       "https://fortuna-online.vercel.app",
+      "http://localhost:5173",
     ],
     methods: ["GET", "POST"],
-    credentials: true,
   })
 );
 
-// ✅ Rotta di test
+// ✅ Header CORS forzati per ogni richiesta
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+  res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  next();
+});
+
+// ✅ Rotta test
 app.get("/", (req, res) => {
   res.send("Fortuna Online Server attivo ✅");
 });
 
-// ✅ Porta dinamica (Render)
 const PORT = process.env.PORT || 3001;
 const server = http.createServer(app);
 
-// ✅ Socket.io con configurazione CORS robusta
+// ✅ SOCKET.IO con CORS forzato
 const io = new Server(server, {
   cors: {
-    origin: [
-      "http://localhost:5173",
-      "https://fortuna-online.vercel.app",
-    ],
+    origin: "*",
     methods: ["GET", "POST"],
-    credentials: true,
   },
-  allowEIO3: true, // compatibilità piena con polling
+});
+
+// 🔥 PATCH DIRETTA sugli header HTTP di polling
+io.engine.on("headers", (headers, req) => {
+  headers["Access-Control-Allow-Origin"] = "*";
+  headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS";
+  headers["Access-Control-Allow-Headers"] = "Origin, X-Requested-With, Content-Type, Accept";
 });
 
 // Archivio stanze in memoria
 let rooms = {};
 
-// 🔌 Connessione Socket
+// 🔌 Gestione connessioni
 io.on("connection", (socket) => {
-  console.log("✅ Nuova connessione:", socket.id);
+  console.log("✅ Connessione:", socket.id);
 
   // CREA STANZA
   socket.on("createRoom", ({ playerName, totalRounds, roomName }, callback) => {
@@ -65,7 +65,7 @@ io.on("connection", (socket) => {
       code,
       players: [{ id: socket.id, name: playerName || "GIOCATORE", score: 0 }],
       totalRounds: totalRounds || 3,
-      spectators: [], // ✅ aggiunto per evitare undefined
+      spectators: [],
     };
 
     socket.join(code);
@@ -82,13 +82,11 @@ io.on("connection", (socket) => {
     io.to(code).emit("roomUpdate", { room: rooms[code], roomCode: code });
   });
 
-  // ENTRA STANZA
+  // ENTRA COME GIOCATORE
   socket.on("joinRoom", ({ roomCode, playerName }, callback) => {
     const code = (roomCode || "").trim().toUpperCase();
     const room = rooms[code];
-
     if (!room) {
-      console.log("❌ Stanza non trovata:", code);
       if (typeof callback === "function")
         callback({ ok: false, error: "Stanza non trovata" });
       return;
@@ -109,12 +107,11 @@ io.on("connection", (socket) => {
     io.to(code).emit("roomUpdate", { room, roomCode: code });
   });
 
-  // DISCONNESSIONE
   socket.on("disconnect", () => {
     console.log("❌ Disconnessione:", socket.id);
   });
 });
 
 server.listen(PORT, () => {
-  console.log(`🚀 Fortuna Online Server attivo sulla porta ${PORT}`);
+  console.log(`🚀 Server attivo sulla porta ${PORT}`);
 });
