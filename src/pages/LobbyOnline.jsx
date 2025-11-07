@@ -1,7 +1,7 @@
 // src/pages/LobbyOnline.jsx
 import React, { useState, useEffect } from "react";
 import socket from "../socket";
-import LobbyForm from "../components/LobbyForm";
+import LobbyFormMinimal from "../components/LobbyFormMinimal";
 import OnlinePlayers from "../components/OnlinePlayers";
 
 export default function LobbyOnline({ onGameStart }) {
@@ -88,7 +88,7 @@ export default function LobbyOnline({ onGameStart }) {
   return (
     <div className="lobby-online">
       {!room && (
-        <LobbyForm
+        <LobbyFormMinimal
           onCreate={handleCreate}
           onJoin={handleJoin}
           onSpectate={handleSpectate}

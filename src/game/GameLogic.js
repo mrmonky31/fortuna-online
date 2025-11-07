@@ -1,6 +1,6 @@
 // VERSIONE SENZA TIMER - MOD by MARCO
 // src/game/GameLogic.js
-import { SPIN_PATTERNS } from "./spinPatterns";
+import { SPIN_PATTERNS } from "../../src/game/spinPatterns.js";
 
 /* =========================
    Utils di normalizzazione

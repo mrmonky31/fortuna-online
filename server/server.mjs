@@ -1,337 +1,100 @@
 // server/server.mjs
-
 import express from "express";
 import http from "http";
 import { Server } from "socket.io";
 import cors from "cors";
-import fs from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
-
-import {
-  createInitialGameState,
-  startRound,
-  applyWheelSpin,
-  applyWheelOutcome,
-  playConsonant,
-  buyVowel,
-  trySolve
-} from "./game/GameLogic.js";
-
-import { buildBoard } from "./game/GameEngine.js";
-import { testPhrases as defaultPhrases } from "./game/phrases.js";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// CONFIG
-const PORT = process.env.PORT || 3001;
-const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || "http://localhost:5173";
 
 const app = express();
-app.use(
-  cors({
-    origin: CLIENT_ORIGIN,
-    methods: ["GET", "POST"],
-    credentials: true
-  })
-);
+app.use(cors());
 
-const server = http.createServer(app);
-const io = new Server(server, {
-  cors: {
-    origin: CLIENT_ORIGIN,
-    methods: ["GET", "POST"],
-    credentials: true
-  }
+// Rotta di prova per vedere se il server risponde
+app.get("/", (req, res) => {
+  res.send("Fortuna Online Server attivo ✅");
 });
 
-// rooms[roomCode] = { hostSocketId, totalRounds, players, spectators, gameState, customPhrases, phraseIndex, roomName }
-const rooms = new Map();
+// Render usa una PORT dinamica
+const PORT = process.env.PORT || 3001;
 
-function generateRoomCode() {
-  const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-  let code = "";
-  for (let i = 0; i < 4; i++) {
-    code += letters[Math.floor(Math.random() * letters.length)];
-  }
-  if (rooms.has(code)) return generateRoomCode();
-  return code;
-}
+const server = http.createServer(app);
 
-function normalizeKey(value) {
-  return String(value || "").trim().toLowerCase().replace(/\s+/g, "_");
-}
+const io = new Server(server, {
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST"],
+  },
+});
 
-async function loadPhrasesForRoom(roomName) {
-  const key = normalizeKey(roomName);
-  if (!key) return { phrases: [], sequential: false };
+// Archivio stanze in memoria
+let rooms = {};
 
-  const filePath = path.join(__dirname, "game", `phrases_${key}.js`);
-  if (!fs.existsSync(filePath)) {
-    console.log(`📄 Nessun file personalizzato per stanza '${roomName}', uso default`);
-    return { phrases: [], sequential: false };
-  }
-
-  try {
-    const mod = await import(filePath);
-    const phrases = mod.testPhrases || [];
-    console.log(`✅ Caricate frasi personalizzate SEQUENZIALI per stanza '${roomName}'`);
-    return { phrases, sequential: true };
-  } catch (err) {
-    console.error("Errore caricamento frasi personalizzate:", err);
-    return { phrases: [], sequential: false };
-  }
-}
-
-function serializeRoom(roomCode, room) {
-  return {
-    roomCode,
-    roomName: room.roomName,
-    totalRounds: room.totalRounds,
-    players: room.players.map((p) => ({ name: p.name })),
-    spectators: room.spectators.map((s) => ({ name: s.name })),
-    gameStarted: !!room.gameState
-  };
-}
-
-function getRoomAndIndex(roomCode, socketId) {
-  const code = String(roomCode || "").toUpperCase();
-  const room = rooms.get(code);
-  if (!room) return { room: null, playerIndex: -1 };
-  const idx = room.players.findIndex((p) => p.socketId === socketId);
-  return { room, playerIndex: idx };
-}
-
-function isPlayerTurn(room, playerIndex) {
-  if (!room.gameState) return false;
-  return room.gameState.currentPlayerIndex === playerIndex;
-}
-
-function broadcastState(roomCode, room) {
-  io.to(roomCode).emit("gameState", {
-    roomCode,
-    state: room.gameState
-  });
-}
-
-// SOCKET.IO
+// 🔌 CONNECTION PRINCIPALE
 io.on("connection", (socket) => {
-  console.log("Nuovo client:", socket.id);
+  console.log("✅ Nuova connessione:", socket.id);
 
-  socket.on("createRoom", async ({ playerName, totalRounds, roomName }, callback) => {
-    const name = (playerName || "Giocatore").trim();
-    const rounds = Number(totalRounds) || 3;
+  // CREA STANZA
+  socket.on("createRoom", ({ playerName, totalRounds, roomName }, callback) => {
+    const code =
+      roomName?.trim().toUpperCase() ||
+      Math.random().toString(36).substring(2, 6).toUpperCase();
 
-    const code = generateRoomCode();
-    const cleanRoomName = (roomName || code).trim();
-    const roomCode = code;
-
-    const room = {
-      hostSocketId: socket.id,
-      totalRounds: rounds,
-      players: [{ socketId: socket.id, name }],
-      spectators: [],
-      gameState: null,
-      roomName: cleanRoomName,
-      customPhrases: [],
-      sequential: false,
-      phraseIndex: 0
+    rooms[code] = {
+      code,
+      players: [{ id: socket.id, name: playerName || "GIOCATORE", score: 0 }],
+      totalRounds: totalRounds || 3,
     };
 
-    const { phrases, sequential } = await loadPhrasesForRoom(cleanRoomName);
-    room.customPhrases = phrases;
-    room.sequential = sequential;
-
-    rooms.set(roomCode, room);
-    socket.join(roomCode);
-
-    console.log(`Stanza ${roomCode} ('${cleanRoomName}') creata da ${name}`);
-
-    callback?.({
-      ok: true,
-      roomCode,
-      roomName: cleanRoomName,
-      isHost: true,
-      playerName: name,
-      room: serializeRoom(roomCode, room)
-    });
-
-    io.to(roomCode).emit("roomUpdate", { roomCode, room: serializeRoom(roomCode, room) });
-  });
-
-  socket.on("joinRoom", ({ roomCode, playerName }, callback) => {
-    const code = String(roomCode || "").toUpperCase();
-    const name = (playerName || "Giocatore").trim();
-    const room = rooms.get(code);
-
-    if (!room) return callback?.({ ok: false, error: "Stanza inesistente" });
-    if (room.players.length >= 4)
-      return callback?.({ ok: false, error: "Stanza piena (max 4 giocatori)" });
-
-    room.players.push({ socketId: socket.id, name });
     socket.join(code);
+    console.log(`🌀 Stanza creata: ${code} da ${playerName}`);
 
-    console.log(`${name} è entrato nella stanza ${code} come giocatore`);
-
-    callback?.({
+    // Risposta al frontend
+    const payload = {
       ok: true,
+      room: rooms[code],
       roomCode: code,
-      roomName: room.roomName,
-      isHost: socket.id === room.hostSocketId,
-      playerName: name,
-      room: serializeRoom(code, room)
-    });
+      playerName: playerName || "GIOCATORE",
+    };
 
-    io.to(code).emit("roomUpdate", { roomCode: code, room: serializeRoom(code, room) });
-  });
-
-  socket.on("joinAsSpectator", ({ roomCode, name }, callback) => {
-    const code = String(roomCode || "").toUpperCase();
-    const cleanName = (name || "Spettatore").trim();
-    const room = rooms.get(code);
-
-    if (!room) return callback?.({ ok: false, error: "Stanza inesistente" });
-    if (room.spectators.length >= 10)
-      return callback?.({ ok: false, error: "Limite spettatori (10) raggiunto" });
-
-    room.spectators.push({ socketId: socket.id, name: cleanName });
-    socket.join(code);
-
-    console.log(`${cleanName} è entrato nella stanza ${code} come spettatore`);
-
-    callback?.({
-      ok: true,
-      role: "spectator",
-      roomCode: code,
-      roomName: room.roomName,
-      room: serializeRoom(code, room)
-    });
-
-    if (room.gameState) {
-      socket.emit("gameState", {
-        roomCode: code,
-        state: room.gameState
-      });
+    if (typeof callback === "function") {
+      callback(payload);
     }
 
-    io.to(code).emit("roomUpdate", { roomCode: code, room: serializeRoom(code, room) });
+    io.to(code).emit("roomUpdate", { room: rooms[code], roomCode: code });
   });
 
-  socket.on("startGame", ({ roomCode }, callback) => {
-    const code = String(roomCode || "").toUpperCase();
-    const room = rooms.get(code);
-    if (!room) return callback?.({ ok: false, error: "Stanza inesistente" });
-    if (socket.id !== room.hostSocketId)
-      return callback?.({ ok: false, error: "Solo l'host può avviare" });
-    if (room.players.length < 1)
-      return callback?.({ ok: false, error: "Nessun giocatore" });
+  // ENTRA COME GIOCATORE
+  socket.on("joinRoom", ({ roomCode, playerName }, callback) => {
+    const code = (roomCode || "").trim().toUpperCase();
+    const room = rooms[code];
 
-    const phrases = room.customPhrases.length > 0 ? room.customPhrases : defaultPhrases;
-
-    const pickPhrase = () => {
-      if (room.customPhrases.length > 0 && room.sequential) {
-        const idx = room.phraseIndex % phrases.length;
-        const phrase = phrases[idx];
-        room.phraseIndex = (room.phraseIndex + 1) % phrases.length;
-        return phrase;
+    if (!room) {
+      console.log("❌ Stanza non trovata:", code);
+      if (typeof callback === "function") {
+        callback({ ok: false, error: "Stanza non trovata" });
       }
-      const idx = Math.floor(Math.random() * phrases.length);
-      return phrases[idx];
-    };
+      return;
+    }
 
-    const first = pickPhrase();
-    const base = createInitialGameState(
-      room.players.map((p) => ({ name: p.name })),
-      room.totalRounds,
-      {
-        vowelCost: 500,
-        getNextRoundData: () => {
-          const phrase = pickPhrase();
-          const rows = buildBoard(phrase.text, 14, 4);
-          return { phrase: phrase.text, rows, category: phrase.category };
-        }
-      }
-    );
+    room.players.push({
+      id: socket.id,
+      name: playerName || "GIOCATORE",
+      score: 0,
+    });
 
-    const rows = buildBoard(first.text, 14, 4);
-    const started = startRound(base, first.text, rows, first.category);
+    socket.join(code);
+    console.log(`🎮 ${playerName} si è unito alla stanza ${code}`);
 
-    room.gameState = started;
+    if (typeof callback === "function") {
+      callback({ ok: true, room, playerName });
+    }
 
-    io.to(code).emit("gameState", { roomCode: code, state: started });
-    callback?.({ ok: true });
-  });
-
-  // ACTIONS
-  socket.on("spin", ({ roomCode }) => {
-    const { room, playerIndex } = getRoomAndIndex(roomCode, socket.id);
-    if (!room || !isPlayerTurn(room, playerIndex)) return;
-    room.gameState = applyWheelSpin(room.gameState, 500);
-    broadcastState(roomCode, room);
-  });
-
-  socket.on("wheelOutcome", ({ roomCode, outcome }) => {
-    const { room, playerIndex } = getRoomAndIndex(roomCode, socket.id);
-    if (!room || !isPlayerTurn(room, playerIndex)) return;
-    room.gameState = applyWheelOutcome(room.gameState, outcome);
-    broadcastState(roomCode, room);
-  });
-
-  socket.on("playConsonant", ({ roomCode, letter }) => {
-    const { room, playerIndex } = getRoomAndIndex(roomCode, socket.id);
-    if (!room || !isPlayerTurn(room, playerIndex)) return;
-    room.gameState = playConsonant(room.gameState, letter);
-    broadcastState(roomCode, room);
-  });
-
-  socket.on("buyVowel", ({ roomCode, letter }) => {
-    const { room, playerIndex } = getRoomAndIndex(roomCode, socket.id);
-    if (!room || !isPlayerTurn(room, playerIndex)) return;
-    room.gameState = buyVowel(room.gameState, letter);
-    broadcastState(roomCode, room);
-  });
-
-  socket.on("solve", ({ roomCode, text }) => {
-    const { room, playerIndex } = getRoomAndIndex(roomCode, socket.id);
-    if (!room || !isPlayerTurn(room, playerIndex)) return;
-    room.gameState = trySolve(room.gameState, text);
-    broadcastState(roomCode, room);
+    io.to(code).emit("roomUpdate", { room, roomCode: code });
   });
 
   socket.on("disconnect", () => {
-    console.log("Client disconnesso:", socket.id);
-    for (const [code, room] of rooms.entries()) {
-      let changed = false;
-
-      const pIdx = room.players.findIndex((p) => p.socketId === socket.id);
-      if (pIdx !== -1) {
-        room.players.splice(pIdx, 1);
-        changed = true;
-      }
-
-      const sIdx = room.spectators.findIndex((s) => s.socketId === socket.id);
-      if (sIdx !== -1) {
-        room.spectators.splice(sIdx, 1);
-        changed = true;
-      }
-
-      if (changed) {
-        if (room.players.length === 0 && room.spectators.length === 0) {
-          rooms.delete(code);
-          console.log(`Stanza ${code} eliminata`);
-        } else {
-          io.to(code).emit("roomUpdate", {
-            roomCode: code,
-            room: serializeRoom(code, room)
-          });
-        }
-      }
-    }
+    console.log("❌ Disconnessione:", socket.id);
   });
 });
 
-app.get("/", (req, res) => res.send("Fortuna server attivo"));
 server.listen(PORT, () => {
-  console.log(`Server attivo su http://localhost:${PORT}`);
+  console.log(`🚀 Fortuna Online Server attivo sulla porta ${PORT}`);
 });
