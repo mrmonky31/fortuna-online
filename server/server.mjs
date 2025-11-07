@@ -6,7 +6,15 @@ import cors from "cors";
 
 const app = express();
 
-// ✅ Fix definitivo CORS per Vercel e Render
+// ✅ CORS fissato per Render e Vercel (include header forzati)
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  next();
+});
+
+// ✅ Middleware cors esplicito
 app.use(
   cors({
     origin: [
@@ -18,17 +26,16 @@ app.use(
   })
 );
 
-// Rotta di prova per vedere se il server risponde
+// ✅ Rotta di test
 app.get("/", (req, res) => {
   res.send("Fortuna Online Server attivo ✅");
 });
 
-// Render usa una PORT dinamica
+// ✅ Porta dinamica (Render)
 const PORT = process.env.PORT || 3001;
-
 const server = http.createServer(app);
 
-// ✅ Stesso fix anche nel socket
+// ✅ Socket.io con configurazione CORS robusta
 const io = new Server(server, {
   cors: {
     origin: [
@@ -38,12 +45,13 @@ const io = new Server(server, {
     methods: ["GET", "POST"],
     credentials: true,
   },
+  allowEIO3: true, // compatibilità piena con polling
 });
 
 // Archivio stanze in memoria
 let rooms = {};
 
-// 🔌 CONNECTION PRINCIPALE
+// 🔌 Connessione Socket
 io.on("connection", (socket) => {
   console.log("✅ Nuova connessione:", socket.id);
 
@@ -57,12 +65,12 @@ io.on("connection", (socket) => {
       code,
       players: [{ id: socket.id, name: playerName || "GIOCATORE", score: 0 }],
       totalRounds: totalRounds || 3,
+      spectators: [], // ✅ aggiunto per evitare undefined
     };
 
     socket.join(code);
     console.log(`🌀 Stanza creata: ${code} da ${playerName}`);
 
-    // Risposta al frontend
     const payload = {
       ok: true,
       room: rooms[code],
@@ -70,23 +78,19 @@ io.on("connection", (socket) => {
       playerName: playerName || "GIOCATORE",
     };
 
-    if (typeof callback === "function") {
-      callback(payload);
-    }
-
+    if (typeof callback === "function") callback(payload);
     io.to(code).emit("roomUpdate", { room: rooms[code], roomCode: code });
   });
 
-  // ENTRA COME GIOCATORE
+  // ENTRA STANZA
   socket.on("joinRoom", ({ roomCode, playerName }, callback) => {
     const code = (roomCode || "").trim().toUpperCase();
     const room = rooms[code];
 
     if (!room) {
       console.log("❌ Stanza non trovata:", code);
-      if (typeof callback === "function") {
+      if (typeof callback === "function")
         callback({ ok: false, error: "Stanza non trovata" });
-      }
       return;
     }
 
@@ -99,13 +103,13 @@ io.on("connection", (socket) => {
     socket.join(code);
     console.log(`🎮 ${playerName} si è unito alla stanza ${code}`);
 
-    if (typeof callback === "function") {
+    if (typeof callback === "function")
       callback({ ok: true, room, playerName });
-    }
 
     io.to(code).emit("roomUpdate", { room, roomCode: code });
   });
 
+  // DISCONNESSIONE
   socket.on("disconnect", () => {
     console.log("❌ Disconnessione:", socket.id);
   });
