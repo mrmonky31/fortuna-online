@@ -1,4 +1,3 @@
-// src/game/spinPatterns.js
 // 🎡 Fortuna Project — Pattern predefiniti della ruota
 
 export const SPIN_PATTERNS = [
