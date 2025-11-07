@@ -5,7 +5,18 @@ import { Server } from "socket.io";
 import cors from "cors";
 
 const app = express();
-app.use(cors());
+
+// ✅ Fix definitivo CORS per Vercel e Render
+app.use(
+  cors({
+    origin: [
+      "http://localhost:5173",
+      "https://fortuna-online.vercel.app",
+    ],
+    methods: ["GET", "POST"],
+    credentials: true,
+  })
+);
 
 // Rotta di prova per vedere se il server risponde
 app.get("/", (req, res) => {
@@ -17,10 +28,15 @@ const PORT = process.env.PORT || 3001;
 
 const server = http.createServer(app);
 
+// ✅ Stesso fix anche nel socket
 const io = new Server(server, {
   cors: {
-    origin: "*",
+    origin: [
+      "http://localhost:5173",
+      "https://fortuna-online.vercel.app",
+    ],
     methods: ["GET", "POST"],
+    credentials: true,
   },
 });
 
