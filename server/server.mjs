@@ -20,7 +20,10 @@ app.use(
 // ✅ Header CORS forzati per ogni richiesta
 app.use((req, res, next) => {
   res.header("Access-Control-Allow-Origin", "*");
-  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+  res.header(
+    "Access-Control-Allow-Headers",
+    "Origin, X-Requested-With, Content-Type, Accept"
+  );
   res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
   next();
 });
@@ -45,7 +48,8 @@ const io = new Server(server, {
 io.engine.on("headers", (headers, req) => {
   headers["Access-Control-Allow-Origin"] = "*";
   headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS";
-  headers["Access-Control-Allow-Headers"] = "Origin, X-Requested-With, Content-Type, Accept";
+  headers["Access-Control-Allow-Headers"] =
+    "Origin, X-Requested-With, Content-Type, Accept";
 });
 
 // Archivio stanze in memoria
@@ -105,6 +109,39 @@ io.on("connection", (socket) => {
       callback({ ok: true, room, playerName });
 
     io.to(code).emit("roomUpdate", { room, roomCode: code });
+  });
+
+  // 🟢 AVVIO PARTITA (FIX)
+  socket.on("startGame", ({ roomCode }, callback) => {
+    const code = (roomCode || "").trim().toUpperCase();
+    const room = rooms[code];
+
+    if (!room) {
+      console.log("❌ startGame: stanza non trovata:", code);
+      if (typeof callback === "function")
+        callback({ ok: false, error: "Stanza non trovata" });
+      return;
+    }
+
+    if (!room.players || room.players.length === 0) {
+      console.log("❌ startGame: nessun giocatore nella stanza:", code);
+      if (typeof callback === "function")
+        callback({ ok: false, error: "Nessun giocatore" });
+      return;
+    }
+
+    const state = {
+      roomCode: code,
+      players: room.players,
+      totalRounds: room.totalRounds,
+      currentRound: 1,
+      currentPlayerIndex: 0,
+      status: "IN_PROGRESS",
+    };
+
+    console.log(`🚀 Partita avviata nella stanza ${code}`);
+    if (typeof callback === "function") callback({ ok: true });
+    io.to(code).emit("gameState", { state });
   });
 
   socket.on("disconnect", () => {
