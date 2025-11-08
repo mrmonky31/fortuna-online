@@ -127,13 +127,11 @@ html, body {
   max-height: 100vh;
 }
 
-/* NASCONDE LA SCRITTA “GIOCATORI” */
-.game-players h4,
-.game-players h2,
-.game-players .title,
-.game-players .label {
+/* Forza la sparizione della scritta "Giocatori" in ogni forma */
+.game-players *:not(.player-card):not(.player-card *) {
   display: none !important;
 }
+
 
 .player-card {
   border: 3px solid #000;
