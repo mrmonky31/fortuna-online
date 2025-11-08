@@ -354,7 +354,7 @@ body {
   }
 
   .tile {
-    transform: scale(0.9);
+    transform: scale(1.1);
     margin: 1px;
   }
 
@@ -377,4 +377,53 @@ body {
     font-size: 1rem;
     padding: 0.5rem 1rem;
   }
+}
+/* --- SBLOCCO ASSI XY INDIPENDENTE --- */
+
+/* Ruota */
+.game-wheel-area {
+  position: relative;
+  top: 0;    /* regola liberamente */
+  left: 0;   /* regola liberamente */
+  transform-origin: center center;
+}
+
+/* Tabellone */
+.game-board-area {
+  position: relative;
+  top: 0;    /* regola liberamente */
+  left: 0;   /* regola liberamente */
+  transform-origin: center center;
+}
+
+/* Controlli */
+.controls-area {
+  position: relative;
+  top: 0;    /* regola liberamente */
+  left: 0;   /* regola liberamente */
+  transform-origin: center center;
+}
+
+/* Round info (titolo e numero round) */
+.game-round-info {
+  position: relative;
+  top: 0;    /* regola liberamente */
+  left: 0;   /* regola liberamente */
+  transform-origin: center center;
+}
+
+/* Giocatori */
+.game-players {
+  position: relative;
+  top: 0;    /* regola liberamente */
+  left: 0;   /* regola liberamente */
+  transform-origin: center center;
+}
+
+/* Punteggi */
+.scoreboard {
+  position: relative;
+  top: 0;    /* regola liberamente */
+  left: 0;   /* regola liberamente */
+  transform-origin: center center;
 }
