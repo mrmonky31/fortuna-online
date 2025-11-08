@@ -107,7 +107,7 @@ html, body {
 
 /* ---------- CASELLE DEL TABELLONE ---------- */
 .tile {
-  transform: scale(1.3);
+  transform: scale(1.5);
   transform-origin: center center;
   margin: 2px;
   overflow: hidden;
@@ -117,8 +117,8 @@ html, body {
 /* ---------- BOX GIOCATORI (sinistra, trasparente) ---------- */
 .game-players {
   position: absolute;
-  top: 20px;
-  left: 40px;
+  top: 200px;
+  left: 10px;
   display: flex;
   flex-direction: column;
   gap: 12px;
