@@ -25,11 +25,11 @@ html, body {
 /* ---------- RUOTA (alta, centrata) ---------- */
 .game-wheel-area {
   position: absolute;
-  top: 200px;
+  top: 400px;
   left: 52%;
   transform: translateX(-50%);
   z-index: 10;
-  overflow: hidden;
+  overflow: visible;
   max-height: 100vh;
 }
 
