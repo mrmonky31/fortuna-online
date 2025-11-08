@@ -383,16 +383,16 @@ body {
 /* Ruota */
 .game-wheel-area {
   position: relative;
-  top: -300;    /* regola liberamente */
-  left: -300;   /* regola liberamente */
+  top: 90;    /* regola liberamente */
+  left: 90;   /* regola liberamente */
   transform-origin: center center;
 }
 
 /* Tabellone */
 .game-board-area {
   position: relative;
-  top: -200;    /* regola liberamente */
-  left: 50;   /* regola liberamente */
+  top: -400;    /* regola liberamente */
+  left: 90;   /* regola liberamente */
   transform-origin: center center;
 }
 
