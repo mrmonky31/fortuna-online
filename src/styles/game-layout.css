@@ -19,27 +19,32 @@ html, body {
   width: 100vw;
   height: 100vh;
   overflow: hidden;
+  max-height: 100vh;
 }
 
 /* ---------- RUOTA (alta, centrata) ---------- */
 .game-wheel-area {
   position: absolute;
-  top: 760px;          /* ↑ distanza dal bordo alto */
+  top: 760px;
   left: 52%;
   transform: translateX(-50%);
   z-index: 10;
+  overflow: hidden;
+  max-height: 100vh;
 }
 
 /* ---------- CONTROLLI (centrali sotto ruota) ---------- */
 .controls-area {
   position: absolute;
-  top: 400px;          /* ↓ sotto la ruota */
+  top: 400px;
   left: 50%;
   transform: translateX(-40%);
   display: flex;
   align-items: center;
   gap: 15px;
   z-index: 12;
+  overflow: hidden;
+  max-height: 100vh;
 }
 
 /* TIMER (a sinistra del pulsante gira la ruota) */
@@ -49,6 +54,8 @@ html, body {
   left: calc(50% - 230px);
   z-index: 15;
   pointer-events: none;
+  overflow: hidden;
+  max-height: 100vh;
 }
 
 /* TARGET (a destra del pulsante gira la ruota) */
@@ -57,6 +64,8 @@ html, body {
   top: -40px;
   left: 120px;
   z-index: 15;
+  overflow: hidden;
+  max-height: 100vh;
 }
 
 /* BOX MESSAGGI (ancora più a destra) */
@@ -67,6 +76,8 @@ html, body {
   z-index: 16;
   width: 250px;
   text-align: left;
+  overflow: hidden;
+  max-height: 100vh;
 }
 
 .alert {
@@ -90,14 +101,17 @@ html, body {
   transform: translateX(-47%) scale(0.5);
   transform-origin: center center;
   z-index: 8;
-  max-height: 90vh; /* impedisce che si allarghi oltre lo schermo */
+  max-height: 90vh;
   overflow: hidden;
 }
+
 /* ---------- CASELLE DEL TABELLONE ---------- */
 .tile {
-  transform: scale(1.3); /* ingrandisce leggermente ogni casella */
+  transform: scale(1.3);
   transform-origin: center center;
-  margin: 2px; /* piccolo spazio fra le lettere */
+  margin: 2px;
+  overflow: hidden;
+  max-height: 100vh;
 }
 
 /* ---------- BOX GIOCATORI (sinistra, trasparente) ---------- */
@@ -109,6 +123,16 @@ html, body {
   flex-direction: column;
   gap: 12px;
   z-index: 20;
+  overflow: hidden;
+  max-height: 100vh;
+}
+
+/* NASCONDE LA SCRITTA “GIOCATORI” */
+.game-players h4,
+.game-players h2,
+.game-players .title,
+.game-players .label {
+  display: none !important;
 }
 
 .player-card {
@@ -120,7 +144,10 @@ html, body {
   font-weight: bold;
   color: #fff;
   transition: box-shadow 180ms ease, border-color 180ms ease;
+  overflow: hidden;
+  max-height: 100vh;
 }
+
 .player-card.player-active {
   border-color: #00ff55;
   box-shadow: 0 0 12px #00ff55;
@@ -134,11 +161,13 @@ html, body {
   background: transparent;
   border: 2px solid #fff;
   border-radius: 10px;
-  padding: 10px 12px;
-  min-width: 180px;
+  padding: 5px 6px;          /* dimezzato */
+  min-width: 90px;           /* dimezzato */
   color: #fff;
   z-index: 30;
-  transform: translateX(-40%);
+  transform: translateX(-40%) scale(0.5); /* dimezzata visivamente */
+  overflow: hidden;
+  max-height: 100vh;
 }
 
 .scoreboard h4 {
@@ -163,6 +192,8 @@ html, body {
   font-weight: bold;
   font-size: 1.2em;
   z-index: 25;
+  overflow: hidden;
+  max-height: 100vh;
 }
 
 /* ---------- OVERLAY (MESSAGGIO CENTRALE) ---------- */
@@ -174,6 +205,8 @@ html, body {
   justify-content: center;
   background: rgba(0,0,0,0.45);
   z-index: 999;
+  overflow: hidden;
+  max-height: 100vh;
 }
 
 .center-box {
@@ -185,6 +218,8 @@ html, body {
   font-weight: 900;
   color: #eaffea;
   text-align: center;
+  overflow: hidden;
+  max-height: 100vh;
 }
 
 /* ---------- EFFETTI TABELLONE ---------- */
@@ -211,6 +246,8 @@ html, body {
   font-weight: 900;
   color: #ff3333;
   z-index: 50;
+  overflow: hidden;
+  max-height: 100vh;
 }
 
 /* ---------- PUNTATORE DI RIFERIMENTO (opzionale) ---------- */
@@ -223,4 +260,6 @@ html, body {
   background: red;
   border-radius: 50%;
   z-index: 9999;
+  overflow: hidden;
+  max-height: 100vh;
 }
