@@ -383,7 +383,7 @@ body {
 /* Ruota */
 .game-wheel-area {
   position: relative;
-  top: 640px;    /* regola liberamente */
+  top: 540px;    /* regola liberamente */
   left: 150px;   /* regola liberamente */
   transform-origin: center center;
 }
@@ -391,7 +391,7 @@ body {
 /* Tabellone */
 .game-board-area {
   position: relative;
-  top: -150px;    /* regola liberamente */
+  top: -250px;    /* regola liberamente */
   left: 180px;   /* regola liberamente */
   transform-origin: center center;
 }
@@ -415,7 +415,7 @@ body {
 /* Giocatori */
 .game-players {
   position: relative;
-  top: -300;    /* regola liberamente */
+  top: -500;    /* regola liberamente */
   left: 0;   /* regola liberamente */
   transform-origin: center center;
 }
