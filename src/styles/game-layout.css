@@ -1,26 +1,30 @@
 /* ========================================== */
 /*   GAME LAYOUT — VERSIONE LIBERA MARCO      */
-/*   Tutti gli elementi sono ABSOLUTE         */
+/*   Layout a schermo pieno, assi XY liberi   */
 /* ========================================== */
 
-body {
+html, body {
+  width: 100vw;
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
   background-color: #0b0b0f;
   color: #ffffff;
   font-family: system-ui, Arial, Roboto, sans-serif;
-  margin: 0;
-  overflow: hidden;
 }
 
 .game-wrapper {
   position: relative;
   width: 100vw;
   height: 100vh;
+  overflow: hidden;
 }
 
 /* ---------- RUOTA (alta, centrata) ---------- */
 .game-wheel-area {
   position: absolute;
-  top: -29px;       /* ↑ distanza dal bordo alto */
+  top: -29px;          /* ↑ distanza dal bordo alto */
   left: 50%;
   transform: translateX(-50%);
   z-index: 10;
@@ -29,7 +33,7 @@ body {
 /* ---------- CONTROLLI (centrali sotto ruota) ---------- */
 .controls-area {
   position: absolute;
-  top: 400px;       /* ↓ sotto la ruota */
+  top: 400px;          /* ↓ sotto la ruota */
   left: 50%;
   transform: translateX(-50%);
   display: flex;
@@ -38,11 +42,11 @@ body {
   z-index: 12;
 }
 
-/* TIMER (libero a sinistra del pulsante gira la ruota) */
+/* TIMER (a sinistra del pulsante gira la ruota) */
 .lr-timer {
   position: absolute;
-  top: -10px;        /* allineato verticalmente ai pulsanti */
-  left: calc(50% - 230px); /* spostato a sinistra del pulsante */
+  top: -10px;
+  left: calc(50% - 230px);
   z-index: 15;
   pointer-events: none;
 }
@@ -51,7 +55,7 @@ body {
 .target-box {
   position: absolute;
   top: -40px;
-  left: calc(50% 0px);
+  left: calc(50% + 120px);
   z-index: 15;
 }
 
@@ -82,17 +86,16 @@ body {
 .game-board-area {
   position: absolute;
   bottom: 10px;
-  left: 45%;
-  transform: translateX(-50%) scale(1); /* ⬅️ RADDOPPIA TUTTO IL TABELLONE */
-  transform-origin: center center;      /* mantiene il centro come punto di scala */
+  left: 50%;
+  transform: translateX(-50%) scale(1);
+  transform-origin: center center;
   z-index: 8;
 }
-
 
 /* ---------- BOX GIOCATORI (sinistra, trasparente) ---------- */
 .game-players {
   position: absolute;
-  top: 10px;
+  top: 20px;
   left: 40px;
   display: flex;
   flex-direction: column;
@@ -188,111 +191,8 @@ body {
   0%, 100% { box-shadow: 0 0 0 transparent; border-color: transparent; }
   50% { box-shadow: 0 0 18px #ff3333; border-color: #ff3333; }
 }
-.pm-board-wrapper {
-  position: absolute;
-  bottom: 130px;
-  left: -50%;
-  transform: scale(1.5);
-  transform-origin: center center;
-}
 
-
-
-/* ===== MOBILE LAYOUT FORTUNA ONLINE V2 ===== */
-@media (max-width: 768px) {
-  body {
-    overflow: hidden;
-  }
-
-  .game-wrapper {
-    position: relative;
-    width: 100vw;
-    height: 100vh;
-    overflow: hidden;
-  }
-
-  /* Rimuovi posizionamenti sparsi: usiamo un layout a colonna */
-  .game-players,
-  .scoreboard,
-  .game-alerts,
-  .pm-board-wrapper,
-  .lr-controls,
-  .wheel-wrap-svg,
-  .wheel-pointer-6 {
-    position: static !important;
-  }
-
-  .game-wrapper {
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    justify-content: flex-start;
-    padding: 8px;
-    box-sizing: border-box;
-  }
-
-  /* Barra info round + categoria */
-  .scoreboard {
-    order: 1;
-    width: 100%;
-    text-align: center;
-    margin-bottom: 4px;
-  }
-
-  /* Tabellone */
-  .pm-board-wrapper {
-    order: 2;
-    position: relative !important;
-    margin: 0 auto 4px auto;
-    transform: scale(1) translateX(0) !important;
-  }
-
-  /* Messaggi di gioco */
-  .game-alerts {
-    order: 3;
-    width: 100%;
-    text-align: center;
-    margin: 4px 0;
-  }
-
-  /* Box giocatori in una riga */
-  .game-players {
-    order: 4;
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-    gap: 4px;
-    margin: 4px 0;
-  }
-
-  .player-card {
-    flex: 1;
-    padding: 4px;
-    border-width: 2px;
-    font-size: 0.7rem;
-  }
-
-  .player-name {
-    font-size: 0.75rem;
-  }
-
-  .player-round-score {
-    font-size: 0.8rem;
-  }
-
-  /* Zona comandi + ruota */
-  .lr-controls {
-    order: 5;
-    width: 100%;
-    position: relative !important;
-    margin-top: 4px;
-    padding-bottom: 4px;
-  }
-
-  /* Timer numerico centrale (usiamo .turn-timer nella pagina) */
-}
-
-/* Timer numerico rosso 10->0 (classe aggiunta in Game.jsx) */
+/* ---------- TIMER NUMERICO ROSSO ---------- */
 .turn-timer {
   position: absolute;
   bottom: 42%;
@@ -303,127 +203,15 @@ body {
   color: #ff3333;
   z-index: 50;
 }
-/* --- RESPONSIVE FIX MOBILE --- */
-@media (max-width: 768px) {
-  .game-wrapper {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: flex-start;
-    gap: 0.5rem;
-    padding: 0.5rem;
-  }
 
-  .game-round-info {
-    font-size: 1rem;
-    text-align: center;
-  }
-
-  .game-wheel-area {
-  width: 100%;
-  display: flex;
-  justify-content: center;
-  transform: scale(0.78);
-  transform-origin: top center;
-  margin-top: 3vh;   /* sposta la ruota più in basso */
-  margin-bottom: -10px;
-}
-
-
-  .controls-area {
-    width: 100%;
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 0.4rem;
-  }
-
-  .controls-area button {
-    font-size: 0.9rem;
-    padding: 6px 10px;
-  }
-
-  .game-board-area {
-    width: 100%;
-      margin-bottom: 3vh; /* alza un po’ il tabellone */
-    display: flex;
-    justify-content: center;
-    overflow: visible;
-    transform: scale(0.47);
-    transform-origin: top center;
-  }
-
-  .tile {
-    transform: scale(1.1);
-    margin: 1px;
-  }
-
-  .game-players {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    width: 100%;
-  }
-
-  .scoreboard {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    width: 100%;
-    margin-top: 1rem;
-  }
-
-  .center-overlay .center-box {
-    font-size: 1rem;
-    padding: 0.5rem 1rem;
-  }
-}
-/* --- SBLOCCO ASSI XY INDIPENDENTE --- */
-
-/* Ruota */
-.game-wheel-area {
-  position: relative;
-  top: 540px;    /* regola liberamente */
-  left: 150px;   /* regola liberamente */
-  transform-origin: center center;
-}
-
-/* Tabellone */
-.game-board-area {
-  position: relative;
-  top: -250px;    /* regola liberamente */
-  left: 180px;   /* regola liberamente */
-  transform-origin: center center;
-}
-
-/* Controlli */
-.controls-area {
-  position: relative;
-  top: 0;    /* regola liberamente */
-  left: -200;   /* regola liberamente */
-  transform-origin: center center;
-}
-
-/* Round info (titolo e numero round) */
-.game-round-info {
-  position: relative;
-  top: 0;    /* regola liberamente */
-  left: 0;   /* regola liberamente */
-  transform-origin: center center;
-}
-
-/* Giocatori */
-.game-players {
-  position: relative;
-  top: -500;    /* regola liberamente */
-  left: 0;   /* regola liberamente */
-  transform-origin: center center;
-}
-
-/* Punteggi */
-.scoreboard {
-  position: relative;
-  top: 0;    /* regola liberamente */
-  left: 0;   /* regola liberamente */
-  transform-origin: center center;
+/* ---------- PUNTATORE DI RIFERIMENTO (opzionale) ---------- */
+#debug-marker {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 4px;
+  height: 4px;
+  background: red;
+  border-radius: 50%;
+  z-index: 9999;
 }
