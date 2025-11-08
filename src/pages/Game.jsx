@@ -33,7 +33,7 @@ function pickValidRandomPhrase(list) {
   return valid[i];
 }
 
-export default function Game({ players = [], totalRounds = 3 }) {
+export default function Game({ players = [], totalRounds = 3, state }) {
   const [gameState, setGameState] = useState(null);
   const [turnTimer, setTurnTimer] = useState(60);
   const [timerPaused, setTimerPaused] = useState(false);
@@ -90,81 +90,58 @@ export default function Game({ players = [], totalRounds = 3 }) {
     };
   }, []);
 
-  // 🔹 Riceve "gameStart" dal server e inizializza TUTTI con stessa frase, stessi giocatori, stessi round
-  useEffect(() => {
-    function handleGameStart({ room, roomCode, phrase, category, totalRounds }) {
-      if (!phrase) {
-        console.warn("gameStart ricevuto senza phrase");
-        return;
-      }
-
-      console.log(
-        "🚀 Avvio partita sincronizzato:",
-        { phrase, category, roomCode, totalRounds, room }
-      );
-
-      setGameState((prev) => {
-        // Giocatori presi dalla stanza del server
-        let basePlayers = [];
-        if (room && Array.isArray(room.players) && room.players.length) {
-          basePlayers = room.players.map((p) => ({
-            name: p.name || "GIOCATORE",
-          }));
-        } else if (prev?.players && prev.players.length) {
-          basePlayers = prev.players;
-        } else if (players.length) {
-          basePlayers = players;
-        } else {
-          basePlayers = [{ name: "GIOCATORE 1" }];
-        }
-
-        // Numero di round: usa quello del server se c'è
-        const baseTotalRounds =
-          typeof totalRounds === "number" && totalRounds > 0
-            ? totalRounds
-            : room?.totalRounds && room.totalRounds > 0
-            ? room.totalRounds
-            : prev?.totalRounds && prev.totalRounds > 0
-            ? prev.totalRounds
-            : totalRounds || 3;
-
-        const base = createInitialGameState(basePlayers, baseTotalRounds, {
-          vowelCost: 500,
-          debug: false,
-          getNextRoundData: () => ({
-            phrase,
-            rows: buildBoard(phrase, 14, 4),
-            category,
-          }),
-        });
-
-        const rows = buildBoard(phrase, 14, 4);
-        const started = startRound(base, phrase, rows, category);
-
-        // 🔴 FORZIAMO IL VALORE REALMENTE USATO PER I ROUND
-        started.totalRounds = baseTotalRounds;
-
-        if (roomCode) {
-          started.roomCode = roomCode;
-        } else if (prev?.roomCode) {
-          started.roomCode = prev.roomCode;
-        }
-
-        return started;
-      });
-    }
-
-    socket.on("gameStart", handleGameStart);
-    return () => {
-      socket.off("gameStart", handleGameStart);
-    };
-  }, [players, totalRounds]);
-
-  // Inizializzazione locale (fallback: singolo device / nessun server)
+  // 🔹 Inizializzazione partita: usa PRIMA i dati del server (state), altrimenti fallback locale
   useEffect(() => {
     if (gameState) return;
 
-    console.log("🕓 Nessun gameStart ancora ricevuto, inizializzazione locale…");
+    // Se arriva dallo stato online (App -> Game)
+    if (state && state.phrase) {
+      const { room, roomCode, phrase, category } = state;
+
+      // Giocatori da stanza server
+      let basePlayers = [];
+      if (room && Array.isArray(room.players) && room.players.length) {
+        basePlayers = room.players.map((p) => ({
+          name: p.name || "GIOCATORE",
+        }));
+      } else if (players.length) {
+        basePlayers = players;
+      } else {
+        basePlayers = [{ name: "GIOCATORE 1" }];
+      }
+
+      // Numero round dal server
+      const baseTotalRounds =
+        room && typeof room.totalRounds === "number" && room.totalRounds > 0
+          ? room.totalRounds
+          : totalRounds || 3;
+
+      const base = createInitialGameState(basePlayers, baseTotalRounds, {
+        vowelCost: 500,
+        debug: false,
+        getNextRoundData: () => ({
+          phrase,
+          rows: buildBoard(phrase, 14, 4),
+          category,
+        }),
+      });
+
+      const rows = buildBoard(phrase, 14, 4);
+      const started = startRound(base, phrase, rows, category);
+      started.totalRounds = baseTotalRounds;
+
+      if (roomCode) {
+        started.roomCode = roomCode;
+      } else if (state.roomCode) {
+        started.roomCode = state.roomCode;
+      }
+
+      setGameState(started);
+      return;
+    }
+
+    // Fallback locale (single-player / nessun server)
+    console.log("🕓 Nessun stato online, inizializzazione locale…");
 
     const phraseObj = pickValidRandomPhrase(testPhrases);
     const basePlayers = players.length ? players : [{ name: "GIOCATORE 1" }];
@@ -187,12 +164,10 @@ export default function Game({ players = [], totalRounds = 3 }) {
       rows,
       phraseObj.category
     );
-
-    // 🔴 Anche qui forziamo il totale round
     started.totalRounds = baseTotalRounds;
 
     setGameState(started);
-  }, [gameState, players, totalRounds]);
+  }, [state, gameState, players, totalRounds]);
 
   // Tick logico (solo per countdown round)
   useEffect(() => {
@@ -228,14 +203,17 @@ export default function Game({ players = [], totalRounds = 3 }) {
     return () => clearInterval(id);
   }, [gameState, timerPaused]);
 
+  const isOnline = !!(gameState && gameState.roomCode);
+
   // === HANDLERS ===
 
   const handleSpin = () => {
+    // spin locale (solo chi ha il controllo)
     setGameState((s) => applyWheelSpin(s, 500));
   };
 
   const handleWheelStop = (outcome) => {
-    if (socket && gameState?.roomCode) {
+    if (isOnline && socket) {
       socket.emit(
         "action",
         {
@@ -248,41 +226,46 @@ export default function Game({ players = [], totalRounds = 3 }) {
           else console.log("Spin registrato dal server ✅", res);
         }
       );
+    } else {
+      // modalità locale
+      setGameState((s) => applyWheelOutcome(s, outcome));
     }
-    setGameState((s) => applyWheelOutcome(s, outcome));
   };
 
   const handleConsonant = (letter) => {
-    if (socket && gameState?.roomCode) {
+    if (isOnline && socket) {
       socket.emit("action", {
         roomCode: gameState.roomCode,
         type: "consonant",
         payload: { letter },
       });
+    } else {
+      setGameState((s) => playConsonant(s, letter));
     }
-    setGameState((s) => playConsonant(s, letter));
   };
 
   const handleVowel = (letter) => {
-    if (socket && gameState?.roomCode) {
+    if (isOnline && socket) {
       socket.emit("action", {
         roomCode: gameState.roomCode,
         type: "vowel",
         payload: { letter },
       });
+    } else {
+      setGameState((s) => buyVowel(s, letter));
     }
-    setGameState((s) => buyVowel(s, letter));
   };
 
   const handleSolution = (text) => {
-    if (socket && gameState?.roomCode) {
+    if (isOnline && socket) {
       socket.emit("action", {
         roomCode: gameState.roomCode,
         type: "solve",
         payload: { text },
       });
+    } else {
+      setGameState((s) => trySolve(s, text));
     }
-    setGameState((s) => trySolve(s, text));
   };
 
   const handleChangePhrase = () => {
@@ -321,7 +304,6 @@ export default function Game({ players = [], totalRounds = 3 }) {
 
   return (
     <div className="game-wrapper">
-      {/* SINISTRA: GIOCATORI */}
       <div className="game-players">
         <h3>Giocatori</h3>
         {gameState.players.map((p, i) => (
@@ -337,7 +319,6 @@ export default function Game({ players = [], totalRounds = 3 }) {
         ))}
       </div>
 
-      {/* CENTRO: RUOTA + CONTROLLI + TABELLONE */}
       <div>
         <div className="game-round-info">
           ROUND {gameState.currentRound} / {gameState.totalRounds}
@@ -375,7 +356,6 @@ export default function Game({ players = [], totalRounds = 3 }) {
         </div>
       </div>
 
-      {/* DESTRA: MESSAGGI + CLASSIFICA */}
       <div>
         <div className="game-alerts">
           {gameState.gameMessage ? (

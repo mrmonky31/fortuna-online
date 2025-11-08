@@ -11,12 +11,15 @@ export default function LobbyOnline({ onGameStart }) {
   const [roomCode, setRoomCode] = useState("");
   const [error, setError] = useState("");
 
+  // Aggiornamenti di lobby (giocatori / spettatori / rounds)
   useEffect(() => {
     function handleRoomUpdate({ room: updatedRoom, roomCode: code }) {
       setRoom({ ...updatedRoom, roomCode: code || roomCode });
     }
+
     function handleGameState({ state }) {
-      onGameStart(state);
+      console.log("📡 gameState (lobby):", state);
+      // Non avviamo la partita da qui, serve solo log
     }
 
     socket.on("roomUpdate", handleRoomUpdate);
@@ -26,13 +29,14 @@ export default function LobbyOnline({ onGameStart }) {
       socket.off("roomUpdate", handleRoomUpdate);
       socket.off("gameState", handleGameState);
     };
-  }, [onGameStart, roomCode]);
+  }, [roomCode]);
 
-  // 🔹 Sincronizza l'avvio partita col server via "action"
+  // Avvio partita sincronizzato: il server emette "gameStart"
   useEffect(() => {
-    const handleGameStart = ({ room }) => {
-      console.log("🚀 Partita avviata dal server:", room);
-      if (onGameStart) onGameStart(room);
+    const handleGameStart = (payload) => {
+      console.log("🚀 Partita avviata dal server:", payload);
+      // payload: { room, roomCode, phrase, category, totalRounds? }
+      if (onGameStart) onGameStart(payload);
     };
 
     socket.on("gameStart", handleGameStart);
@@ -79,15 +83,19 @@ export default function LobbyOnline({ onGameStart }) {
     setError("");
     const upper = String(code || "").toUpperCase();
     setRoomCode(upper);
-    socket.emit("joinAsSpectator", { roomCode: upper, name }, (res) => {
-      if (!res || !res.ok) {
-        setError(res?.error || "Errore ingresso spettatore");
-        return;
+    socket.emit(
+      "joinAsSpectator",
+      { roomCode: upper, name },
+      (res) => {
+        if (!res || !res.ok) {
+          setError(res?.error || "Errore ingresso spettatore");
+          return;
+        }
+        setRoom(res.room);
+        setPlayerName(name);
+        setRole("spectator");
       }
-      setRoom(res.room);
-      setPlayerName(name || "Spettatore");
-      setRole("spectator");
-    });
+    );
   };
 
   const handleStartGame = () => {
@@ -112,7 +120,12 @@ export default function LobbyOnline({ onGameStart }) {
 
       {room && (
         <div className="lobby-room">
-          <OnlinePlayers room={room} playerName={playerName} role={role} roomCode={roomCode} />
+          <OnlinePlayers
+            room={room}
+            playerName={playerName}
+            role={role}
+            roomCode={roomCode}
+          />
           {role === "host" && (
             <button className="start-btn" onClick={handleStartGame}>
               🚀 INIZIA PARTITA
