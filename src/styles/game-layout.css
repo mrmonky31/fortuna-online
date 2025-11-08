@@ -349,7 +349,7 @@ body {
     display: flex;
     justify-content: center;
     overflow: visible;
-    transform: scale(0.9);
+    transform: scale(0.5);
     transform-origin: top center;
   }
 
