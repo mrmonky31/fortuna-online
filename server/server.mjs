@@ -87,6 +87,7 @@ io.on("connection", (socket) => {
       }
 
       if (!room.players) room.players = [];
+      if (!room.spectators) room.spectators = [];
       room.players.push({ id: socket.id, name: playerName });
 
       socket.join(roomCode);
@@ -237,6 +238,7 @@ io.on("connection", (socket) => {
 
       // Se stanza vuota, cancellala
       const hasPlayers = room.players && room.players.length > 0;
+      if (!room.spectators) room.spectators = [];
       const hasSpectators = room.spectators && room.spectators.length > 0;
 
       if (!hasPlayers && !hasSpectators) {
