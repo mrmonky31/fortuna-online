@@ -24,7 +24,7 @@ html, body {
 /* ---------- RUOTA (alta, centrata) ---------- */
 .game-wheel-area {
   position: absolute;
-  top: 329px;          /* ↑ distanza dal bordo alto */
+  top: 629px;          /* ↑ distanza dal bordo alto */
   left: 52%;
   transform: translateX(-50%);
   z-index: 10;
@@ -85,9 +85,9 @@ html, body {
 /* ---------- TABELLONE (parte bassa dello schermo) ---------- */
 .game-board-area {
   position: absolute;
-  bottom: 10px;
+  bottom: 500px;
   left: 50%;
-  transform: translateX(-50%) scale(1);
+  transform: translateX(-50%) scale(0.5);
   transform-origin: center center;
   z-index: 8;
 }
