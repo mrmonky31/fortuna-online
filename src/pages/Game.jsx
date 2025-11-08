@@ -90,25 +90,43 @@ export default function Game({ players = [], totalRounds = 3 }) {
     };
   }, []);
 
-  // 🔹 Riceve "gameStart" dal server e inizializza tutti con la stessa frase
+  // 🔹 Riceve "gameStart" dal server e inizializza TUTTI con stessa frase, stessi giocatori, stessi round
   useEffect(() => {
-    function handleGameStart({ phrase, category, roomCode }) {
+    function handleGameStart({ room, roomCode, phrase, category, totalRounds }) {
       if (!phrase) {
         console.warn("gameStart ricevuto senza phrase");
         return;
       }
 
-      console.log("🚀 Avvio partita sincronizzato:", phrase, category, roomCode);
+      console.log(
+        "🚀 Avvio partita sincronizzato:",
+        { phrase, category, roomCode, totalRounds, room }
+      );
 
       setGameState((prev) => {
-        const basePlayers =
-          prev?.players && prev.players.length
-            ? prev.players
-            : players.length
-            ? players
-            : [{ name: "GIOCATORE 1" }];
+        // Giocatori presi dalla stanza del server
+        let basePlayers = [];
+        if (room && Array.isArray(room.players) && room.players.length) {
+          basePlayers = room.players.map((p) => ({
+            name: p.name || "GIOCATORE",
+          }));
+        } else if (prev?.players && prev.players.length) {
+          basePlayers = prev.players;
+        } else if (players.length) {
+          basePlayers = players;
+        } else {
+          basePlayers = [{ name: "GIOCATORE 1" }];
+        }
 
-        const baseTotalRounds = prev?.totalRounds || totalRounds || 3;
+        // Numero di round: usa quello del server se c'è
+        const baseTotalRounds =
+          typeof totalRounds === "number" && totalRounds > 0
+            ? totalRounds
+            : room?.totalRounds && room.totalRounds > 0
+            ? room.totalRounds
+            : prev?.totalRounds && prev.totalRounds > 0
+            ? prev.totalRounds
+            : totalRounds || 3;
 
         const base = createInitialGameState(basePlayers, baseTotalRounds, {
           vowelCost: 500,
@@ -122,11 +140,16 @@ export default function Game({ players = [], totalRounds = 3 }) {
 
         const rows = buildBoard(phrase, 14, 4);
         const started = startRound(base, phrase, rows, category);
+
+        // 🔴 FORZIAMO IL VALORE REALMENTE USATO PER I ROUND
+        started.totalRounds = baseTotalRounds;
+
         if (roomCode) {
           started.roomCode = roomCode;
         } else if (prev?.roomCode) {
           started.roomCode = prev.roomCode;
         }
+
         return started;
       });
     }
@@ -137,26 +160,26 @@ export default function Game({ players = [], totalRounds = 3 }) {
     };
   }, [players, totalRounds]);
 
-  // Inizializzazione partita locale (solo se il server non manda nulla)
+  // Inizializzazione locale (fallback: singolo device / nessun server)
   useEffect(() => {
     if (gameState) return;
 
-    // Modalità locale: se non stiamo usando roomCode/sync server, usa una frase random
-    // Utile per giocare in singolo, ma in online viene sovrascritta da gameStart
+    console.log("🕓 Nessun gameStart ancora ricevuto, inizializzazione locale…");
+
     const phraseObj = pickValidRandomPhrase(testPhrases);
-    const base = createInitialGameState(
-      players.length ? players : [{ name: "GIOCATORE 1" }],
-      totalRounds,
-      {
-        vowelCost: 500,
-        debug: false,
-        getNextRoundData: () => ({
-          phrase: phraseObj.text,
-          rows: buildBoard(phraseObj.text, 14, 4),
-          category: phraseObj.category,
-        }),
-      }
-    );
+    const basePlayers = players.length ? players : [{ name: "GIOCATORE 1" }];
+    const baseTotalRounds = totalRounds || 3;
+
+    const base = createInitialGameState(basePlayers, baseTotalRounds, {
+      vowelCost: 500,
+      debug: false,
+      getNextRoundData: () => ({
+        phrase: phraseObj.text,
+        rows: buildBoard(phraseObj.text, 14, 4),
+        category: phraseObj.category,
+      }),
+    });
+
     const rows = buildBoard(phraseObj.text, 14, 4);
     const started = startRound(
       base,
@@ -164,6 +187,10 @@ export default function Game({ players = [], totalRounds = 3 }) {
       rows,
       phraseObj.category
     );
+
+    // 🔴 Anche qui forziamo il totale round
+    started.totalRounds = baseTotalRounds;
+
     setGameState(started);
   }, [gameState, players, totalRounds]);
 
@@ -294,6 +321,7 @@ export default function Game({ players = [], totalRounds = 3 }) {
 
   return (
     <div className="game-wrapper">
+      {/* SINISTRA: GIOCATORI */}
       <div className="game-players">
         <h3>Giocatori</h3>
         {gameState.players.map((p, i) => (
@@ -309,6 +337,7 @@ export default function Game({ players = [], totalRounds = 3 }) {
         ))}
       </div>
 
+      {/* CENTRO: RUOTA + CONTROLLI + TABELLONE */}
       <div>
         <div className="game-round-info">
           ROUND {gameState.currentRound} / {gameState.totalRounds}
@@ -346,6 +375,7 @@ export default function Game({ players = [], totalRounds = 3 }) {
         </div>
       </div>
 
+      {/* DESTRA: MESSAGGI + CLASSIFICA */}
       <div>
         <div className="game-alerts">
           {gameState.gameMessage ? (
