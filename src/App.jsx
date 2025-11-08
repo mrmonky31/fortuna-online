@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import "./App.css"; // assicurati che il file esista
 import Setup from "./pages/Setup";
 import LobbyOnline from "./pages/LobbyOnline.jsx";
 import Game from "./pages/Game";
@@ -9,7 +10,7 @@ function App() {
   const [rounds, setRounds] = useState(1);
   const [gameState, setGameState] = useState(null); // stato iniziale ricevuto dalla lobby/server
 
-  // Offline (Setup) – lo lasciamo intatto per eventuale uso futuro
+  // Offline (Setup)
   const startGame = (playersList, totalRounds) => {
     setPlayers(playersList);
     setRounds(totalRounds);
@@ -18,7 +19,6 @@ function App() {
 
   // Online – chiamato da LobbyOnline quando il server emette "gameStart"
   const handleOnlineGameStart = (payload) => {
-    // payload atteso: { room, roomCode, phrase, category, totalRounds? }
     if (payload && payload.room) {
       const room = payload.room;
 
@@ -40,24 +40,33 @@ function App() {
       }
     }
 
-    setGameState(payload); // passo TUTTO a Game tramite prop "state"
+    setGameState(payload);
     setScreen("game");
   };
 
   return (
-    <>
+    <div
+      className="app-fullscreen"
+      style={{
+        width: "100vw",
+        height: "100vh",
+        margin: 0,
+        padding: 0,
+        overflow: "hidden",
+        backgroundColor: "#0b0b0f",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+      }}
+    >
       {screen === "setup" && (
         <LobbyOnline onGameStart={handleOnlineGameStart} />
       )}
 
       {screen === "game" && (
-        <Game
-          players={players}
-          totalRounds={rounds}
-          state={gameState}
-        />
+        <Game players={players} totalRounds={rounds} state={gameState} />
       )}
-    </>
+    </div>
   );
 }
 
