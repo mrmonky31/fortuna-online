@@ -1,0 +1,61 @@
+/* ========================================== */
+/*   LOBBY ONLINE — VERSIONE FULLSCREEN MARCO  */
+/* ========================================== */
+
+.lobby-container {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background-color: #0b0b0f;
+  color: #fff;
+  overflow: hidden;
+}
+
+.lobby-container h1,
+.lobby-container h2 {
+  margin: 10px 0;
+  font-weight: 900;
+  letter-spacing: 1px;
+  text-align: center;
+}
+
+.lobby-container input[type="text"],
+.lobby-container button {
+  transform: scale(2.2);
+  transform-origin: center center;
+  margin: 14px;
+  padding: 12px 18px;
+  font-size: 1rem;
+  border-radius: 10px;
+  border: 2px solid #00ff55;
+  background: #11131a;
+  color: #eaffea;
+  font-weight: bold;
+  transition: 0.25s ease;
+}
+
+.lobby-container button:hover {
+  background: #00ff55;
+  color: #11131a;
+  transform: scale(2.3);
+}
+
+.lobby-container input[type="text"]::placeholder {
+  color: rgba(255,255,255,0.5);
+}
+
+.lobby-container .inputs-row {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.lobby-footer {
+  position: absolute;
+  bottom: 10px;
+  font-size: 0.9rem;
+  opacity: 0.6;
+}
