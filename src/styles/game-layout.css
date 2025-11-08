@@ -25,7 +25,7 @@ html, body {
 /* ---------- RUOTA (alta, centrata) ---------- */
 .game-wheel-area {
   position: absolute;
-  top: 760px;
+  top: 560px;
   left: 52%;
   transform: translateX(-50%);
   z-index: 10;
