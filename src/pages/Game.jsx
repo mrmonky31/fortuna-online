@@ -23,6 +23,7 @@ import {
   changePhrase,
   applyCountdownTick
 } from "../game/GameLogic";
+import socket from "../socket";
 
 // Utility: seleziona una frase valida
 function pickValidRandomPhrase(list) {
@@ -58,6 +59,21 @@ export default function Game({ players = [], totalRounds = 3 }) {
 
   const handleRevealDone = () => setRevealQueue([]);
 
+  // 🔌 Ascolta lo stato di gioco dal server (per ora solo log)
+  useEffect(() => {
+    function handleGameState({ state }) {
+      console.log("📡 Nuovo gameState dal server:", state);
+      // Per ora NON facciamo setGameState(state) perché la struttura
+      // del server è diversa dalla logica locale.
+    }
+
+    socket.on("gameState", handleGameState);
+
+    return () => {
+      socket.off("gameState", handleGameState);
+    };
+  }, []);
+
   // Inizializzazione partita
   useEffect(() => {
     if (gameState) return;
@@ -88,37 +104,34 @@ export default function Game({ players = [], totalRounds = 3 }) {
     return () => clearInterval(id);
   }, []);
 
-  
-// Timer turno: 60s, mostra solo ultimi 10
-useEffect(() => {
-  if (!gameState) return;
-  if (timerPaused) return;
+  // Timer turno: 60s, mostra solo ultimi 10
+  useEffect(() => {
+    if (!gameState) return;
+    if (timerPaused) return;
 
-  // reset timer when cambia giocatore
-  // (se vuoi raffinato, collega a gameState.currentPlayerIndex in deps)
-  const id = setInterval(() => {
-    setTurnTimer((prev) => {
-      if (prev <= 1) {
-        clearInterval(id);
-        // allo 0 passa il turno
-        try {
-          setGameState((s) => {
-            if (!s) return s;
-            return { ...s, forcePassTurn: true };
-          });
-        } catch (e) {
-          console.error(e);
+    const id = setInterval(() => {
+      setTurnTimer((prev) => {
+        if (prev <= 1) {
+          clearInterval(id);
+          // allo 0 passa il turno
+          try {
+            setGameState((s) => {
+              if (!s) return s;
+              return { ...s, forcePassTurn: true };
+            });
+          } catch (e) {
+            console.error(e);
+          }
+          return 0;
         }
-        return 0;
-      }
-      return prev - 1;
-    });
-  }, 1000);
+        return prev - 1;
+      });
+    }, 1000);
 
-  return () => clearInterval(id);
-}, [gameState, timerPaused]);
+    return () => clearInterval(id);
+  }, [gameState, timerPaused]);
 
-// Fase di caricamento
+  // Fase di caricamento
   if (!gameState) {
     return (
       <div className="game-loading">
@@ -137,11 +150,47 @@ useEffect(() => {
   }
 
   // === HANDLERS ===
-  const handleSpin = () => setGameState((s) => applyWheelSpin(s, 500));
-  const handleWheelStop = (outcome) => setGameState((s) => applyWheelOutcome(s, outcome));
-  const handleConsonant = (letter) => setGameState((s) => playConsonant(s, letter));
-  const handleVowel = (letter) => setGameState((s) => buyVowel(s, letter));
-  const handleSolution = (text) => setGameState((s) => trySolve(s, text));
+
+  // Gira la ruota → avvia lo spin locale
+  // NB: il valore "500" qui NON è il premio, è solo il "power" / intensità usato dalla logica della ruota.
+  const handleSpin = () => {
+    setGameState((s) => applyWheelSpin(s, 500));
+  };
+
+  // La ruota si ferma → outcome è il risultato REALE (es. 800, PASSA, BANCAROTTA...)
+  const handleWheelStop = (outcome) => {
+    // 🔌 Invia al server il risultato reale dello spin (solo se esiste roomCode)
+    if (socket && gameState?.roomCode) {
+      socket.emit(
+        "action",
+        {
+          roomCode: gameState.roomCode,
+          type: "spin",
+          payload: { result: outcome },
+        },
+        (res) => {
+          if (!res?.ok) {
+            console.error("Errore azione spin:", res?.error);
+          } else {
+            console.log("Spin registrato dal server ✅", res);
+          }
+        }
+      );
+    }
+
+    // ✅ Logica locale: applica l’esito dello spin (qui vengono usati i valori veri)
+    setGameState((s) => applyWheelOutcome(s, outcome));
+  };
+
+  const handleConsonant = (letter) =>
+    setGameState((s) => playConsonant(s, letter));
+
+  const handleVowel = (letter) =>
+    setGameState((s) => buyVowel(s, letter));
+
+  const handleSolution = (text) =>
+    setGameState((s) => trySolve(s, text));
+
   const handleChangePhrase = () => {
     setGameState((s) => {
       const phrase = pickValidRandomPhrase(testPhrases);
@@ -193,7 +242,7 @@ useEffect(() => {
         </div>
 
         <div className="controls-area">
-          {/* ⬇️ Timer completamente rimosso */}
+          {/* ⬇️ Timer completamente rimosso dai controlli, ma turno gestito sopra */}
           <Controls
             onSpin={handleSpin}
             onConsonant={handleConsonant}
@@ -240,11 +289,10 @@ useEffect(() => {
         </div>
       </div>
 
-      {/* OVERLAY CENTRALE */}
-      
-{turnTimer <= 10 && turnTimer > 0 && (
-  <div className="turn-timer">{turnTimer}</div>
-)}
+      {/* OVERLAY: TIMER TURNO & MESSAGGI CENTRALI */}
+      {turnTimer <= 10 && turnTimer > 0 && (
+        <div className="turn-timer">{turnTimer}</div>
+      )}
 
       {showCenterOverlay && (
         <div className="center-overlay">
