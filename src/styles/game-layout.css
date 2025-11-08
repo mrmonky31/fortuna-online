@@ -320,13 +320,15 @@ body {
   }
 
   .game-wheel-area {
-    width: 100%;
-    display: flex;
-    justify-content: center;
-    transform: scale(0.70);
-    transform-origin: top center;
-    margin: -20px 0;
-  }
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  transform: scale(0.78);
+  transform-origin: top center;
+  margin-top: 3vh;   /* sposta la ruota più in basso */
+  margin-bottom: -10px;
+}
+
 
   .controls-area {
     width: 100%;
@@ -343,7 +345,7 @@ body {
 
   .game-board-area {
     width: 95%;
-    margin-top: 0.5rem;
+      margin-bottom: 3vh; /* alza un po’ il tabellone */
     display: flex;
     justify-content: center;
     overflow: visible;
