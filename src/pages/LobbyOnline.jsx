@@ -28,6 +28,20 @@ export default function LobbyOnline({ onGameStart }) {
     };
   }, [onGameStart, roomCode]);
 
+  // 🔹 Sincronizza l'avvio partita col server via "action"
+  useEffect(() => {
+    const handleGameStart = ({ room }) => {
+      console.log("🚀 Partita avviata dal server:", room);
+      if (onGameStart) onGameStart(room);
+    };
+
+    socket.on("gameStart", handleGameStart);
+
+    return () => {
+      socket.off("gameStart", handleGameStart);
+    };
+  }, [onGameStart]);
+
   const handleCreate = (name, rounds, customRoomName) => {
     setError("");
     socket.emit(

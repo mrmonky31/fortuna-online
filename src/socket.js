@@ -1,18 +1,19 @@
 // src/socket.js
 import { io } from "socket.io-client";
 
-const SERVER_URL = "https://fortuna-online-server.onrender.com";
-
-const socket = io(SERVER_URL, {
+const socket = io("https://fortuna-online-server.onrender.com", {
+  transports: ["websocket", "polling"],
   reconnection: true,
+  reconnectionAttempts: 5,
+  reconnectionDelay: 2000,
 });
 
 socket.on("connect", () => {
-  console.log("✅ Connesso al server:", socket.id);
+  console.log("🔌 Connesso al server Socket.IO:", socket.id);
 });
 
 socket.on("disconnect", () => {
-  console.log("❌ Disconnesso dal server");
+  console.log("❌ Disconnesso dal server Socket.IO");
 });
 
 export default socket;

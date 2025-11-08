@@ -59,12 +59,28 @@ export default function Game({ players = [], totalRounds = 3 }) {
 
   const handleRevealDone = () => setRevealQueue([]);
 
-  // 🔌 Ascolta lo stato di gioco dal server (per ora solo log)
+  // 🔌 Ascolta lo stato di gioco dal server
   useEffect(() => {
     function handleGameState({ state }) {
       console.log("📡 Nuovo gameState dal server:", state);
-      // Per ora NON facciamo setGameState(state) perché la struttura
-      // del server è diversa dalla logica locale.
+
+      if (!state || !state.lastAction) return;
+
+      setGameState((prev) => {
+        if (!prev) return prev;
+        switch (state.lastAction) {
+          case "spin":
+            return applyWheelOutcome(prev, state.result);
+          case "consonant":
+            return playConsonant(prev, state.letter);
+          case "vowel":
+            return buyVowel(prev, state.letter);
+          case "solve":
+            return trySolve(prev, state.text);
+          default:
+            return prev;
+        }
+      });
     }
 
     socket.on("gameState", handleGameState);
@@ -113,7 +129,6 @@ export default function Game({ players = [], totalRounds = 3 }) {
       setTurnTimer((prev) => {
         if (prev <= 1) {
           clearInterval(id);
-          // allo 0 passa il turno
           try {
             setGameState((s) => {
               if (!s) return s;
@@ -131,35 +146,13 @@ export default function Game({ players = [], totalRounds = 3 }) {
     return () => clearInterval(id);
   }, [gameState, timerPaused]);
 
-  // Fase di caricamento
-  if (!gameState) {
-    return (
-      <div className="game-loading">
-        <p>Caricamento partita...</p>
-      </div>
-    );
-  }
-
-  // Fine partita
-  if (gameState.gameOver) {
-    return (
-      <div className="game-wrapper">
-        <FinalScoreboard players={gameState.players} />
-      </div>
-    );
-  }
-
   // === HANDLERS ===
 
-  // Gira la ruota → avvia lo spin locale
-  // NB: il valore "500" qui NON è il premio, è solo il "power" / intensità usato dalla logica della ruota.
   const handleSpin = () => {
     setGameState((s) => applyWheelSpin(s, 500));
   };
 
-  // La ruota si ferma → outcome è il risultato REALE (es. 800, PASSA, BANCAROTTA...)
   const handleWheelStop = (outcome) => {
-    // 🔌 Invia al server il risultato reale dello spin (solo se esiste roomCode)
     if (socket && gameState?.roomCode) {
       socket.emit(
         "action",
@@ -169,27 +162,46 @@ export default function Game({ players = [], totalRounds = 3 }) {
           payload: { result: outcome },
         },
         (res) => {
-          if (!res?.ok) {
-            console.error("Errore azione spin:", res?.error);
-          } else {
-            console.log("Spin registrato dal server ✅", res);
-          }
+          if (!res?.ok) console.error("Errore azione spin:", res?.error);
+          else console.log("Spin registrato dal server ✅", res);
         }
       );
     }
-
-    // ✅ Logica locale: applica l’esito dello spin (qui vengono usati i valori veri)
     setGameState((s) => applyWheelOutcome(s, outcome));
   };
 
-  const handleConsonant = (letter) =>
+  const handleConsonant = (letter) => {
+    if (socket && gameState?.roomCode) {
+      socket.emit("action", {
+        roomCode: gameState.roomCode,
+        type: "consonant",
+        payload: { letter },
+      });
+    }
     setGameState((s) => playConsonant(s, letter));
+  };
 
-  const handleVowel = (letter) =>
+  const handleVowel = (letter) => {
+    if (socket && gameState?.roomCode) {
+      socket.emit("action", {
+        roomCode: gameState.roomCode,
+        type: "vowel",
+        payload: { letter },
+      });
+    }
     setGameState((s) => buyVowel(s, letter));
+  };
 
-  const handleSolution = (text) =>
+  const handleSolution = (text) => {
+    if (socket && gameState?.roomCode) {
+      socket.emit("action", {
+        roomCode: gameState.roomCode,
+        type: "solve",
+        payload: { text },
+      });
+    }
     setGameState((s) => trySolve(s, text));
+  };
 
   const handleChangePhrase = () => {
     setGameState((s) => {
@@ -198,6 +210,22 @@ export default function Game({ players = [], totalRounds = 3 }) {
       return changePhrase(s, phrase.text, rows, phrase.category);
     });
   };
+
+  if (!gameState) {
+    return (
+      <div className="game-loading">
+        <p>Caricamento partita...</p>
+      </div>
+    );
+  }
+
+  if (gameState.gameOver) {
+    return (
+      <div className="game-wrapper">
+        <FinalScoreboard players={gameState.players} />
+      </div>
+    );
+  }
 
   const flashType =
     gameState.countdown?.active
@@ -211,7 +239,6 @@ export default function Game({ players = [], totalRounds = 3 }) {
 
   return (
     <div className="game-wrapper">
-      {/* SINISTRA: GIOCATORI */}
       <div className="game-players">
         <h3>Giocatori</h3>
         {gameState.players.map((p, i) => (
@@ -227,7 +254,6 @@ export default function Game({ players = [], totalRounds = 3 }) {
         ))}
       </div>
 
-      {/* CENTRO: RUOTA + CONTROLLI + TABELLONE */}
       <div>
         <div className="game-round-info">
           ROUND {gameState.currentRound} / {gameState.totalRounds}
@@ -242,7 +268,6 @@ export default function Game({ players = [], totalRounds = 3 }) {
         </div>
 
         <div className="controls-area">
-          {/* ⬇️ Timer completamente rimosso dai controlli, ma turno gestito sopra */}
           <Controls
             onSpin={handleSpin}
             onConsonant={handleConsonant}
@@ -266,7 +291,6 @@ export default function Game({ players = [], totalRounds = 3 }) {
         </div>
       </div>
 
-      {/* DESTRA: MESSAGGI + CLASSIFICA */}
       <div>
         <div className="game-alerts">
           {gameState.gameMessage ? (
@@ -289,7 +313,6 @@ export default function Game({ players = [], totalRounds = 3 }) {
         </div>
       </div>
 
-      {/* OVERLAY: TIMER TURNO & MESSAGGI CENTRALI */}
       {turnTimer <= 10 && turnTimer > 0 && (
         <div className="turn-timer">{turnTimer}</div>
       )}
