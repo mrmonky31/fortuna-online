@@ -87,13 +87,13 @@ html, body {
   position: absolute;
   bottom: 500px;
   left: 50%;
-  transform: translateX(-50%) scale(0.5);
+  transform: translateX(-48%) scale(0.5);
   transform-origin: center center;
   z-index: 8;
 }
 /* ---------- CASELLE DEL TABELLONE ---------- */
 .tile {
-  transform: scale(1.1); /* ingrandisce leggermente ogni casella */
+  transform: scale(1.3); /* ingrandisce leggermente ogni casella */
   transform-origin: center center;
   margin: 2px; /* piccolo spazio fra le lettere */
 }
