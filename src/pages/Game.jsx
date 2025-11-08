@@ -59,7 +59,7 @@ export default function Game({ players = [], totalRounds = 3 }) {
 
   const handleRevealDone = () => setRevealQueue([]);
 
-  // 🔌 Ascolta lo stato di gioco dal server
+  // 🔌 Ascolta lo stato di gioco dal server (azioni: spin, consonante, vocale, soluzione)
   useEffect(() => {
     function handleGameState({ state }) {
       console.log("📡 Nuovo gameState dal server:", state);
@@ -90,25 +90,80 @@ export default function Game({ players = [], totalRounds = 3 }) {
     };
   }, []);
 
-  // Inizializzazione partita
+  // 🔹 Riceve "gameStart" dal server e inizializza tutti con la stessa frase
+  useEffect(() => {
+    function handleGameStart({ phrase, category, roomCode }) {
+      if (!phrase) {
+        console.warn("gameStart ricevuto senza phrase");
+        return;
+      }
+
+      console.log("🚀 Avvio partita sincronizzato:", phrase, category, roomCode);
+
+      setGameState((prev) => {
+        const basePlayers =
+          prev?.players && prev.players.length
+            ? prev.players
+            : players.length
+            ? players
+            : [{ name: "GIOCATORE 1" }];
+
+        const baseTotalRounds = prev?.totalRounds || totalRounds || 3;
+
+        const base = createInitialGameState(basePlayers, baseTotalRounds, {
+          vowelCost: 500,
+          debug: false,
+          getNextRoundData: () => ({
+            phrase,
+            rows: buildBoard(phrase, 14, 4),
+            category,
+          }),
+        });
+
+        const rows = buildBoard(phrase, 14, 4);
+        const started = startRound(base, phrase, rows, category);
+        if (roomCode) {
+          started.roomCode = roomCode;
+        } else if (prev?.roomCode) {
+          started.roomCode = prev.roomCode;
+        }
+        return started;
+      });
+    }
+
+    socket.on("gameStart", handleGameStart);
+    return () => {
+      socket.off("gameStart", handleGameStart);
+    };
+  }, [players, totalRounds]);
+
+  // Inizializzazione partita locale (solo se il server non manda nulla)
   useEffect(() => {
     if (gameState) return;
+
+    // Modalità locale: se non stiamo usando roomCode/sync server, usa una frase random
+    // Utile per giocare in singolo, ma in online viene sovrascritta da gameStart
+    const phraseObj = pickValidRandomPhrase(testPhrases);
     const base = createInitialGameState(
       players.length ? players : [{ name: "GIOCATORE 1" }],
       totalRounds,
       {
         vowelCost: 500,
         debug: false,
-        getNextRoundData: () => {
-          const phrase = pickValidRandomPhrase(testPhrases);
-          const rows = buildBoard(phrase.text, 14, 4);
-          return { phrase: phrase.text, rows, category: phrase.category };
-        }
+        getNextRoundData: () => ({
+          phrase: phraseObj.text,
+          rows: buildBoard(phraseObj.text, 14, 4),
+          category: phraseObj.category,
+        }),
       }
     );
-    const phrase = pickValidRandomPhrase(testPhrases);
-    const rows = buildBoard(phrase.text, 14, 4);
-    const started = startRound(base, phrase.text, rows, phrase.category);
+    const rows = buildBoard(phraseObj.text, 14, 4);
+    const started = startRound(
+      base,
+      phraseObj.text,
+      rows,
+      phraseObj.category
+    );
     setGameState(started);
   }, [gameState, players, totalRounds]);
 

@@ -147,24 +147,43 @@ io.on("connection", (socket) => {
 
   // AVVIO PARTITA (host)
   socket.on("startGame", ({ roomCode }, callback) => {
-    try {
-      const code = String(roomCode || "").trim().toUpperCase();
-      const room = rooms[code];
+  try {
+    const code = String(roomCode || "").trim().toUpperCase();
+    const room = rooms[code];
 
-      if (!room) {
-        if (callback) callback({ ok: false, error: "Stanza inesistente" });
-        return;
-      }
-
-      console.log(`🚀 startGame richiesto per stanza ${code}`);
-      io.to(code).emit("gameStart", { room, roomCode: code });
-
-      if (callback) callback({ ok: true });
-    } catch (err) {
-      console.error("Errore startGame:", err);
-      if (callback) callback({ ok: false, error: "Errore avvio partita" });
+    if (!room) {
+      if (callback) callback({ ok: false, error: "Stanza inesistente" });
+      return;
     }
-  });
+
+    console.log(`🚀 startGame richiesto per stanza ${code}`);
+
+    // 🔹 Genera una frase casuale e inviala a tutti
+    const phrases = [
+      { category: "CINEMA", text: "IL SIGNORE DEGLI ANELLI" },
+      { category: "MUSICA", text: "VIVA LA VIDA" },
+      { category: "SPORT", text: "CALCIO DI RIGORE" },
+      { category: "NATURA", text: "ALBERI SECOLARI" },
+      { category: "STORIA", text: "IMPERO ROMANO" },
+    ];
+    const random = phrases[Math.floor(Math.random() * phrases.length)];
+    room.currentPhrase = random.text;
+    room.currentCategory = random.category;
+
+    io.to(code).emit("gameStart", {
+      room,
+      roomCode: code,
+      phrase: random.text,
+      category: random.category,
+    });
+
+    if (callback) callback({ ok: true, phrase: random.text, category: random.category });
+  } catch (err) {
+    console.error("Errore startGame:", err);
+    if (callback) callback({ ok: false, error: "Errore avvio partita" });
+  }
+});
+
 
   // AZIONI DI GIOCO (spin, consonante, vocale, soluzione, startGame via action)
   socket.on("action", ({ roomCode, type, payload }, callback) => {
