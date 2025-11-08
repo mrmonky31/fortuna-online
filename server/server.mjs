@@ -27,10 +27,10 @@ const io = new Server(server, {
 
 const PORT = process.env.PORT || 10000;
 
-// Mappa delle stanze: { [roomCode]: { host, players, spectators, totalRounds, ... } }
+// Mappa stanze
 const rooms = {};
 
-// Trova la stanza di un certo socket
+// Trova stanza da socket
 function findRoomBySocketId(socketId) {
   for (const [code, room] of Object.entries(rooms)) {
     if (room.players?.some((p) => p.id === socketId)) {
@@ -46,11 +46,15 @@ function findRoomBySocketId(socketId) {
 io.on("connection", (socket) => {
   console.log("🔌 Nuova connessione:", socket.id);
 
-  // Crea stanza
+  // CREA STANZA
   socket.on("createRoom", ({ playerName, totalRounds, roomName }, callback) => {
     try {
+      // 🔴 QUI IL BUG: normalizziamo TUTTO in MAIUSCOLO
+      const rawName = roomName && String(roomName).trim();
       const code =
-        roomName || Math.random().toString(36).substring(2, 7).toUpperCase();
+        rawName && rawName.length > 0
+          ? rawName.toUpperCase()
+          : Math.random().toString(36).substring(2, 7).toUpperCase();
 
       rooms[code] = {
         host: playerName,
@@ -67,7 +71,7 @@ io.on("connection", (socket) => {
         callback({
           ok: true,
           room: rooms[code],
-          roomCode: code,
+          roomCode: code,      // sempre MAIUSCOLO
           playerName,
         });
       }
@@ -77,10 +81,13 @@ io.on("connection", (socket) => {
     }
   });
 
-  // Unisciti come giocatore
+  // JOIN COME GIOCATORE
   socket.on("joinRoom", ({ roomCode, playerName }, callback) => {
     try {
-      const room = rooms[roomCode];
+      // 🔴 Normalizziamo anche qui
+      const code = String(roomCode || "").trim().toUpperCase();
+      const room = rooms[code];
+
       if (!room) {
         if (callback) callback({ ok: false, error: "Stanza inesistente" });
         return;
@@ -88,18 +95,19 @@ io.on("connection", (socket) => {
 
       if (!room.players) room.players = [];
       if (!room.spectators) room.spectators = [];
+
       room.players.push({ id: socket.id, name: playerName });
 
-      socket.join(roomCode);
-      console.log(`🎮 ${playerName} è entrato in ${roomCode}`);
+      socket.join(code);
+      console.log(`🎮 ${playerName} è entrato in ${code}`);
 
-      io.to(roomCode).emit("roomUpdate", { room, roomCode });
+      io.to(code).emit("roomUpdate", { room, roomCode: code });
 
       if (callback) {
         callback({
           ok: true,
           room,
-          roomCode,
+          roomCode: code,
           playerName,
         });
       }
@@ -109,42 +117,47 @@ io.on("connection", (socket) => {
     }
   });
 
-  // Unisciti come spettatore
+  // JOIN COME SPETTATORE
   socket.on("joinAsSpectator", ({ roomCode, name }, callback) => {
     try {
-      const room = rooms[roomCode];
+      const code = String(roomCode || "").trim().toUpperCase();
+      const room = rooms[code];
+
       if (!room) {
         if (callback) callback({ ok: false, error: "Stanza inesistente" });
         return;
       }
 
       if (!room.spectators) room.spectators = [];
+      if (!room.players) room.players = [];
+
       room.spectators.push({ id: socket.id, name: name || "Spettatore" });
 
-      socket.join(roomCode);
-      console.log(`👀 ${name} è entrato come spettatore in ${roomCode}`);
+      socket.join(code);
+      console.log(`👀 ${name} è entrato come spettatore in ${code}`);
 
-      io.to(roomCode).emit("roomUpdate", { room, roomCode });
+      io.to(code).emit("roomUpdate", { room, roomCode: code });
 
-      if (callback) callback({ ok: true, room, roomCode });
+      if (callback) callback({ ok: true, room, roomCode: code });
     } catch (err) {
       console.error("Errore joinAsSpectator:", err);
       if (callback) callback({ ok: false, error: "Errore ingresso spettatore" });
     }
   });
 
-  // Avvio partita (host)
+  // AVVIO PARTITA (host)
   socket.on("startGame", ({ roomCode }, callback) => {
     try {
-      const room = rooms[roomCode];
+      const code = String(roomCode || "").trim().toUpperCase();
+      const room = rooms[code];
+
       if (!room) {
         if (callback) callback({ ok: false, error: "Stanza inesistente" });
         return;
       }
 
-      console.log(`🚀 startGame richiesto per stanza ${roomCode}`);
-      // Per ora il server non calcola il gameState: delega al client.
-      io.to(roomCode).emit("gameStart", { room });
+      console.log(`🚀 startGame richiesto per stanza ${code}`);
+      io.to(code).emit("gameStart", { room, roomCode: code });
 
       if (callback) callback({ ok: true });
     } catch (err) {
@@ -153,10 +166,12 @@ io.on("connection", (socket) => {
     }
   });
 
-  // 🔹 RICEVE AZIONI DI GIOCO (spin, consonante, vocale, soluzione, startGame)
+  // AZIONI DI GIOCO (spin, consonante, vocale, soluzione, startGame via action)
   socket.on("action", ({ roomCode, type, payload }, callback) => {
     try {
-      const room = rooms[roomCode];
+      const code = String(roomCode || "").trim().toUpperCase();
+      const room = rooms[code];
+
       if (!room) {
         if (callback) callback({ ok: false, error: "Stanza inesistente" });
         return;
@@ -164,34 +179,34 @@ io.on("connection", (socket) => {
 
       switch (type) {
         case "startGame":
-          console.log(`🚀 action:startGame su ${roomCode}`);
-          io.to(roomCode).emit("gameStart", { room });
+          console.log(`🚀 action:startGame su ${code}`);
+          io.to(code).emit("gameStart", { room, roomCode: code });
           break;
 
         case "spin":
-          console.log(`🎯 action:spin su ${roomCode}`, payload);
-          io.to(roomCode).emit("gameState", {
+          console.log(`🎯 action:spin su ${code}`, payload);
+          io.to(code).emit("gameState", {
             state: { lastAction: "spin", result: payload?.result },
           });
           break;
 
         case "consonant":
-          console.log(`🔤 action:consonant su ${roomCode}`, payload);
-          io.to(roomCode).emit("gameState", {
+          console.log(`🔤 action:consonant su ${code}`, payload);
+          io.to(code).emit("gameState", {
             state: { lastAction: "consonant", letter: payload?.letter },
           });
           break;
 
         case "vowel":
-          console.log(`🟢 action:vowel su ${roomCode}`, payload);
-          io.to(roomCode).emit("gameState", {
+          console.log(`🟢 action:vowel su ${code}`, payload);
+          io.to(code).emit("gameState", {
             state: { lastAction: "vowel", letter: payload?.letter },
           });
           break;
 
         case "solve":
-          console.log(`✅ action:solve su ${roomCode}`, payload);
-          io.to(roomCode).emit("gameState", {
+          console.log(`✅ action:solve su ${code}`, payload);
+          io.to(code).emit("gameState", {
             state: { lastAction: "solve", text: payload?.text },
           });
           break;
@@ -207,7 +222,7 @@ io.on("connection", (socket) => {
     }
   });
 
-  // Disconnessione: rimuovi player/spettatore dalla stanza e aggiorna
+  // DISCONNESSIONE
   socket.on("disconnect", () => {
     const info = findRoomBySocketId(socket.id);
     if (!info) {
@@ -218,6 +233,9 @@ io.on("connection", (socket) => {
     const { code, room, role } = info;
 
     try {
+      if (!room.players) room.players = [];
+      if (!room.spectators) room.spectators = [];
+
       if (role === "player" && Array.isArray(room.players)) {
         const idx = room.players.findIndex((p) => p.id === socket.id);
         if (idx !== -1) {
@@ -236,9 +254,7 @@ io.on("connection", (socket) => {
         }
       }
 
-      // Se stanza vuota, cancellala
       const hasPlayers = room.players && room.players.length > 0;
-      if (!room.spectators) room.spectators = [];
       const hasSpectators = room.spectators && room.spectators.length > 0;
 
       if (!hasPlayers && !hasSpectators) {
