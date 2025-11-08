@@ -323,7 +323,7 @@ body {
     width: 100%;
     display: flex;
     justify-content: center;
-    transform: scale(0.65);
+    transform: scale(0.70);
     transform-origin: top center;
     margin: -20px 0;
   }

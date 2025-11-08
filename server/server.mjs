@@ -28,6 +28,15 @@ const io = new Server(server, {
 const PORT = process.env.PORT || 10000;
 
 // Mappa stanze
+// rooms[code] = {
+//   host, hostId,
+//   players: [{id, name}],
+//   spectators: [{id, name}],
+//   totalRounds,
+//   currentPhrase,
+//   currentCategory,
+//   gameState: {...}  // stato completo sincronizzato
+// }
 const rooms = {};
 
 // Trova stanza da socket
@@ -49,7 +58,6 @@ io.on("connection", (socket) => {
   // CREA STANZA
   socket.on("createRoom", ({ playerName, totalRounds, roomName }, callback) => {
     try {
-      // 🔴 QUI IL BUG: normalizziamo TUTTO in MAIUSCOLO
       const rawName = roomName && String(roomName).trim();
       const code =
         rawName && rawName.length > 0
@@ -62,6 +70,9 @@ io.on("connection", (socket) => {
         players: [{ id: socket.id, name: playerName }],
         spectators: [],
         totalRounds: totalRounds || 3,
+        currentPhrase: null,
+        currentCategory: null,
+        gameState: null,
       };
 
       socket.join(code);
@@ -71,7 +82,7 @@ io.on("connection", (socket) => {
         callback({
           ok: true,
           room: rooms[code],
-          roomCode: code,      // sempre MAIUSCOLO
+          roomCode: code,
           playerName,
         });
       }
@@ -84,7 +95,6 @@ io.on("connection", (socket) => {
   // JOIN COME GIOCATORE
   socket.on("joinRoom", ({ roomCode, playerName }, callback) => {
     try {
-      // 🔴 Normalizziamo anche qui
       const code = String(roomCode || "").trim().toUpperCase();
       const room = rooms[code];
 
@@ -95,13 +105,19 @@ io.on("connection", (socket) => {
 
       if (!room.players) room.players = [];
       if (!room.spectators) room.spectators = [];
-
       room.players.push({ id: socket.id, name: playerName });
 
       socket.join(code);
       console.log(`🎮 ${playerName} è entrato in ${code}`);
 
+      // aggiorna tutti sulla lobby
       io.to(code).emit("roomUpdate", { room, roomCode: code });
+
+      // se esiste già uno stato di gioco, mandalo SUBITO a chi entra ora
+      if (room.gameState) {
+        console.log("📦 Invia gameState salvato al nuovo player");
+        socket.emit("gameState", { state: room.gameState });
+      }
 
       if (callback) {
         callback({
@@ -130,13 +146,17 @@ io.on("connection", (socket) => {
 
       if (!room.spectators) room.spectators = [];
       if (!room.players) room.players = [];
-
       room.spectators.push({ id: socket.id, name: name || "Spettatore" });
 
       socket.join(code);
       console.log(`👀 ${name} è entrato come spettatore in ${code}`);
 
       io.to(code).emit("roomUpdate", { room, roomCode: code });
+
+      if (room.gameState) {
+        console.log("📦 Invia gameState salvato allo spettatore");
+        socket.emit("gameState", { state: room.gameState });
+      }
 
       if (callback) callback({ ok: true, room, roomCode: code });
     } catch (err) {
@@ -145,47 +165,49 @@ io.on("connection", (socket) => {
     }
   });
 
-  // AVVIO PARTITA (host)
+  // AVVIO PARTITA (host) – sceglie solo la frase condivisa
   socket.on("startGame", ({ roomCode }, callback) => {
-  try {
-    const code = String(roomCode || "").trim().toUpperCase();
-    const room = rooms[code];
+    try {
+      const code = String(roomCode || "").trim().toUpperCase();
+      const room = rooms[code];
 
-    if (!room) {
-      if (callback) callback({ ok: false, error: "Stanza inesistente" });
-      return;
+      if (!room) {
+        if (callback) callback({ ok: false, error: "Stanza inesistente" });
+        return;
+      }
+
+      console.log(`🚀 startGame richiesto per stanza ${code}`);
+
+      // Frasi di esempio (come seed comune – la logica completa resta client-side)
+      const phrases = [
+        { category: "CINEMA", text: "IL SIGNORE DEGLI ANELLI" },
+        { category: "MUSICA", text: "VIVA LA VIDA" },
+        { category: "SPORT", text: "CALCIO DI RIGORE" },
+        { category: "NATURA", text: "ALBERI SECOLARI" },
+        { category: "STORIA", text: "IMPERO ROMANO" },
+      ];
+      const random = phrases[Math.floor(Math.random() * phrases.length)];
+      room.currentPhrase = random.text;
+      room.currentCategory = random.category;
+      // lo stato completo di gioco verrà salvato alla prima sync dal client
+      room.gameState = null;
+
+      io.to(code).emit("gameStart", {
+        room,
+        roomCode: code,
+        phrase: random.text,
+        category: random.category,
+        totalRounds: room.totalRounds || 3,
+      });
+
+      if (callback) callback({ ok: true });
+    } catch (err) {
+      console.error("Errore startGame:", err);
+      if (callback) callback({ ok: false, error: "Errore avvio partita" });
     }
+  });
 
-    console.log(`🚀 startGame richiesto per stanza ${code}`);
-
-    // 🔹 Genera una frase casuale e inviala a tutti
-    const phrases = [
-      { category: "CINEMA", text: "IL SIGNORE DEGLI ANELLI" },
-      { category: "MUSICA", text: "VIVA LA VIDA" },
-      { category: "SPORT", text: "CALCIO DI RIGORE" },
-      { category: "NATURA", text: "ALBERI SECOLARI" },
-      { category: "STORIA", text: "IMPERO ROMANO" },
-    ];
-    const random = phrases[Math.floor(Math.random() * phrases.length)];
-    room.currentPhrase = random.text;
-    room.currentCategory = random.category;
-
-    io.to(code).emit("gameStart", {
-      room,
-      roomCode: code,
-      phrase: random.text,
-      category: random.category,
-    });
-
-    if (callback) callback({ ok: true, phrase: random.text, category: random.category });
-  } catch (err) {
-    console.error("Errore startGame:", err);
-    if (callback) callback({ ok: false, error: "Errore avvio partita" });
-  }
-});
-
-
-  // AZIONI DI GIOCO (spin, consonante, vocale, soluzione, startGame via action)
+  // 🔹 RICEVE AZIONI DI GIOCO
   socket.on("action", ({ roomCode, type, payload }, callback) => {
     try {
       const code = String(roomCode || "").trim().toUpperCase();
@@ -197,37 +219,29 @@ io.on("connection", (socket) => {
       }
 
       switch (type) {
+        // nuovo tipo: sincronizzazione COMPLETA dello stato
+        case "syncState":
+          room.gameState = payload?.state || null;
+          console.log(
+            `🧠 syncState ricevuto per ${code}, stato salvato:`,
+            !!room.gameState
+          );
+          // manda lo stato completo a tutti i client nella stanza
+          io.to(code).emit("gameState", { state: room.gameState });
+          break;
+
+        // altri tipi li lascio solo per debug / compatibilità
         case "startGame":
           console.log(`🚀 action:startGame su ${code}`);
           io.to(code).emit("gameStart", { room, roomCode: code });
           break;
 
         case "spin":
-          console.log(`🎯 action:spin su ${code}`, payload);
-          io.to(code).emit("gameState", {
-            state: { lastAction: "spin", result: payload?.result },
-          });
-          break;
-
         case "consonant":
-          console.log(`🔤 action:consonant su ${code}`, payload);
-          io.to(code).emit("gameState", {
-            state: { lastAction: "consonant", letter: payload?.letter },
-          });
-          break;
-
         case "vowel":
-          console.log(`🟢 action:vowel su ${code}`, payload);
-          io.to(code).emit("gameState", {
-            state: { lastAction: "vowel", letter: payload?.letter },
-          });
-          break;
-
         case "solve":
-          console.log(`✅ action:solve su ${code}`, payload);
-          io.to(code).emit("gameState", {
-            state: { lastAction: "solve", text: payload?.text },
-          });
+          console.log(`🎯 action:${type} su ${code}`, payload);
+          // la logica vera ormai vive lato client via syncState
           break;
 
         default:
