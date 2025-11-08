@@ -24,8 +24,8 @@ html, body {
 /* ---------- RUOTA (alta, centrata) ---------- */
 .game-wheel-area {
   position: absolute;
-  top: -29px;          /* ↑ distanza dal bordo alto */
-  left: 50%;
+  top: 329px;          /* ↑ distanza dal bordo alto */
+  left: 52%;
   transform: translateX(-50%);
   z-index: 10;
 }
@@ -35,7 +35,7 @@ html, body {
   position: absolute;
   top: 400px;          /* ↓ sotto la ruota */
   left: 50%;
-  transform: translateX(-50%);
+  transform: translateX(-40%);
   display: flex;
   align-items: center;
   gap: 15px;
