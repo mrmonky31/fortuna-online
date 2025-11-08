@@ -24,7 +24,7 @@ html, body {
 /* ---------- RUOTA (alta, centrata) ---------- */
 .game-wheel-area {
   position: absolute;
-  top: 629px;          /* ↑ distanza dal bordo alto */
+  top: 670px;          /* ↑ distanza dal bordo alto */
   left: 52%;
   transform: translateX(-50%);
   z-index: 10;
@@ -90,6 +90,12 @@ html, body {
   transform: translateX(-50%) scale(0.5);
   transform-origin: center center;
   z-index: 8;
+}
+/* ---------- CASELLE DEL TABELLONE ---------- */
+.tile {
+  transform: scale(1.1); /* ingrandisce leggermente ogni casella */
+  transform-origin: center center;
+  margin: 2px; /* piccolo spazio fra le lettere */
 }
 
 /* ---------- BOX GIOCATORI (sinistra, trasparente) ---------- */
