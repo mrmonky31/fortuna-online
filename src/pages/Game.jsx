@@ -59,28 +59,44 @@ export default function Game({ players = [], totalRounds = 3, state }) {
 
   const handleRevealDone = () => setRevealQueue([]);
 
-  // 🔌 Riceve stato COMPLETO dal server e lo applica
+  // 🔌 Ascolta lo stato di gioco dal server (azioni: spin, consonante, vocale, soluzione)
   useEffect(() => {
     function handleGameState({ state }) {
-      if (!state) return;
-      console.log("📡 gameState sincronizzato dal server:", state);
-      setGameState(state);
+      console.log("📡 Nuovo gameState dal server:", state);
+
+      if (!state || !state.lastAction) return;
+
+      setGameState((prev) => {
+        if (!prev) return prev;
+        switch (state.lastAction) {
+          case "spin":
+            return applyWheelOutcome(prev, state.result);
+          case "consonant":
+            return playConsonant(prev, state.letter);
+          case "vowel":
+            return buyVowel(prev, state.letter);
+          case "solve":
+            return trySolve(prev, state.text);
+          default:
+            return prev;
+        }
+      });
     }
 
     socket.on("gameState", handleGameState);
+
     return () => {
       socket.off("gameState", handleGameState);
     };
   }, []);
 
-  // 🔹 Inizializzazione partita: PRIMA prova con i dati passati da App (online),
-  // altrimenti usa modalità locale singolo giocatore.
+  // 🔹 Inizializzazione partita: usa PRIMA i dati del server (state), altrimenti fallback locale
   useEffect(() => {
     if (gameState) return;
 
-    // caso ONLINE: App ci ha passato "state" da Lobby/Server (gameStart)
+    // Se arriva dallo stato online (App -> Game)
     if (state && state.phrase) {
-      const { room, roomCode, phrase, category, totalRounds: tRounds } = state;
+      const { room, roomCode, phrase, category } = state;
 
       // Giocatori da stanza server
       let basePlayers = [];
@@ -94,11 +110,11 @@ export default function Game({ players = [], totalRounds = 3, state }) {
         basePlayers = [{ name: "GIOCATORE 1" }];
       }
 
+      // Numero round dal server
       const baseTotalRounds =
-        (room && room.totalRounds) ||
-        tRounds ||
-        totalRounds ||
-        3;
+        room && typeof room.totalRounds === "number" && room.totalRounds > 0
+          ? room.totalRounds
+          : totalRounds || 3;
 
       const base = createInitialGameState(basePlayers, baseTotalRounds, {
         vowelCost: 500,
@@ -113,26 +129,19 @@ export default function Game({ players = [], totalRounds = 3, state }) {
       const rows = buildBoard(phrase, 14, 4);
       const started = startRound(base, phrase, rows, category);
       started.totalRounds = baseTotalRounds;
+
       if (roomCode) {
         started.roomCode = roomCode;
+      } else if (state.roomCode) {
+        started.roomCode = state.roomCode;
       }
 
       setGameState(started);
-
-      // 🔁 Salva subito lo stato sul server (sync iniziale)
-      if (roomCode) {
-        socket.emit("action", {
-          roomCode,
-          type: "syncState",
-          payload: { state: started },
-        });
-      }
-
       return;
     }
 
-    // caso LOCALE (fallback)
-    console.log("🕓 Nessuno stato online, inizializzazione locale…");
+    // Fallback locale (single-player / nessun server)
+    console.log("🕓 Nessun stato online, inizializzazione locale…");
 
     const phraseObj = pickValidRandomPhrase(testPhrases);
     const basePlayers = players.length ? players : [{ name: "GIOCATORE 1" }];
@@ -196,47 +205,71 @@ export default function Game({ players = [], totalRounds = 3, state }) {
 
   const isOnline = !!(gameState && gameState.roomCode);
 
-  // Helper: applica una mossa in locale e manda lo stato COMPLETO al server
-  const applyAndSync = (updater) => {
-    setGameState((prev) => {
-      if (!prev) return prev;
-      const next = updater(prev);
-      if (isOnline && socket && next?.roomCode) {
-        socket.emit("action", {
-          roomCode: next.roomCode,
-          type: "syncState",
-          payload: { state: next },
-        });
-      }
-      return next;
-    });
-  };
-
   // === HANDLERS ===
 
   const handleSpin = () => {
-    // solo effetto visivo di spin, lo stato vero cambia in handleWheelStop
+    // spin locale (solo chi ha il controllo)
     setGameState((s) => applyWheelSpin(s, 500));
   };
 
   const handleWheelStop = (outcome) => {
-    applyAndSync((s) => applyWheelOutcome(s, outcome));
+    if (isOnline && socket) {
+      socket.emit(
+        "action",
+        {
+          roomCode: gameState.roomCode,
+          type: "spin",
+          payload: { result: outcome },
+        },
+        (res) => {
+          if (!res?.ok) console.error("Errore azione spin:", res?.error);
+          else console.log("Spin registrato dal server ✅", res);
+        }
+      );
+    } else {
+      // modalità locale
+      setGameState((s) => applyWheelOutcome(s, outcome));
+    }
   };
 
   const handleConsonant = (letter) => {
-    applyAndSync((s) => playConsonant(s, letter));
+    if (isOnline && socket) {
+      socket.emit("action", {
+        roomCode: gameState.roomCode,
+        type: "consonant",
+        payload: { letter },
+      });
+    } else {
+      setGameState((s) => playConsonant(s, letter));
+    }
   };
 
   const handleVowel = (letter) => {
-    applyAndSync((s) => buyVowel(s, letter));
+    if (isOnline && socket) {
+      socket.emit("action", {
+        roomCode: gameState.roomCode,
+        type: "vowel",
+        payload: { letter },
+      });
+    } else {
+      setGameState((s) => buyVowel(s, letter));
+    }
   };
 
   const handleSolution = (text) => {
-    applyAndSync((s) => trySolve(s, text));
+    if (isOnline && socket) {
+      socket.emit("action", {
+        roomCode: gameState.roomCode,
+        type: "solve",
+        payload: { text },
+      });
+    } else {
+      setGameState((s) => trySolve(s, text));
+    }
   };
 
   const handleChangePhrase = () => {
-    applyAndSync((s) => {
+    setGameState((s) => {
       const phrase = pickValidRandomPhrase(testPhrases);
       const rows = buildBoard(phrase.text, 14, 4);
       return changePhrase(s, phrase.text, rows, phrase.category);
@@ -271,7 +304,6 @@ export default function Game({ players = [], totalRounds = 3, state }) {
 
   return (
     <div className="game-wrapper">
-      {/* SINISTRA: GIOCATORI */}
       <div className="game-players">
         <h3>Giocatori</h3>
         {gameState.players.map((p, i) => (
@@ -287,7 +319,6 @@ export default function Game({ players = [], totalRounds = 3, state }) {
         ))}
       </div>
 
-      {/* CENTRO: RUOTA + CONTROLLI + TABELLONE */}
       <div>
         <div className="game-round-info">
           ROUND {gameState.currentRound} / {gameState.totalRounds}
@@ -325,7 +356,6 @@ export default function Game({ players = [], totalRounds = 3, state }) {
         </div>
       </div>
 
-      {/* DESTRA: MESSAGGI + CLASSIFICA */}
       <div>
         <div className="game-alerts">
           {gameState.gameMessage ? (
