@@ -344,7 +344,7 @@ body {
   }
 
   .game-board-area {
-    width: 95%;
+    width: 100%;
       margin-bottom: 3vh; /* alza un po’ il tabellone */
     display: flex;
     justify-content: center;
