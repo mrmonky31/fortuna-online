@@ -55,7 +55,7 @@ html, body {
 .target-box {
   position: absolute;
   top: -40px;
-  left: calc(50% + 120px);
+  left: 120px;
   z-index: 15;
 }
 
@@ -90,6 +90,8 @@ html, body {
   transform: translateX(-47%) scale(0.5);
   transform-origin: center center;
   z-index: 8;
+  max-height: 90vh; /* impedisce che si allarghi oltre lo schermo */
+  overflow: hidden;
 }
 /* ---------- CASELLE DEL TABELLONE ---------- */
 .tile {
@@ -128,7 +130,7 @@ html, body {
 .scoreboard {
   position: absolute;
   top: 20px;
-  right: 40px;
+  right: 20px;
   background: transparent;
   border: 2px solid #fff;
   border-radius: 10px;
@@ -136,6 +138,7 @@ html, body {
   min-width: 180px;
   color: #fff;
   z-index: 30;
+  transform: translateX(-40%);
 }
 
 .scoreboard h4 {
@@ -213,7 +216,7 @@ html, body {
 /* ---------- PUNTATORE DI RIFERIMENTO (opzionale) ---------- */
 #debug-marker {
   position: absolute;
-  top: 50%;
+  top: 40%;
   left: 50%;
   width: 4px;
   height: 4px;
