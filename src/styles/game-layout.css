@@ -114,6 +114,11 @@ html, body {
   transform: scale(0.9);
   transform-origin: center center;
   margin: 0.5px;
+    font-size: 2.4rem;   /* aumenta o riduci qui la grandezza del testo */
+  font-weight: 900;    /* rende la lettera più piena e leggibile */
+  letter-spacing: 1px; /* distanzia leggermente le lettere */
+  text-transform: uppercase; /* assicura maiuscolo sempre */
+
 }
 
 /* ---------- BOX GIOCATORI (in alto a sinistra, compatto) ---------- */
