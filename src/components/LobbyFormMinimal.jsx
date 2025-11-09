@@ -62,7 +62,7 @@ export default function LobbyFormMinimal({ onCreate, onJoin, onSpectate, error }
   };
 
   return (
-    <div className="lobby-form-minimal">
+    <div className="lobby-form-minimal lobby-container">
       <h1>🎡 RUOTA DELLA FORTUNA</h1>
       <h2>ONLINE</h2>
 
@@ -79,9 +79,7 @@ export default function LobbyFormMinimal({ onCreate, onJoin, onSpectate, error }
 
       {step === "create-name" && (
         <div className="inputs-row">
-          <label style={{ fontSize: "1.5rem", fontWeight: "bold", marginBottom: "10px" }}>
-            Nome della stanza
-          </label>
+          <label className="form-label">Nome della stanza</label>
           <input
             ref={roomNameInputRef}
             type="text"
@@ -118,9 +116,7 @@ export default function LobbyFormMinimal({ onCreate, onJoin, onSpectate, error }
 
       {step === "create-player" && (
         <div className="inputs-row">
-          <label style={{ fontSize: "1.5rem", fontWeight: "bold", marginBottom: "10px" }}>
-            Il tuo nome
-          </label>
+          <label className="form-label">Il tuo nome</label>
           <input
             ref={playerNameInputRef}
             type="text"
@@ -141,9 +137,7 @@ export default function LobbyFormMinimal({ onCreate, onJoin, onSpectate, error }
 
       {step === "join-name" && (
         <div className="inputs-row">
-          <label style={{ fontSize: "1.5rem", fontWeight: "bold", marginBottom: "10px" }}>
-            Codice stanza
-          </label>
+          <label className="form-label">Codice stanza</label>
           <input
             ref={roomCodeInputRef}
             type="text"
@@ -180,9 +174,7 @@ export default function LobbyFormMinimal({ onCreate, onJoin, onSpectate, error }
 
       {step === "join-player" && (
         <div className="inputs-row">
-          <label style={{ fontSize: "1.5rem", fontWeight: "bold", marginBottom: "10px" }}>
-            Il tuo nome
-          </label>
+          <label className="form-label">Il tuo nome</label>
           <input
             ref={playerNameInputRef}
             type="text"
