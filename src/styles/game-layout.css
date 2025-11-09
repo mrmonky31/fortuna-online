@@ -28,7 +28,7 @@ html, body {
 /* ---------- RUOTA (metà fuori schermo in alto) ---------- */
 .game-wheel-area {
   position: absolute;
-  top: -4%; /* Metà sopra lo schermo */
+  top: -3%; /* Metà sopra lo schermo */
   left: 50%;
   transform: translateX(-50%) scale(0.6); /* Ridotta del 30% */
   z-index: 10;
@@ -64,8 +64,8 @@ html, body {
 /* TARGET (sotto i controlli) */
 .target-box {
   position: absolute;
-  top: 25%;
-  left: -20px;
+  top: 20%;
+  left: -30px;
   transform: translateX(-45%);
   z-index: 15;
   font-size: 0.9em;
@@ -102,8 +102,8 @@ html, body {
 .game-board-area {
   position: absolute;
   bottom: 5%;
-  left: 10%;
-  transform: translateX(-40%) scale(0.7); /* Ridotto al 45% */
+  left: 15%;
+  transform: translateX(-40%) scale(0.6); /* Ridotto al 45% */
   transform-origin: center bottom;
   z-index: 8;
   max-width: 100vw;
