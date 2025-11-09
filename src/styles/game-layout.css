@@ -114,8 +114,8 @@ html, body {
   transform: scale(0.9);
   transform-origin: center center;
   margin: 0.5px;
-    font-size: 3rem;   /* aumenta o riduci qui la grandezza del testo */
-  font-weight: 1100;    /* rende la lettera più piena e leggibile */
+    font-size: 6rem;   /* aumenta o riduci qui la grandezza del testo */
+  font-weight: 1900;    /* rende la lettera più piena e leggibile */
   letter-spacing: 1px; /* distanzia leggermente le lettere */
   text-transform: uppercase; /* assicura maiuscolo sempre */
 
