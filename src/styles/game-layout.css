@@ -30,7 +30,7 @@ html, body {
   position: absolute;
   top: -30%; /* Metà sopra lo schermo */
   left: 50%;
-  transform: translateX(-50%) scale(0.7); /* Ridotta del 30% */
+  transform: translateX(-50%) scale(0.9); /* Ridotta del 30% */
   z-index: 10;
 }
 
@@ -63,8 +63,8 @@ html, body {
 /* TARGET (sotto i controlli) */
 .target-box {
   position: absolute;
-  top: 32%;
-  left: 50%;
+  top: 30%;
+  left: 10%;
   transform: translateX(-50%);
   z-index: 15;
   font-size: 0.9em;
@@ -100,9 +100,9 @@ html, body {
 /* ---------- TABELLONE (parte bassa, ridotto) ---------- */
 .game-board-area {
   position: absolute;
-  bottom: 2%;
-  left: 50%;
-  transform: translateX(-50%) scale(0.45); /* Ridotto al 45% */
+  bottom: 10%;
+  left: 30%;
+  transform: translateX(-50%) scale(0.48); /* Ridotto al 45% */
   transform-origin: center bottom;
   z-index: 8;
   max-width: 100vw;
@@ -110,7 +110,7 @@ html, body {
 
 /* ---------- CASELLE DEL TABELLONE ---------- */
 .tile {
-  transform: scale(1);
+  transform: scale(1.2);
   transform-origin: center center;
   margin: 1px;
 }
@@ -185,8 +185,8 @@ html, body {
 /* ---------- ROUND INFO (in alto al centro) ---------- */
 .game-round-info {
   position: absolute;
-  top: 5px;
-  left: 50%;
+  top: 10px;
+  left: 70%;
   transform: translateX(-50%);
   font-weight: bold;
   font-size: 0.75em;
