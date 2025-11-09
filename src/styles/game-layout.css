@@ -32,6 +32,7 @@ html, body {
   left: 50%;
   transform: translateX(-50%) scale(0.9); /* Ridotta del 30% */
   z-index: 10;
+  overflow: visible;
 }
 
 /* ---------- CONTROLLI (centrati, sotto ruota visibile) ---------- */
