@@ -111,7 +111,7 @@ html, body {
 
 /* ---------- CASELLE DEL TABELLONE ---------- */
 .tile {
-  transform: scale(1.3);
+  transform: scale(1.9);
   transform-origin: center center;
   margin: 1px;
 }
@@ -187,7 +187,7 @@ html, body {
 .game-round-info {
   position: absolute;
   top: 3px;
-  left: 75%;
+  left: 78%;
   transform: translateX(-50%);
   font-weight: bold;
   font-size: 0.75em;
