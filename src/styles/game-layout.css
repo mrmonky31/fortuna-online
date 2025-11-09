@@ -154,7 +154,7 @@ html, body {
 /* ---------- CLASSIFICA (in alto a destra, compatta) ---------- */
 .scoreboard {
   position: absolute;
-  top: 5px;
+  top: 15px;
   right: 5px;
   background: rgba(17, 19, 26, 0.9);
   border: 2px solid #fff;
@@ -186,7 +186,7 @@ html, body {
 /* ---------- ROUND INFO (in alto al centro) ---------- */
 .game-round-info {
   position: absolute;
-  top: 40px;
+  top: 5px;
   left: 80%;
   transform: translateX(-50%);
   font-weight: bold;
