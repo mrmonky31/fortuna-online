@@ -55,7 +55,7 @@ html, body {
   position: absolute;
   top: 20%;
   left: 50%;
-  transform: translateX(-50%);
+  transform: translateX(-47%);
   z-index: 15;
   pointer-events: none;
   font-size: 0.9em;
@@ -102,7 +102,7 @@ html, body {
 .game-board-area {
   position: absolute;
   bottom: 20%;
-  left: 10%;
+  left: 20%;
   transform: translateX(-30%) scale(0.48); /* Ridotto al 45% */
   transform-origin: center bottom;
   z-index: 8;
