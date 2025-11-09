@@ -25,7 +25,7 @@ html, body {
 /* ---------- RUOTA (alta, centrata) ---------- */
 .game-wheel-area {
   position: absolute;
-  top: 750px;
+  top: 650px;
   left: 52%;
   transform: translateX(-50%);
   z-index: 10;
@@ -184,7 +184,7 @@ html, body {
 /* ---------- ROUND INFO ---------- */
 .game-round-info {
   position: absolute;
-  top: 20px;
+  top: 5px;
   left: 50%;
   transform: translateX(-50%);
   font-weight: bold;
@@ -196,7 +196,9 @@ html, body {
 
 /* ---------- OVERLAY (MESSAGGIO CENTRALE) ---------- */
 .center-overlay {
-  position: fixed;
+  position: absolute;
+  top: 400px;
+  left: 50%;
   inset: 0;
   display: flex;
   align-items: center;
