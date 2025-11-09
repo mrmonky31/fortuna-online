@@ -1,6 +1,6 @@
 /* ========================================== */
-/*   GAME LAYOUT — VERSIONE SCHERMO PIENO     */
-/*   Layout ottimizzato con coordinate %      */
+/*   GAME LAYOUT — VERSIONE LIBERA MARCO      */
+/*   Layout a schermo pieno, assi XY liberi   */
 /* ========================================== */
 
 html, body {
@@ -19,54 +19,65 @@ html, body {
   width: 100vw;
   height: 100vh;
   overflow: hidden;
+  max-height: 100vh;
 }
 
-/* ---------- RUOTA (parte alta centrale) ---------- */
+/* ---------- RUOTA (alta, centrata) ---------- */
 .game-wheel-area {
   position: absolute;
-  top: 8%;
-  left: 50%;
+  top: 650px;
+  left: 52%;
   transform: translateX(-50%);
   z-index: 10;
+  overflow: visible;
+  max-height: 100vh;
 }
 
-/* ---------- CONTROLLI (sotto la ruota) ---------- */
+/* ---------- CONTROLLI (centrali sotto ruota) ---------- */
 .controls-area {
   position: absolute;
-  top: 35%;
+  top: 400px;
   left: 50%;
-  transform: translateX(-50%);
+  transform: translateX(-40%);
   display: flex;
   align-items: center;
   gap: 15px;
   z-index: 12;
+  overflow: hidden;
+  max-height: 100vh;
 }
 
-/* TIMER (a sinistra del pulsante) */
+/* TIMER (a sinistra del pulsante gira la ruota) */
 .lr-timer {
   position: absolute;
-  top: 35%;
-  left: calc(50% - 250px);
+  top: -10px;
+  left: calc(50% - 230px);
   z-index: 15;
   pointer-events: none;
+  overflow: hidden;
+  max-height: 100vh;
 }
 
-/* TARGET (a destra del pulsante) */
+/* TARGET (a destra del pulsante gira la ruota) */
 .target-box {
   position: absolute;
-  top: 35%;
-  left: calc(50% + 150px);
+  top: 40px;
+  left: 10px;
   z-index: 15;
+  overflow: hidden;
+  max-height: 100vh;
 }
 
 /* BOX MESSAGGI (ancora più a destra) */
 .game-alerts {
   position: absolute;
-  top: 35%;
-  left: calc(50% + 250px);
+  top: 35px;
+  left: 60px;
   z-index: 16;
   width: 250px;
   text-align: left;
+  overflow: hidden;
+  max-height: 100vh;
 }
 
 .alert {
@@ -82,123 +93,133 @@ html, body {
 .alert.warning { border-color: #ffcc00; color: #996600; }
 .alert.info    { border-color: #5555ff; color: #3333cc; }
 
-/* ---------- TABELLONE (parte bassa centrale) ---------- */
+/* ---------- TABELLONE (parte bassa dello schermo) ---------- */
 .game-board-area {
   position: absolute;
-  bottom: 5%;
-  left: 50%;
-  transform: translateX(-50%) scale(0.8);
-  transform-origin: center bottom;
+  bottom: 430px;
+  left: 45%;
+  transform: translateX(-47%) scale(0.5);
+  transform-origin: center center;
   z-index: 8;
+  max-height: 90vh;
+  overflow: hidden;
 }
 
 /* ---------- CASELLE DEL TABELLONE ---------- */
 .tile {
-  transform: scale(1.2);
+  transform: scale(1.5);
   transform-origin: center center;
   margin: 2px;
+  overflow: hidden;
+  max-height: 100vh;
 }
 
-/* ---------- BOX GIOCATORI (sinistra) ---------- */
+/* ---------- BOX GIOCATORI (sinistra, trasparente) ---------- */
 .game-players {
   position: absolute;
-  top: 20%;
-  left: 20px;
+  top: 300px;
+  left: 10px;
   display: flex;
   flex-direction: column;
   gap: 12px;
   z-index: 20;
+  overflow: hidden;
+  max-height: 100vh;
 }
 
-/* Nascondi titolo "Giocatori" */
-.game-players > *:not(.player-card) {
+/* Forza la sparizione della scritta "Giocatori" in ogni forma */
+.game-players *:not(.player-card):not(.player-card *) {
   display: none !important;
 }
 
+
 .player-card {
-  border: 3px solid #555;
+  border: 3px solid #000;
   border-radius: 8px;
-  padding: 10px 15px;
+  padding: 8px 12px;
   text-align: center;
-  background: rgba(17, 19, 26, 0.85);
+  background: transparent;
   font-weight: bold;
   color: #fff;
   transition: box-shadow 180ms ease, border-color 180ms ease;
-  backdrop-filter: blur(5px);
+  overflow: hidden;
+  max-height: 100vh;
 }
 
 .player-card.player-active {
   border-color: #00ff55;
-  box-shadow: 0 0 15px #00ff55;
+  box-shadow: 0 0 12px #00ff55;
 }
 
-/* ---------- CLASSIFICA (alto a destra) ---------- */
+/* ---------- CLASSIFICA (in alto a destra, trasparente) ---------- */
 .scoreboard {
   position: absolute;
-  top: 20%;
-  right: 20px;
-  background: rgba(17, 19, 26, 0.85);
+  top: 200px;
+  right: 10px;
+  background: transparent;
   border: 2px solid #fff;
   border-radius: 10px;
-  padding: 15px 20px;
-  min-width: 180px;
+  padding: 5px 6px;          /* dimezzato */
+  min-width: 90px;           /* dimezzato */
   color: #fff;
   z-index: 30;
-  backdrop-filter: blur(5px);
+  transform: translateX(-40%) scale(0.5); /* dimezzata visivamente */
+  overflow: hidden;
+  max-height: 100vh;
 }
 
 .scoreboard h4 {
-  margin: 0 0 12px;
+  margin: 0 0 8px;
   text-align: center;
-  font-size: 1.1em;
 }
 
 .score-row {
   display: flex;
   justify-content: space-between;
-  padding: 6px 0;
+  padding: 3px 0;
   border-bottom: 1px solid rgba(255,255,255,0.2);
 }
 .score-row:last-child { border-bottom: none; }
 
-/* ---------- ROUND INFO (in alto al centro) ---------- */
+/* ---------- ROUND INFO ---------- */
 .game-round-info {
   position: absolute;
-  top: 10px;
+  top: 5px;
   left: 50%;
   transform: translateX(-50%);
   font-weight: bold;
-  font-size: 1em;
+  font-size: 0.8em;
   z-index: 25;
-  background: rgba(17, 19, 26, 0.7);
-  padding: 8px 16px;
-  border-radius: 8px;
+  overflow: hidden;
+  max-height: 100vh;
 }
 
 /* ---------- OVERLAY (MESSAGGIO CENTRALE) ---------- */
 .center-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  position: absolute;
+  top: 400px;
+  left: 50%;
+  inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0,0,0,0.75);
+  background: rgba(0,0,0,0.45);
   z-index: 999;
+  overflow: hidden;
+  max-height: 100vh;
 }
 
 .center-box {
   background: #11131a;
   border: 3px solid #00e676;
   border-radius: 14px;
-  padding: 24px 32px;
-  font-size: 20px;
+  padding: 18px 22px;
+  font-size: 18px;
   font-weight: 900;
   color: #eaffea;
   text-align: center;
-  max-width: 80%;
+  overflow: hidden;
+  max-height: 100vh;
 }
 
 /* ---------- EFFETTI TABELLONE ---------- */
@@ -218,26 +239,27 @@ html, body {
 /* ---------- TIMER NUMERICO ROSSO ---------- */
 .turn-timer {
   position: absolute;
-  top: 45%;
+  bottom: 42%;
   left: 50%;
   transform: translateX(-50%);
-  font-size: 3rem;
+  font-size: 2.7rem;
   font-weight: 900;
   color: #ff3333;
-  text-shadow: 0 0 10px rgba(255, 51, 51, 0.5);
   z-index: 50;
+  overflow: hidden;
+  max-height: 100vh;
 }
 
-/* ---------- PUNTATORE DI RIFERIMENTO (debug) ---------- */
+/* ---------- PUNTATORE DI RIFERIMENTO (opzionale) ---------- */
 #debug-marker {
   position: absolute;
-  top: 50%;
+  top: 400px;
   left: 50%;
-  width: 8px;
-  height: 8px;
+  width: 4px;
+  height: 4px;
   background: red;
   border-radius: 50%;
-  transform: translate(-50%, -50%);
   z-index: 9999;
-  display: none; /* Nascondi quando non serve debug */
+  overflow: hidden;
+  max-height: 100vh;
 }
