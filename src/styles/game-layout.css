@@ -64,8 +64,8 @@ html, body {
 /* TARGET (sotto i controlli) */
 .target-box {
   position: absolute;
-  top: 28%;
-  left: 5%;
+  top: 25%;
+  left: 1%;
   transform: translateX(-50%);
   z-index: 15;
   font-size: 0.9em;
