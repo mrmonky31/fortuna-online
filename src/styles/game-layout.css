@@ -64,8 +64,8 @@ html, body {
 /* TARGET (sotto i controlli) */
 .target-box {
   position: absolute;
-  top: 30%;
-  left: 10%;
+  top: 28%;
+  left: 5%;
   transform: translateX(-50%);
   z-index: 15;
   font-size: 0.9em;
@@ -154,7 +154,7 @@ html, body {
 /* ---------- CLASSIFICA (in alto a destra, compatta) ---------- */
 .scoreboard {
   position: absolute;
-  top: 15px;
+  top: 25px;
   right: 5px;
   background: rgba(17, 19, 26, 0.9);
   border: 2px solid #fff;
@@ -186,7 +186,7 @@ html, body {
 /* ---------- ROUND INFO (in alto al centro) ---------- */
 .game-round-info {
   position: absolute;
-  top: 5px;
+  top: 3px;
   left: 80%;
   transform: translateX(-50%);
   font-weight: bold;
