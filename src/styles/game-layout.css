@@ -103,7 +103,7 @@ html, body {
   position: absolute;
   bottom: 20%;
   left: 20%;
-  transform: translateX(-30%) scale(0.48); /* Ridotto al 45% */
+  transform: translateX(-30%) scale(0.8); /* Ridotto al 45% */
   transform-origin: center bottom;
   z-index: 8;
   max-width: 100vw;
@@ -188,7 +188,7 @@ html, body {
   position: absolute;
   top: 3px;
   left: 78%;
-  transform: translateX(-50%);
+  transform: translateX(-60%);
   font-weight: bold;
   font-size: 0.75em;
   z-index: 25;
