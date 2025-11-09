@@ -1,6 +1,6 @@
 /* ========================================== */
-/*   GAME LAYOUT — VERSIONE SCHERMO PIENO     */
-/*   Layout ottimizzato con coordinate %      */
+/*   GAME LAYOUT — MOBILE FULLSCREEN          */
+/*   Ottimizzato per schermi piccoli          */
 /* ========================================== */
 
 html, body {
@@ -15,58 +15,71 @@ html, body {
 }
 
 .game-wrapper {
-  position: relative;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   width: 100vw;
   height: 100vh;
   overflow: hidden;
 }
 
-/* ---------- RUOTA (parte alta centrale) ---------- */
+/* ---------- RUOTA (metà fuori schermo in alto) ---------- */
 .game-wheel-area {
   position: absolute;
-  top: 8%;
+  top: -30%; /* Metà sopra lo schermo */
   left: 50%;
-  transform: translateX(-50%);
+  transform: translateX(-50%) scale(0.7); /* Ridotta del 30% */
   z-index: 10;
 }
 
-/* ---------- CONTROLLI (sotto la ruota) ---------- */
+/* ---------- CONTROLLI (centrati, sotto ruota visibile) ---------- */
 .controls-area {
   position: absolute;
-  top: 35%;
+  top: 25%;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
   align-items: center;
-  gap: 15px;
+  gap: 10px;
   z-index: 12;
+  flex-wrap: wrap;
+  justify-content: center;
+  max-width: 90vw;
 }
 
-/* TIMER (a sinistra del pulsante) */
+/* TIMER (sopra i controlli) */
 .lr-timer {
   position: absolute;
-  top: 35%;
-  left: calc(50% - 250px);
+  top: 20%;
+  left: 50%;
+  transform: translateX(-50%);
   z-index: 15;
   pointer-events: none;
+  font-size: 0.9em;
 }
 
-/* TARGET (a destra del pulsante) */
+/* TARGET (sotto i controlli) */
 .target-box {
   position: absolute;
-  top: 35%;
-  left: calc(50% + 150px);
+  top: 32%;
+  left: 50%;
+  transform: translateX(-50%);
   z-index: 15;
+  font-size: 0.9em;
 }
 
-/* BOX MESSAGGI (ancora più a destra) */
+/* BOX MESSAGGI (centrato, sotto target) */
 .game-alerts {
   position: absolute;
-  top: 35%;
-  left: calc(50% + 250px);
+  top: 38%;
+  left: 50%;
+  transform: translateX(-50%);
   z-index: 16;
-  width: 250px;
-  text-align: left;
+  width: 90vw;
+  max-width: 350px;
+  text-align: center;
 }
 
 .alert {
@@ -76,38 +89,42 @@ html, body {
   padding: 8px;
   font-weight: bold;
   color: #000;
+  font-size: 0.85em;
+  margin-bottom: 5px;
 }
 .alert.success { border-color: #00ff55; color: #00aa33; }
 .alert.error   { border-color: #ff3333; color: #cc0000; }
 .alert.warning { border-color: #ffcc00; color: #996600; }
 .alert.info    { border-color: #5555ff; color: #3333cc; }
 
-/* ---------- TABELLONE (parte bassa centrale) ---------- */
+/* ---------- TABELLONE (parte bassa, ridotto) ---------- */
 .game-board-area {
   position: absolute;
-  bottom: 5%;
+  bottom: 2%;
   left: 50%;
-  transform: translateX(-50%) scale(0.8);
+  transform: translateX(-50%) scale(0.45); /* Ridotto al 45% */
   transform-origin: center bottom;
   z-index: 8;
+  max-width: 100vw;
 }
 
 /* ---------- CASELLE DEL TABELLONE ---------- */
 .tile {
-  transform: scale(1.2);
+  transform: scale(1);
   transform-origin: center center;
-  margin: 2px;
+  margin: 1px;
 }
 
-/* ---------- BOX GIOCATORI (sinistra) ---------- */
+/* ---------- BOX GIOCATORI (in alto a sinistra, compatto) ---------- */
 .game-players {
   position: absolute;
-  top: 20%;
-  left: 20px;
+  top: 5px;
+  left: 5px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 6px;
   z-index: 20;
+  max-width: 35vw;
 }
 
 /* Nascondi titolo "Giocatori" */
@@ -116,63 +133,67 @@ html, body {
 }
 
 .player-card {
-  border: 3px solid #555;
-  border-radius: 8px;
-  padding: 10px 15px;
+  border: 2px solid #555;
+  border-radius: 6px;
+  padding: 6px 10px;
   text-align: center;
-  background: rgba(17, 19, 26, 0.85);
+  background: rgba(17, 19, 26, 0.9);
   font-weight: bold;
   color: #fff;
   transition: box-shadow 180ms ease, border-color 180ms ease;
   backdrop-filter: blur(5px);
+  font-size: 0.8em;
 }
 
 .player-card.player-active {
   border-color: #00ff55;
-  box-shadow: 0 0 15px #00ff55;
+  box-shadow: 0 0 12px #00ff55;
 }
 
-/* ---------- CLASSIFICA (alto a destra) ---------- */
+/* ---------- CLASSIFICA (in alto a destra, compatta) ---------- */
 .scoreboard {
   position: absolute;
-  top: 20%;
-  right: 20px;
-  background: rgba(17, 19, 26, 0.85);
+  top: 5px;
+  right: 5px;
+  background: rgba(17, 19, 26, 0.9);
   border: 2px solid #fff;
-  border-radius: 10px;
-  padding: 15px 20px;
-  min-width: 180px;
+  border-radius: 8px;
+  padding: 8px 12px;
+  min-width: 100px;
+  max-width: 35vw;
   color: #fff;
   z-index: 30;
   backdrop-filter: blur(5px);
+  font-size: 0.8em;
 }
 
 .scoreboard h4 {
-  margin: 0 0 12px;
+  margin: 0 0 8px;
   text-align: center;
-  font-size: 1.1em;
+  font-size: 0.95em;
 }
 
 .score-row {
   display: flex;
   justify-content: space-between;
-  padding: 6px 0;
+  padding: 4px 0;
   border-bottom: 1px solid rgba(255,255,255,0.2);
+  font-size: 0.85em;
 }
 .score-row:last-child { border-bottom: none; }
 
 /* ---------- ROUND INFO (in alto al centro) ---------- */
 .game-round-info {
   position: absolute;
-  top: 10px;
+  top: 5px;
   left: 50%;
   transform: translateX(-50%);
   font-weight: bold;
-  font-size: 1em;
+  font-size: 0.75em;
   z-index: 25;
-  background: rgba(17, 19, 26, 0.7);
-  padding: 8px 16px;
-  border-radius: 8px;
+  background: rgba(17, 19, 26, 0.8);
+  padding: 5px 12px;
+  border-radius: 6px;
 }
 
 /* ---------- OVERLAY (MESSAGGIO CENTRALE) ---------- */
@@ -185,20 +206,20 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0,0,0,0.75);
+  background: rgba(0,0,0,0.85);
   z-index: 999;
 }
 
 .center-box {
   background: #11131a;
   border: 3px solid #00e676;
-  border-radius: 14px;
-  padding: 24px 32px;
-  font-size: 20px;
+  border-radius: 12px;
+  padding: 20px 28px;
+  font-size: 1.1em;
   font-weight: 900;
   color: #eaffea;
   text-align: center;
-  max-width: 80%;
+  max-width: 85vw;
 }
 
 /* ---------- EFFETTI TABELLONE ---------- */
@@ -218,26 +239,39 @@ html, body {
 /* ---------- TIMER NUMERICO ROSSO ---------- */
 .turn-timer {
   position: absolute;
-  top: 45%;
+  top: 43%;
   left: 50%;
   transform: translateX(-50%);
-  font-size: 3rem;
+  font-size: 2rem;
   font-weight: 900;
   color: #ff3333;
   text-shadow: 0 0 10px rgba(255, 51, 51, 0.5);
   z-index: 50;
 }
 
-/* ---------- PUNTATORE DI RIFERIMENTO (debug) ---------- */
-#debug-marker {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 8px;
-  height: 8px;
-  background: red;
-  border-radius: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 9999;
-  display: none; /* Nascondi quando non serve debug */
+/* ---------- MEDIA QUERIES PER SCHERMI MOLTO PICCOLI ---------- */
+@media (max-height: 700px) {
+  .game-wheel-area {
+    top: -35%;
+    transform: translateX(-50%) scale(0.6);
+  }
+  
+  .game-board-area {
+    transform: translateX(-50%) scale(0.35);
+  }
+  
+  .controls-area {
+    top: 22%;
+  }
+}
+
+@media (max-height: 600px) {
+  .game-wheel-area {
+    top: -40%;
+    transform: translateX(-50%) scale(0.5);
+  }
+  
+  .game-board-area {
+    transform: translateX(-50%) scale(0.3);
+  }
 }
