@@ -62,7 +62,7 @@ export default function LobbyFormMinimal({ onCreate, onJoin, onSpectate, error }
   };
 
   return (
-    <div className="lobby-form-minimal lobby-container">
+    <div className="lobby-form-minimal">
       <h1>🎡 RUOTA DELLA FORTUNA</h1>
       <h2>ONLINE</h2>
 
