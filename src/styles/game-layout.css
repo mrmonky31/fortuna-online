@@ -61,8 +61,8 @@ html, body {
 /* TARGET (a destra del pulsante gira la ruota) */
 .target-box {
   position: absolute;
-  top: -40px;
-  left: 120px;
+  top: 40px;
+  left: 10px;
   z-index: 15;
   overflow: hidden;
   max-height: 100vh;
@@ -71,8 +71,8 @@ html, body {
 /* BOX MESSAGGI (ancora più a destra) */
 .game-alerts {
   position: absolute;
-  top: 385px;
-  left: calc(50% + 260px);
+  top: 35px;
+  left: 60px;
   z-index: 16;
   width: 250px;
   text-align: left;
@@ -117,7 +117,7 @@ html, body {
 /* ---------- BOX GIOCATORI (sinistra, trasparente) ---------- */
 .game-players {
   position: absolute;
-  top: 200px;
+  top: 300px;
   left: 10px;
   display: flex;
   flex-direction: column;
@@ -154,8 +154,8 @@ html, body {
 /* ---------- CLASSIFICA (in alto a destra, trasparente) ---------- */
 .scoreboard {
   position: absolute;
-  top: 20px;
-  right: 20px;
+  top: 200px;
+  right: 10px;
   background: transparent;
   border: 2px solid #fff;
   border-radius: 10px;
@@ -184,11 +184,11 @@ html, body {
 /* ---------- ROUND INFO ---------- */
 .game-round-info {
   position: absolute;
-  top: 10px;
+  top: 20px;
   left: 50%;
   transform: translateX(-50%);
   font-weight: bold;
-  font-size: 1.2em;
+  font-size: 0.8em;
   z-index: 25;
   overflow: hidden;
   max-height: 100vh;
@@ -251,7 +251,7 @@ html, body {
 /* ---------- PUNTATORE DI RIFERIMENTO (opzionale) ---------- */
 #debug-marker {
   position: absolute;
-  top: 40%;
+  top: 400px;
   left: 50%;
   width: 4px;
   height: 4px;
