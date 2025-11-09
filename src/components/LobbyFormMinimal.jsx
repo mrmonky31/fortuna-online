@@ -1,11 +1,31 @@
 // src/components/LobbyFormMinimal.jsx
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 
 export default function LobbyFormMinimal({ onCreate, onJoin, onSpectate, error }) {
-  const [step, setStep] = useState("home"); // home | create-name | create-role | join-name | join-role
+  const [step, setStep] = useState("home");
   const [roomName, setRoomName] = useState("");
   const [roomCode, setRoomCode] = useState("");
   const [playerName, setPlayerName] = useState("");
+  
+  // Refs per auto-focus
+  const roomNameInputRef = useRef(null);
+  const roomCodeInputRef = useRef(null);
+  const playerNameInputRef = useRef(null);
+
+  // Auto-focus quando cambia lo step
+  useEffect(() => {
+    const focusTimeout = setTimeout(() => {
+      if (step === "create-name" && roomNameInputRef.current) {
+        roomNameInputRef.current.focus();
+      } else if (step === "join-name" && roomCodeInputRef.current) {
+        roomCodeInputRef.current.focus();
+      } else if ((step === "create-player" || step === "join-player") && playerNameInputRef.current) {
+        playerNameInputRef.current.focus();
+      }
+    }, 100); // Piccolo delay per assicurare il render
+
+    return () => clearTimeout(focusTimeout);
+  }, [step]);
 
   const handleCreate = () => {
     if (!roomName.trim()) return;
@@ -34,135 +54,154 @@ export default function LobbyFormMinimal({ onCreate, onJoin, onSpectate, error }
     }
   };
 
+  // Handler per premere Enter negli input
+  const handleKeyPress = (e, action) => {
+    if (e.key === 'Enter') {
+      action();
+    }
+  };
+
   return (
-    <div className="lobby-form-minimal" style={{ textAlign: "center", lineHeight: "1.6em" }}>
-      <h2>RUOTA DELLA FORTUNA ONLINE</h2>
+    <div className="lobby-form-minimal">
+      <h1>🎡 RUOTA DELLA FORTUNA</h1>
+      <h2>ONLINE</h2>
 
       {step === "home" && (
-        <>
-          <button onClick={() => setStep("create-name")} style={{ marginBottom: "10px" }}>
-            🌀 Crea stanza
+        <div className="inputs-row">
+          <button onClick={() => setStep("create-name")}>
+            🌀 CREA STANZA
           </button>
-          <br />
-          <button onClick={() => setStep("join-name")}>🎮 Unisciti a stanza</button>
-        </>
+          <button onClick={() => setStep("join-name")}>
+            🎮 UNISCITI A STANZA
+          </button>
+        </div>
       )}
 
       {step === "create-name" && (
-        <>
-          <label>Nome stanza</label>
-          <br />
+        <div className="inputs-row">
+          <label style={{ fontSize: "1.5rem", fontWeight: "bold", marginBottom: "10px" }}>
+            Nome della stanza
+          </label>
           <input
+            ref={roomNameInputRef}
             type="text"
             placeholder="es. ORCHIDEA"
             value={roomName}
             onChange={(e) => setRoomName(e.target.value)}
+            onKeyPress={(e) => handleKeyPress(e, handleCreate)}
+            autoComplete="off"
+            autoCapitalize="characters"
           />
-          <br />
-          <button onClick={handleCreate} style={{ marginTop: "15px" }}>
-            Continua ➜
+          <button onClick={handleCreate} disabled={!roomName.trim()}>
+            CONTINUA ➜
           </button>
-          <br />
-          <button onClick={() => setStep("home")} style={{ marginTop: "10px" }}>
-            ⬅️ Indietro
+          <button onClick={() => setStep("home")} className="btn-secondary">
+            ⬅️ INDIETRO
           </button>
-        </>
+        </div>
       )}
 
       {step === "create-role" && (
-        <>
-          <p>Entra come:</p>
-          <button onClick={() => setStep("create-player")} style={{ marginBottom: "10px" }}>
-            🎮 Giocatore
+        <div className="inputs-row">
+          <h2>Entra come:</h2>
+          <button onClick={() => setStep("create-player")}>
+            🎮 GIOCATORE
           </button>
-          <br />
-          <button onClick={() => handleEnterAsSpectator(false)}>👀 Spettatore</button>
-          <br />
-          <button onClick={() => setStep("create-name")} style={{ marginTop: "10px" }}>
-            ⬅️ Indietro
+          <button onClick={() => handleEnterAsSpectator(false)}>
+            👀 SPETTATORE
           </button>
-        </>
+          <button onClick={() => setStep("create-name")} className="btn-secondary">
+            ⬅️ INDIETRO
+          </button>
+        </div>
       )}
 
       {step === "create-player" && (
-        <>
-          <label>Nome giocatore</label>
-          <br />
+        <div className="inputs-row">
+          <label style={{ fontSize: "1.5rem", fontWeight: "bold", marginBottom: "10px" }}>
+            Il tuo nome
+          </label>
           <input
+            ref={playerNameInputRef}
             type="text"
             placeholder="es. Marco"
             value={playerName}
             onChange={(e) => setPlayerName(e.target.value)}
+            onKeyPress={(e) => handleKeyPress(e, () => handleEnterAsPlayer(false))}
+            autoComplete="off"
           />
-          <br />
-          <button onClick={() => handleEnterAsPlayer(false)} style={{ marginTop: "15px" }}>
-            Entra in gioco
+          <button onClick={() => handleEnterAsPlayer(false)} disabled={!playerName.trim()}>
+            ENTRA IN GIOCO
           </button>
-          <br />
-          <button onClick={() => setStep("create-role")} style={{ marginTop: "10px" }}>
-            ⬅️ Indietro
+          <button onClick={() => setStep("create-role")} className="btn-secondary">
+            ⬅️ INDIETRO
           </button>
-        </>
+        </div>
       )}
 
       {step === "join-name" && (
-        <>
-          <label>Codice o nome stanza</label>
-          <br />
+        <div className="inputs-row">
+          <label style={{ fontSize: "1.5rem", fontWeight: "bold", marginBottom: "10px" }}>
+            Codice stanza
+          </label>
           <input
+            ref={roomCodeInputRef}
             type="text"
             placeholder="es. ORCHIDEA"
             value={roomCode}
-            onChange={(e) => setRoomCode(e.target.value)}
+            onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
+            onKeyPress={(e) => handleKeyPress(e, handleJoin)}
+            autoComplete="off"
+            autoCapitalize="characters"
           />
-          <br />
-          <button onClick={handleJoin} style={{ marginTop: "15px" }}>
-            Continua ➜
+          <button onClick={handleJoin} disabled={!roomCode.trim()}>
+            CONTINUA ➜
           </button>
-          <br />
-          <button onClick={() => setStep("home")} style={{ marginTop: "10px" }}>
-            ⬅️ Indietro
+          <button onClick={() => setStep("home")} className="btn-secondary">
+            ⬅️ INDIETRO
           </button>
-        </>
+        </div>
       )}
 
       {step === "join-role" && (
-        <>
-          <p>Entra come:</p>
-          <button onClick={() => setStep("join-player")} style={{ marginBottom: "10px" }}>
-            🎮 Giocatore
+        <div className="inputs-row">
+          <h2>Entra come:</h2>
+          <button onClick={() => setStep("join-player")}>
+            🎮 GIOCATORE
           </button>
-          <br />
-          <button onClick={() => handleEnterAsSpectator(true)}>👀 Spettatore</button>
-          <br />
-          <button onClick={() => setStep("join-name")} style={{ marginTop: "10px" }}>
-            ⬅️ Indietro
+          <button onClick={() => handleEnterAsSpectator(true)}>
+            👀 SPETTATORE
           </button>
-        </>
+          <button onClick={() => setStep("join-name")} className="btn-secondary">
+            ⬅️ INDIETRO
+          </button>
+        </div>
       )}
 
       {step === "join-player" && (
-        <>
-          <label>Nome giocatore</label>
-          <br />
+        <div className="inputs-row">
+          <label style={{ fontSize: "1.5rem", fontWeight: "bold", marginBottom: "10px" }}>
+            Il tuo nome
+          </label>
           <input
+            ref={playerNameInputRef}
             type="text"
             placeholder="es. Marco"
             value={playerName}
             onChange={(e) => setPlayerName(e.target.value)}
+            onKeyPress={(e) => handleKeyPress(e, () => handleEnterAsPlayer(true))}
+            autoComplete="off"
           />
-          <br />
-          <button onClick={() => handleEnterAsPlayer(true)} style={{ marginTop: "15px" }}>
-            Entra in gioco
+          <button onClick={() => handleEnterAsPlayer(true)} disabled={!playerName.trim()}>
+            ENTRA IN GIOCO
           </button>
-          <br />
-          <button onClick={() => setStep("join-role")} style={{ marginTop: "10px" }}>
-            ⬅️ Indietro
+          <button onClick={() => setStep("join-role")} className="btn-secondary">
+            ⬅️ INDIETRO
           </button>
-        </>
+        </div>
       )}
 
-      {error && <p className="error" style={{ color: "red", marginTop: "20px" }}>{error}</p>}
+      {error && <p className="error">{error}</p>}
     </div>
   );
 }
