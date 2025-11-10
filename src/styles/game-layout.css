@@ -6,6 +6,7 @@
 html, body {
   width: 100vw;
   height: 100vh;
+  height: 100dvh; /* Dynamic viewport per mobile */
   margin: 0;
   padding: 0;
   overflow: hidden;
@@ -22,6 +23,7 @@ html, body {
   bottom: 0;
   width: 100vw;
   height: 100vh;
+  height: 100dvh;
   overflow: hidden;
 }
 
@@ -240,28 +242,39 @@ html, body {
 }
 
 /* ---------- MEDIA QUERIES PER SCHERMI MOLTO PICCOLI ---------- */
-@media (max-height: 700px) {
-  .game-wheel-area {
-    top: -35%;
-    transform: translateX(-50%) scale(0.6);
-  }
-  
+@media (max-width: 768px) and (max-height: 700px) {
+  /* Mobile NON fullscreen (con barre browser) */
   .game-board-area {
-    transform: translateX(-50%) scale(0.35);
+    bottom: 68%;
+    transform: translateX(-28%) scale(0.4);
   }
   
   .controls-area {
-    top: 22%;
+    top: 30%;
+  }
+  
+  .game-players {
+    top: 400px;
+    font-size: 0.7em;
+  }
+  
+  .scoreboard {
+    top: 400px;
+    font-size: 0.7em;
   }
 }
 
-@media (max-height: 600px) {
-  .game-wheel-area {
-    top: -40%;
-    transform: translateX(-50%) scale(0.5);
+@media (max-width: 768px) and (min-height: 700px) {
+  /* Mobile fullscreen o schermo alto */
+  .game-board-area {
+    bottom: 73%;
   }
   
-  .game-board-area {
-    transform: translateX(-50%) scale(0.3);
+  .game-players {
+    top: 480px;
+  }
+  
+  .scoreboard {
+    top: 480px;
   }
 }

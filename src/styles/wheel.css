@@ -30,12 +30,13 @@
   z-index: 5;
 }
 
-/* ===== MOBILE FULLSCREEN (PRIORITÀ) ===== */
+/* ===== MOBILE (con e senza fullscreen) ===== */
 @media (max-width: 768px) {
   .wheel-wrap-svg {
-    position: fixed; /* Fixed invece di absolute */
+    position: fixed;
     left: 50%;
-    bottom: calc(-35vh + 200px); /* Alzata di 200px */
+    /* Usa dvh che si adatta alle barre del browser */
+    bottom: calc(-35dvh + 200px);
     margin-left: -45vw;
     width: 90vw;
     height: 90vw;
@@ -44,7 +45,7 @@
   .wheel-pointer-6 {
     position: fixed;
     left: 50%;
-    bottom: calc(16vh + 200px); /* Alzato di 200px */
+    bottom: calc(16dvh + 200px);
     transform: translateX(-50%) rotate(0deg);
   }
 }
