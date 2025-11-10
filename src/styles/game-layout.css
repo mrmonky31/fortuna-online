@@ -30,7 +30,7 @@ html, body {
   position: absolute;
   top: 99%; /* Metà sopra lo schermo */
   left: 50%;
-  transform: translateX(-50%) scale(0.8); /* Ridotta del 30% */
+  transform: translateX(-40%) scale(0.8); /* Ridotta del 30% */
   z-index: 10;
   
 }
@@ -101,7 +101,7 @@ html, body {
 /* ---------- TABELLONE (parte bassa, ridotto) ---------- */
 .game-board-area {
   position: absolute;
-  bottom: 80%;
+  bottom: 75%;
   left: 10px;
   transform: translateX(-28%) scale(0.5); /* Ridotto al 45% */
   transform-origin: center bottom;
