@@ -30,7 +30,7 @@ html, body {
   position: absolute;
   top: 99%; /* Metà sopra lo schermo */
   left: 50%;
-  transform: translate(-30%, -30%) scale(1);
+  transform: translate(-50%, -50%) scale(1);
   transform-origin: center center;
   z-index: 10;
   
