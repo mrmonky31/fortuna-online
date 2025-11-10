@@ -31,6 +31,7 @@ html, body {
   top: 99%; /* Metà sopra lo schermo */
   left: 50%;
   transform: translateX(-30%) scale(1); /* Ridotta del 30% */
+  transform-origin: center center;
   z-index: 10;
   
 }
