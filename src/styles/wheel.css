@@ -1,7 +1,7 @@
 /* ===== Ruota SVG pulita ===== */
 .wheel-wrap-svg {
   position: absolute;
-  top: 650px;
+  top: -150px;
   left: 50%;
   /* NON usare transform qui - usa margin per centrare */
   margin-left: -390px; /* Metà della larghezza (780px / 2) */
@@ -38,22 +38,20 @@
     position: absolute;
     left: 50%;
     bottom: -35vh;
-    /* Usa margin invece di transform per centrare */
     margin-left: -45vw; /* Metà di 90vw */
     width: 90vw;
     height: 90vw;
   }
   
-  /* Per mobile, ruota il CONTAINER, non l'SVG interno */
-  .wheel-wrap-svg {
-    transform: rotate(180deg);
+  /* La rotazione 180deg è gestita dal JS - non serve qui */
+  .wheel-svg {
+    /* transform gestito inline da JS */
   }
   
-  /* Controbilancia la rotazione del container per il pointer */
   .wheel-pointer-6 {
     position: absolute;
     left: 50%;
     bottom: 16vh;
-    transform: translateX(-50%) rotate(0deg); /* 180 + 180 = 360 = 0 */
+    transform: translateX(-50%) rotate(0deg);
   }
 }

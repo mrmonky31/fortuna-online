@@ -2,23 +2,11 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import "../styles/wheel.css";
 
-/**
- * FISICA REALE + DIREZIONE ORARIA FISSA
- * - Sempre orario (angolo positivo)
- * - 1s = 1 giro (durata → distanza)
- * - Easing fluido + rimbalzo dolce (0.25 spicchio)
- * - Offset puntatore a 90°
- * - Micro-jitter ±0.2° sui bordi
- * - Reset a 0° ad ogni spin (con micro-pausa)
- * - Spicchi 50/50 disegnati come due mezzi spicchi adiacenti
- * - Disposizione spicchi random ad inizio PARTITA (e quando cambia `shuffleKey`)
- */
-
 const SLICE_COUNT = 20;
 const SLICE_DEG = 360 / SLICE_COUNT;
 
 // Parametri fisici
-const BOUNCE_FRACTION = 0.25; // ~ 1/4 di spicchio ≈ 4.5°
+const BOUNCE_FRACTION = 0.25;
 const BOUNCE_DEG = SLICE_DEG * BOUNCE_FRACTION;
 const BOUNCE_TIME = 0.4;
 const EASING_SPIN = "cubic-bezier(.12,.64,.24,1)";
@@ -27,7 +15,6 @@ const TARGET_POINTER_DEG = 90;
 const MICRO_JITTER_DEG = 0.2;
 const EDGE_EPS = 1e-6;
 
-// Durate ammesse (secondi)
 const DURATIONS = [2.8, 3.0, 3.2, 3.4, 3.6, 3.8, 4.0];
 
 const COLORS = {
@@ -53,21 +40,21 @@ const TEXT_COLOR = (bg) => {
 
 const toRad = (deg) => (Math.PI / 180) * deg;
 const norm360 = (deg) => ((deg % 360) + 360) % 360;
-const shuffle = (arr) => {
-  const a = [...arr];
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-};
 
 export default function Wheel({ slices = [], spinning = false, onStop, shuffleKey = 0 }) {
   const ref = useRef(null);
   const [angle, setAngle] = useState(0);
   const spinningRef = useRef(false);
+  const [isMobile, setIsMobile] = useState(false);
 
-  // valori base (fallback)
+  // Detect mobile
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth <= 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
   const baseValues = slices.length
     ? slices
     : [
@@ -81,13 +68,10 @@ export default function Wheel({ slices = [], spinning = false, onStop, shuffleKe
         200, 400, 500, 300, 800,
       ];
 
- // Usa i valori così come arrivano dal GameLogic (nessuno shuffle)
-const values = useMemo(() => baseValues, [baseValues]);
+  const values = useMemo(() => baseValues, [baseValues]);
 
-  // --- geometria grafica invariata ---
   const size = 380;
-  const cx = size / 2,
-    cy = size / 2;
+  const cx = size / 2, cy = size / 2;
   const R = 170;
 
   const arcPath = (startDeg, sweepDeg) => {
@@ -114,10 +98,8 @@ const values = useMemo(() => baseValues, [baseValues]);
     return { i, label, start, mid };
   });
 
-  // --- render mezzi spicchi 50/50 come DUE spicchi da 9° adiacenti ---
   const renderSplitSector = (start, idx, a, b) => {
     const half = SLICE_DEG / 2;
-
     const colorFor = (t) =>
       COLORS[t] ||
       (t === "PASSA" ? COLORS.PASSA : t === "BANCAROTTA" ? COLORS.BANCAROTTA : t === "RADDOPPIA" ? COLORS.RADDOPPIA : "#ddd");
@@ -125,14 +107,12 @@ const values = useMemo(() => baseValues, [baseValues]);
     const colA = colorFor(a);
     const colB = colorFor(b);
 
-    // Prima metà
     const startA = start;
     const midA = startA + half / 2;
     const pathA = arcPath(startA, half);
     const posA = labelPos(midA, 0.68);
     const tcA = TEXT_COLOR(colA);
 
-    // Seconda metà
     const startB = start + half;
     const midB = startB + half / 2;
     const pathB = arcPath(startB, half);
@@ -171,7 +151,6 @@ const values = useMemo(() => baseValues, [baseValues]);
           {b}
         </text>
 
-        {/* linea di separazione centrale (opzionale ma utile) */}
         <line
           x1={cx}
           y1={cy}
@@ -215,23 +194,19 @@ const values = useMemo(() => baseValues, [baseValues]);
     );
   };
 
-  // =================== FISICA ===================
   const doSpin = () => {
     if (!ref.current || spinningRef.current) return;
     spinningRef.current = true;
 
-    // Reset a 0° senza transizione + micro-pausa per forzare reflow
     ref.current.style.transition = "none";
     setAngle(0);
 
     setTimeout(() => {
-      // 1s = 1 giro → distanza proporzionale alla durata
       const dur = DURATIONS[Math.floor(Math.random() * DURATIONS.length)];
       const totalDeg = dur * 360;
       const randomOffset = Math.random() * 360;
-      const finalNoBounce = totalDeg + randomOffset; // sempre orario
+      const finalNoBounce = totalDeg + randomOffset;
 
-      // spin principale
       ref.current.style.transition = `transform ${dur}s ${EASING_SPIN}`;
       setAngle(finalNoBounce);
 
@@ -239,40 +214,30 @@ const values = useMemo(() => baseValues, [baseValues]);
         if (!ref.current) return;
         ref.current.removeEventListener("transitionend", onMainEnd);
 
-        // rimbalzo dolce
         const finalBounce = finalNoBounce - BOUNCE_DEG;
         ref.current.style.transition = `transform ${BOUNCE_TIME}s ${BOUNCE_EASING}`;
         setAngle(finalBounce);
 
         setTimeout(() => {
           spinningRef.current = false;
-
-          // angolo finale normalizzato
           const ang = norm360(finalBounce);
-
-          // posizione sotto puntatore (settori disegnati da -90°)
           let at = norm360(TARGET_POINTER_DEG - ang + 90);
 
-          // micro-jitter se su un bordo
           const posInSlice = at % SLICE_DEG;
           const dist = Math.min(posInSlice, SLICE_DEG - posInSlice);
           if (dist < EDGE_EPS) {
             at = norm360(at + (Math.random() < 0.5 ? MICRO_JITTER_DEG : -MICRO_JITTER_DEG));
           }
 
-          // indice spicchio
           const idx = Math.floor(at / SLICE_DEG) % SLICE_COUNT;
           const slice = values[idx];
 
-          // calcolo metà per i 50/50 usando angolo locale [0..18)
           let outcome;
           if (typeof slice === "string" && slice.includes("/")) {
             const [a, b] = slice.split("/");
-
             let local = at - idx * SLICE_DEG;
             local = norm360(local);
             if (local >= SLICE_DEG) local -= SLICE_DEG;
-
             const chosen = local < SLICE_DEG / 2 ? a : b;
 
             if (chosen === "PASSA") outcome = { type: "pass", label: "PASSA" };
@@ -302,13 +267,16 @@ const values = useMemo(() => baseValues, [baseValues]);
 
   useEffect(() => {
     if (spinning) doSpin();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [spinning, shuffleKey]);
 
-  // =================== RENDER ===================
+  // COMBINA la rotazione mobile (180deg) con la rotazione dello spin
+  const rotationStyle = isMobile 
+    ? `rotate(${180 + angle}deg)` 
+    : `rotate(${angle}deg)`;
+
   return (
     <div className="wheel-wrap-svg">
-      <div className="wheel-svg" ref={ref} style={{ transform: `rotate(${angle}deg)` }}>
+      <div className="wheel-svg" ref={ref} style={{ transform: rotationStyle }}>
         <svg viewBox={`0 0 ${size} ${size}`} width={size} height={size}>
           <circle cx={cx} cy={cy} r={R + 4} fill="#0b0b0f" stroke="#fff" strokeWidth="4" />
           {sectors.map(renderSector)}
