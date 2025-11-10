@@ -101,7 +101,7 @@ html, body {
 /* ---------- TABELLONE (parte bassa, ridotto) ---------- */
 .game-board-area {
   position: absolute;
-  bottom: 77%;
+  bottom: 75%;
   left: 10px;
   transform: translateX(-28%) scale(0.5); /* Ridotto al 45% */
   transform-origin: center bottom;
