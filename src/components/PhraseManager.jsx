@@ -74,12 +74,16 @@ export default function PhraseManager({
             base.map((row, r) => (
               <div key={r} className="pm-row">
                 {row.map((cell, c) => (
+                  
                  <div
   key={c}
+  
   className={`pm-cell ${
     cell.char === " " ? "space" : cell.visible ? "vis" : ""
   }`}
->
+  
+>if (cell.char === "_") cell.char = " ";
+
   <span>{cell.visible ? cell.char : cell.char === "_" ? "\u00A0" : "\u00A0"}</span>
 
 </div>
