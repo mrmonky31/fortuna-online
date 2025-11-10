@@ -1,22 +1,30 @@
 /* ===== Ruota SVG pulita ===== */
-.wheel-wrap-svg{
+.wheel-wrap-svg {
   position: absolute;
-  top: -150px; /* come prima */
+  top: 650px;
   left: 50%;
-  transform: translateX(-50%);
-  width: 780px; height: 780px;
+  /* NON usare transform qui - usa margin per centrare */
+  margin-left: -390px; /* Metà della larghezza (780px / 2) */
+  width: 780px;
+  height: 780px;
 }
-.wheel-svg{
-  width: 100%; height: 100%;
-  display: grid; place-items: center;
+
+.wheel-svg {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
   transform-origin: 50% 50%;
+  /* Il transform: rotate() viene applicato da JS inline */
 }
-.wheel-pointer-6{
+
+.wheel-pointer-6 {
   position: absolute;
   left: 50%;
-  bottom: 197px; /* sotto la ruota */
-  transform: translateX(-50%) rotate(180deg); /* ore 6 */
-  width: 0; height: 0;
+  bottom: 197px;
+  transform: translateX(-50%) rotate(180deg);
+  width: 0;
+  height: 0;
   border-left: 10px solid transparent;
   border-right: 10px solid transparent;
   border-top: 32px solid #ffcc00;
@@ -24,22 +32,28 @@
   z-index: 5;
 }
 
-
-
 /* ===== MOBILE HALF WHEEL ===== */
 @media (max-width: 768px) {
-  .wheel-wrap-svg{
+  .wheel-wrap-svg {
     position: absolute;
     left: 50%;
-    bottom: -35vh; /* metà ruota nascosta fuori dallo schermo */
-    transform: translateX(-50%) rotate(180deg);
+    bottom: -35vh;
+    /* Usa margin invece di transform per centrare */
+    margin-left: -45vw; /* Metà di 90vw */
     width: 90vw;
     height: 90vw;
   }
-  .wheel-pointer-6{
+  
+  /* Per mobile, ruota il CONTAINER, non l'SVG interno */
+  .wheel-wrap-svg {
+    transform: rotate(180deg);
+  }
+  
+  /* Controbilancia la rotazione del container per il pointer */
+  .wheel-pointer-6 {
     position: absolute;
     left: 50%;
     bottom: 16vh;
-    transform: translateX(-50%) rotate(180deg);
+    transform: translateX(-50%) rotate(0deg); /* 180 + 180 = 360 = 0 */
   }
 }
