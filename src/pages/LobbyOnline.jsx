@@ -1,5 +1,5 @@
 // src/pages/LobbyOnline.jsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import socket from "../socket";
 import LobbyFormMinimal from "../components/LobbyFormMinimal";
 import OnlinePlayers from "../components/OnlinePlayers";
@@ -12,6 +12,8 @@ export default function LobbyOnline({ onGameStart }) {
   const [roomCode, setRoomCode] = useState("");
   const [error, setError] = useState("");
   const [isFullscreen, setIsFullscreen] = useState(false);
+    const containerRef = useRef(null);
+
 
   // Controlla se già in fullscreen
   useEffect(() => {
@@ -33,20 +35,46 @@ export default function LobbyOnline({ onGameStart }) {
     };
   }, []);
 
-  // Funzione per entrare in fullscreen
+    // Funzione per entrare in fullscreen
   const enterFullscreen = () => {
-    const elem = document.documentElement;
-    
-    if (elem.requestFullscreen) {
-      elem.requestFullscreen();
-    } else if (elem.webkitRequestFullscreen) {
-      elem.webkitRequestFullscreen(); // Safari
-    } else if (elem.mozRequestFullScreen) {
-      elem.mozRequestFullScreen(); // Firefox
-    } else if (elem.msRequestFullscreen) {
-      elem.msRequestFullscreen(); // IE/Edge
+    const elem = containerRef.current || document.documentElement;
+
+    if (!elem) return;
+
+    const request =
+      elem.requestFullscreen ||
+      elem.webkitRequestFullscreen ||
+      elem.mozRequestFullScreen ||
+      elem.msRequestFullscreen;
+
+    if (!request) {
+      // Fallback: su alcuni browser (es. Safari iOS in modalità normale)
+      // il fullscreen non è disponibile via API
+      alert(
+        "Il tuo browser non permette il fullscreen forzato. " +
+        "Prova a ruotare lo schermo o aggiungere il sito alla schermata Home."
+      );
+      return;
+    }
+
+    try {
+      const result = request.call(elem);
+      // In molti browser requestFullscreen ritorna una Promise
+      if (result && typeof result.then === "function") {
+        result.then(() => {
+          setIsFullscreen(true);
+        }).catch((err) => {
+          console.error("Errore attivando il fullscreen:", err);
+        });
+      } else {
+        // Browser vecchi / senza Promise
+        setIsFullscreen(true);
+      }
+    } catch (err) {
+      console.error("Errore attivando il fullscreen:", err);
     }
   };
+
 
   // Aggiornamenti di lobby (giocatori / spettatori / rounds)
   useEffect(() => {
@@ -143,7 +171,7 @@ export default function LobbyOnline({ onGameStart }) {
   };
 
   return (
-    <div className="lobby-container">
+        <div className="lobby-container" ref={containerRef}>
       {/* Pulsante Fullscreen (solo se non già in fullscreen e non in stanza) */}
       {!isFullscreen && !room && (
         <button className="fullscreen-btn" onClick={enterFullscreen}>
