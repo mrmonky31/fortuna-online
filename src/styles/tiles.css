@@ -1,11 +1,29 @@
 /* Celle del tabellone */
 .pm-row { display: flex; gap: 6px; margin-bottom: 6px; }
-.pm-cell {
-  min-width: 28px; min-height: 34px;
-  border: 2px solid #2a2f3a; border-radius: 6px;
-  display: flex; align-items: center; justify-content: center;
-  padding: 4px 6px; background: #151821;
+.pm-board {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 10px; /* spazio costante tra righe */
+  min-height: 340px; /* forza una riga in più di spazio */
 }
+
+.pm-cell {
+  min-width: 40px;
+  min-height: 48px;
+  border: 2px solid #2a2f3a;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 8px;
+  background: #151821;
+  font-size: 1.6rem;
+  font-weight: 600;
+  line-height: 1;
+}
+
 .pm-cell.vis { border-color: #3b4358; }
 
 /* Flash */
