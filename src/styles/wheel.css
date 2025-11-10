@@ -36,7 +36,7 @@
     position: fixed;
     left: 50%;
     /* Usa dvh che si adatta alle barre del browser */
-    bottom: calc(-35dvh + 200px);
+    bottom: calc(-35dvh + 300px);
     margin-left: -45vw;
     width: 90vw;
     height: 90vw;

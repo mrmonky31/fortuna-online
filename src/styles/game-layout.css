@@ -33,7 +33,7 @@ html, body {
 /* ---------- CONTROLLI (centrati, sotto ruota visibile) ---------- */
 .controls-area {
   position: absolute;
-  top: 35%;
+  top: 40%;
   left: 80px;
 }
 
@@ -90,7 +90,7 @@ html, body {
   position: absolute;
   bottom: 73%;
   left: 10px;
-  transform: translateX(-28%) scale(0.5);
+  transform: translateX(-28%) scale(0.65);
   transform-origin: center bottom;
   z-index: 8;
   max-width: 100vw;
