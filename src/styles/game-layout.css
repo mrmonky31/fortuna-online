@@ -281,3 +281,9 @@ html, body {
     transform: translateX(-50%) scale(0.3);
   }
 }
+.pm-cell:not(.vis) span {
+  color: transparent !important;
+}
+.pm-cell:not(.vis) span {
+  color: transparent !important;
+}

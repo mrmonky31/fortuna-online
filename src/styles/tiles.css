@@ -41,3 +41,6 @@
 .pm-cell:not(.vis) span {
   color: transparent !important;
 }
+.pm-cell:not(.vis) span {
+  color: transparent !important;
+}
