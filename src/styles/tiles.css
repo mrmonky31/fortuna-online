@@ -38,9 +38,4 @@
   0%, 100% { border-color: #3b4358; box-shadow: 0 0 0 transparent; }
   50% { border-color: #ff1744; box-shadow: 0 0 10px #ff174466; }
 }
-.pm-cell:not(.vis) span {
-  color: transparent !important;
-}
-.pm-cell:not(.vis) span {
-  color: transparent !important;
-}
+
