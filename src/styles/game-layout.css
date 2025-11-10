@@ -38,8 +38,8 @@ html, body {
 /* ---------- CONTROLLI (centrati, sotto ruota visibile) ---------- */
 .controls-area {
   position: absolute;
-  top: 50%;
-  left: 100px;
+  top: 35%;
+  left: 80px;
   
   
  
