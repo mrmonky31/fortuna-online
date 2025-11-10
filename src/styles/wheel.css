@@ -1,7 +1,7 @@
 /* ===== Ruota SVG pulita ===== */
 .wheel-wrap-svg {
   position: absolute;
-  top: -150px;
+  top: 700px;
   left: 50%;
   /* NON usare transform qui - usa margin per centrare */
   margin-left: -390px; /* Metà della larghezza (780px / 2) */
