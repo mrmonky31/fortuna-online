@@ -28,7 +28,7 @@ html, body {
 /* ---------- RUOTA (metà fuori schermo in alto) ---------- */
 .game-wheel-area {
   position: absolute;
-  top: 99%; /* Metà sopra lo schermo */
+  top: 90%; /* Metà sopra lo schermo */
   left: 50%;
   transform: translateX(-50%, -50%) scale(1);
   transform-origin: center center;
