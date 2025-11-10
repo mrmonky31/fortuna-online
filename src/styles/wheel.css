@@ -19,7 +19,7 @@
 .wheel-pointer-6 {
   position: absolute;
   left: 50%;
-  bottom: 100px;
+  bottom: 50px;
   transform: translateX(-50%) rotate(180deg);
   width: 0;
   height: 0;
@@ -45,7 +45,7 @@
   .wheel-pointer-6 {
     position: fixed;
     left: 50%;
-    bottom: calc(16dvh + 220px);
+    bottom: calc(16dvh + 50px);
     transform: translateX(-50%) rotate(0deg);
     z-index: 100;
   }
