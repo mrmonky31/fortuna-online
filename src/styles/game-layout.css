@@ -245,14 +245,16 @@ html, body {
 @media (max-width: 768px) and (max-height: 700px) {
   /* Mobile NON fullscreen (con barre browser) */
   .game-board-area {
-    bottom: 68%;
-    transform: translateX(-28%) scale(0.4);
+    bottom: 69%;
+    transform: translateX(-28%) scale(0.51);
   }
   
   .controls-area {
-    top: 30%;
+    top: 43%;
   }
-  
+  .game-alerts {
+    top: 50%; /* ← AGGIUNTO: Box messaggi NON fullscreen */
+  }
   .game-players {
     top: 400px;
     font-size: 0.7em;
