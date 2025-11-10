@@ -111,11 +111,11 @@ html, body {
 
 /* ---------- CASELLE DEL TABELLONE ---------- */
 .tile {
-  transform: scale(0.9);
+  transform: scale(1);
   transform-origin: center center;
   margin: 0.5px;
-    font-size: 6rem;   /* aumenta o riduci qui la grandezza del testo */
-  font-weight: 1900;    /* rende la lettera più piena e leggibile */
+    font-size: 8rem;   /* aumenta o riduci qui la grandezza del testo */
+  font-weight: 990;    /* rende la lettera più piena e leggibile */
   letter-spacing: 1px; /* distanzia leggermente le lettere */
   text-transform: uppercase; /* assicura maiuscolo sempre */
 
