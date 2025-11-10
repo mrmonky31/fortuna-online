@@ -28,7 +28,7 @@ html, body {
 /* ---------- RUOTA (metà fuori schermo in alto) ---------- */
 .game-wheel-area {
   position: absolute;
-  top: 0%;
+  top: 80%;
   left: 50%;
   transform: translate(-50%, -50%);
   transform-origin: 50% 50%;
@@ -40,7 +40,7 @@ html, body {
 /* ---------- CONTROLLI (centrati, sotto ruota visibile) ---------- */
 .controls-area {
   position: absolute;
-  top: 85%;
+  top: 35%;
   left: 80px;
   
   
