@@ -45,7 +45,7 @@
   .wheel-pointer-6 {
     position: fixed;
     left: 50%;
-    bottom: calc(16dvh + 350px);
+    bottom: calc(16dvh + 550px);
     transform: translateX(-50%) rotate(0deg);
   }
 }
