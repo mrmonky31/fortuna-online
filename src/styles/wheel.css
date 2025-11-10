@@ -19,7 +19,7 @@
 .wheel-pointer-6 {
   position: absolute;
   left: 50%;
-  bottom: 150px;
+  bottom: 100px;
   transform: translateX(-50%) rotate(180deg);
   width: 0;
   height: 0;
@@ -27,7 +27,7 @@
   border-right: 10px solid transparent;
   border-top: 32px solid #ffcc00;
   filter: drop-shadow(0 2px 3px rgba(0,0,0,.6));
-  z-index: 999;
+  z-index: 100;
 }
 
 /* ===== MOBILE (con e senza fullscreen) ===== */
@@ -47,6 +47,6 @@
     left: 50%;
     bottom: calc(16dvh + 220px);
     transform: translateX(-50%) rotate(0deg);
-    z-index: 999;
+    z-index: 100;
   }
 }
