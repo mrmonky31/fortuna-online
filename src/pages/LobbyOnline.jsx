@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import socket from "../socket";
 import LobbyFormMinimal from "../components/LobbyFormMinimal";
 import OnlinePlayers from "../components/OnlinePlayers";
+import "../styles/lobby.css"; // ⭐ IMPORTA IL CSS!
 
 export default function LobbyOnline({ onGameStart }) {
   const [room, setRoom] = useState(null);
@@ -10,6 +11,42 @@ export default function LobbyOnline({ onGameStart }) {
   const [role, setRole] = useState(null);
   const [roomCode, setRoomCode] = useState("");
   const [error, setError] = useState("");
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  // Controlla se già in fullscreen
+  useEffect(() => {
+    const checkFullscreen = () => {
+      setIsFullscreen(
+        document.fullscreenElement ||
+        document.webkitFullscreenElement ||
+        window.navigator.standalone // PWA su iOS
+      );
+    };
+    
+    checkFullscreen();
+    document.addEventListener('fullscreenchange', checkFullscreen);
+    document.addEventListener('webkitfullscreenchange', checkFullscreen);
+    
+    return () => {
+      document.removeEventListener('fullscreenchange', checkFullscreen);
+      document.removeEventListener('webkitfullscreenchange', checkFullscreen);
+    };
+  }, []);
+
+  // Funzione per entrare in fullscreen
+  const enterFullscreen = () => {
+    const elem = document.documentElement;
+    
+    if (elem.requestFullscreen) {
+      elem.requestFullscreen();
+    } else if (elem.webkitRequestFullscreen) {
+      elem.webkitRequestFullscreen(); // Safari
+    } else if (elem.mozRequestFullScreen) {
+      elem.mozRequestFullScreen(); // Firefox
+    } else if (elem.msRequestFullscreen) {
+      elem.msRequestFullscreen(); // IE/Edge
+    }
+  };
 
   // Aggiornamenti di lobby (giocatori / spettatori / rounds)
   useEffect(() => {
@@ -19,7 +56,6 @@ export default function LobbyOnline({ onGameStart }) {
 
     function handleGameState({ state }) {
       console.log("📡 gameState (lobby):", state);
-      // Non avviamo la partita da qui, serve solo log
     }
 
     socket.on("roomUpdate", handleRoomUpdate);
@@ -31,11 +67,10 @@ export default function LobbyOnline({ onGameStart }) {
     };
   }, [roomCode]);
 
-  // Avvio partita sincronizzato: il server emette "gameStart"
+  // Avvio partita sincronizzato
   useEffect(() => {
     const handleGameStart = (payload) => {
       console.log("🚀 Partita avviata dal server:", payload);
-      // payload: { room, roomCode, phrase, category, totalRounds? }
       if (onGameStart) onGameStart(payload);
     };
 
@@ -108,7 +143,15 @@ export default function LobbyOnline({ onGameStart }) {
   };
 
   return (
-    <div className="lobby-online">
+    <div className="lobby-container">
+      {/* Pulsante Fullscreen (solo se non già in fullscreen e non in stanza) */}
+      {!isFullscreen && !room && (
+        <button className="fullscreen-btn" onClick={enterFullscreen}>
+          🖥️ FULLSCREEN
+        </button>
+      )}
+
+      {/* Form iniziale - nascosto quando c'è room */}
       {!room && (
         <LobbyFormMinimal
           onCreate={handleCreate}
@@ -118,6 +161,7 @@ export default function LobbyOnline({ onGameStart }) {
         />
       )}
 
+      {/* Schermata stanza - mostrata solo con room */}
       {room && (
         <div className="lobby-room">
           <OnlinePlayers
