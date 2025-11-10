@@ -28,9 +28,9 @@ html, body {
 /* ---------- RUOTA (metà fuori schermo in alto) ---------- */
 .game-wheel-area {
   position: absolute;
-  top: 93%; /* Metà sopra lo schermo */
+  top: 99%; /* Metà sopra lo schermo */
   left: 50%;
-  transform: translateX(-50%) scale(0.6); /* Ridotta del 30% */
+  transform: translateX(-50%) scale(0.8); /* Ridotta del 30% */
   z-index: 10;
   
 }
@@ -38,12 +38,12 @@ html, body {
 /* ---------- CONTROLLI (centrati, sotto ruota visibile) ---------- */
 .controls-area {
   position: absolute;
-  top: 30%;
+  top: 50%;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 5px;
   z-index: 12;
   flex-wrap: wrap;
   justify-content: center;
@@ -74,7 +74,7 @@ html, body {
 /* BOX MESSAGGI (centrato, sotto target) */
 .game-alerts {
   position: absolute;
-  top: 43%;
+  top: 55%;
   left: 50%;
   transform: translateX(-50%);
   z-index: 16;
@@ -101,7 +101,7 @@ html, body {
 /* ---------- TABELLONE (parte bassa, ridotto) ---------- */
 .game-board-area {
   position: absolute;
-  bottom: 70%;
+  bottom: 80%;
   left: 10px;
   transform: translateX(-28%) scale(0.5); /* Ridotto al 45% */
   transform-origin: center bottom;
@@ -124,7 +124,7 @@ html, body {
 /* ---------- BOX GIOCATORI (in alto a sinistra, compatto) ---------- */
 .game-players {
   position: absolute;
-  top: 60px;
+  top: 400px;
   left: 5px;
   display: flex;
   flex-direction: column;
@@ -159,7 +159,7 @@ html, body {
 /* ---------- CLASSIFICA (in alto a destra, compatta) ---------- */
 .scoreboard {
   position: absolute;
-  top: 60px;
+  top: 400px;
   right: 5px;
   background: rgba(17, 19, 26, 0.9);
   border: 2px solid #fff;
