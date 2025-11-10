@@ -1,9 +1,8 @@
-/* ===== Ruota SVG pulita ===== */
+/* ===== Ruota SVG pulita (DESKTOP) ===== */
 .wheel-wrap-svg {
   position: absolute;
-  top: 700px;
+  top: 80%;
   left: 50%;
-  /* NON usare transform qui - usa margin per centrare */
   margin-left: -390px; /* Metà della larghezza (780px / 2) */
   width: 780px;
   height: 780px;
@@ -15,7 +14,6 @@
   display: grid;
   place-items: center;
   transform-origin: 50% 50%;
-  /* Il transform: rotate() viene applicato da JS inline */
 }
 
 .wheel-pointer-6 {
@@ -32,26 +30,21 @@
   z-index: 5;
 }
 
-/* ===== MOBILE HALF WHEEL ===== */
+/* ===== MOBILE FULLSCREEN (PRIORITÀ) ===== */
 @media (max-width: 768px) {
   .wheel-wrap-svg {
-    position: absolute;
+    position: fixed; /* Fixed invece di absolute */
     left: 50%;
-    bottom: -35vh;
-    margin-left: -45vw; /* Metà di 90vw */
+    bottom: calc(-35vh + 200px); /* Alzata di 200px */
+    margin-left: -45vw;
     width: 90vw;
     height: 90vw;
   }
   
-  /* La rotazione 180deg è gestita dal JS - non serve qui */
-  .wheel-svg {
-    /* transform gestito inline da JS */
-  }
-  
   .wheel-pointer-6 {
-    position: absolute;
+    position: fixed;
     left: 50%;
-    bottom: 16vh;
+    bottom: calc(16vh + 200px); /* Alzato di 200px */
     transform: translateX(-50%) rotate(0deg);
   }
 }
