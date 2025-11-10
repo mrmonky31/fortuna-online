@@ -43,11 +43,10 @@ html, body {
   transform: translateX(-50%);
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 10px;
   z-index: 12;
-  flex-wrap: wrap;
   
-  max-width: 90vw;
+ 
 }
 
 /* TIMER (sopra i controlli) */
