@@ -27,14 +27,14 @@ html, body {
 
 /* ---------- RUOTA (metà fuori schermo in alto) ---------- */
 .game-wheel-area {
-  /* Poco importa la posizione assoluta o relativa per la rotazione */
   position: absolute;
-  top: 99%; /* occhio: questo mette il centro alla base del div, magari meglio 50% */
+  top: 50%;
   left: 50%;
-  transform: translate(-50%, -50%); /* centra l'elemento */
-  transform-origin: 50% 50%; /* centra la rotazione */
+  transform: translate(-50%, -50%);
+  transform-origin: 50% 50%;
   z-index: 10;
 }
+
 
 
 /* ---------- CONTROLLI (centrati, sotto ruota visibile) ---------- */
