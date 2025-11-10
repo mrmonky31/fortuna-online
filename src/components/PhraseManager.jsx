@@ -82,10 +82,8 @@ export default function PhraseManager({
     cell.char === " " ? "space" : cell.visible ? "vis" : ""
   }`}
   
->if (cell.char === "_") cell.char = " ";
-
-  <span>{cell.visible ? cell.char : cell.char === "_" ? "\u00A0" : "\u00A0"}</span>
-
+>
+  
 </div>
 
                 ))}
