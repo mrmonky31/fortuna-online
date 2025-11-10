@@ -30,7 +30,7 @@ html, body {
   position: absolute;
   top: 99%; /* Metà sopra lo schermo */
   left: 50%;
-  transform: translateX(-40%) scale(0.8); /* Ridotta del 30% */
+  transform: translateX(-30%) scale(1); /* Ridotta del 30% */
   z-index: 10;
   
 }
@@ -46,7 +46,7 @@ html, body {
   gap: 5px;
   z-index: 12;
   flex-wrap: wrap;
-  justify-content: center;
+  
   max-width: 90vw;
 }
 
@@ -74,7 +74,7 @@ html, body {
 /* BOX MESSAGGI (centrato, sotto target) */
 .game-alerts {
   position: absolute;
-  top: 55%;
+  top: 30%;
   left: 50%;
   transform: translateX(-50%);
   z-index: 16;
@@ -101,7 +101,7 @@ html, body {
 /* ---------- TABELLONE (parte bassa, ridotto) ---------- */
 .game-board-area {
   position: absolute;
-  bottom: 75%;
+  bottom: 77%;
   left: 10px;
   transform: translateX(-28%) scale(0.5); /* Ridotto al 45% */
   transform-origin: center bottom;
@@ -124,7 +124,7 @@ html, body {
 /* ---------- BOX GIOCATORI (in alto a sinistra, compatto) ---------- */
 .game-players {
   position: absolute;
-  top: 400px;
+  top: 480px;
   left: 5px;
   display: flex;
   flex-direction: column;
@@ -159,7 +159,7 @@ html, body {
 /* ---------- CLASSIFICA (in alto a destra, compatta) ---------- */
 .scoreboard {
   position: absolute;
-  top: 400px;
+  top: 480px;
   right: 5px;
   background: rgba(17, 19, 26, 0.9);
   border: 2px solid #fff;
