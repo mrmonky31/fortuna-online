@@ -33,14 +33,14 @@
 /* ===== MOBILE (con e senza fullscreen) ===== */
 @media (max-width: 768px) {
   .wheel-wrap-svg {
-   width: 300px;
-    height: 300px;
-    transform-origin: center center;
+    position: fixed;
     left: 50%;
-    top: 50%;
-    translate: -50% -50%;
+    /* Usa dvh che si adatta alle barre del browser */
+    bottom: calc(-35dvh + 200px);
+    margin-left: -45vw;
+    width: 90vw;
+    height: 90vw;
   }
-
 
   .wheel-pointer-6 {
     position: fixed;
