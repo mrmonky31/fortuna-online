@@ -1,9 +1,9 @@
 /* ===== Ruota SVG pulita (DESKTOP) ===== */
 .wheel-wrap-svg {
   position: absolute;
-  top: 80%;
+  top: 50%;
   left: 50%;
-  margin-left: -390px; /* Metà della larghezza (780px / 2) */
+  margin-left: -20px; /* Metà della larghezza (780px / 2) */
   width: 780px;
   height: 780px;
 }
@@ -36,7 +36,7 @@
     position: fixed;
     left: 50%;
     /* Usa dvh che si adatta alle barre del browser */
-    bottom: calc(-35dvh + 300px);
+    bottom: calc(-35dvh + 260px);
     margin-left: -45vw;
     width: 90vw;
     height: 90vw;
