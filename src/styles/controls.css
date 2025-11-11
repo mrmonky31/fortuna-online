@@ -311,7 +311,7 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.85);
+  background: rgba(0, 0, 0, 0.5);    /* ← ERA 0.85, ora 0.6 per vedere meglio */
   display: flex;
   align-items: center;
   justify-content: center;

@@ -1,11 +1,10 @@
-// src/components/Wheel.jsx
+// src/components/Wheel.jsx - CORRETTO
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import "../styles/wheel.css";
 
 const SLICE_COUNT = 20;
 const SLICE_DEG = 360 / SLICE_COUNT;
 
-// Parametri fisici
 const BOUNCE_FRACTION = 0.25;
 const BOUNCE_DEG = SLICE_DEG * BOUNCE_FRACTION;
 const BOUNCE_TIME = 0.4;
@@ -47,7 +46,6 @@ export default function Wheel({ slices = [], spinning = false, onStop, shuffleKe
   const spinningRef = useRef(false);
   const [isMobile, setIsMobile] = useState(false);
 
-  // Detect mobile
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth <= 768);
     checkMobile();
@@ -220,7 +218,10 @@ export default function Wheel({ slices = [], spinning = false, onStop, shuffleKe
 
         setTimeout(() => {
           spinningRef.current = false;
-          const ang = norm360(finalBounce);
+          
+          // ✅ FISSO: Considera rotazione base mobile nel calcolo
+          const baseRotation = isMobile ? 180 : 0;
+          const ang = norm360(finalBounce + baseRotation);
           let at = norm360(TARGET_POINTER_DEG - ang + 90);
 
           const posInSlice = at % SLICE_DEG;
@@ -269,10 +270,9 @@ export default function Wheel({ slices = [], spinning = false, onStop, shuffleKe
     if (spinning) doSpin();
   }, [spinning, shuffleKey]);
 
-  // COMBINA la rotazione mobile (180deg) con la rotazione dello spin
-  const rotationStyle = isMobile 
-    ? `rotate(${180 + angle}deg)` 
-    : `rotate(${angle}deg)`;
+  // ✅ FISSO: Rotazione base separata dallo spin
+  const baseRotation = isMobile ? 180 : 0;
+  const rotationStyle = `rotate(${baseRotation + angle}deg)`;
 
   return (
     <div className="wheel-wrap-svg">
