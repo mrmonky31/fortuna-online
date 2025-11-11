@@ -95,6 +95,7 @@ export default function Controls({
 
   return (
     <div className="controls-root">
+      {/* RIGA 1: Gira la ruota + Target */}
       <div className="controls-buttons">
         <button
           className="btn-primary"
@@ -105,8 +106,14 @@ export default function Controls({
           Gira la ruota
         </button>
 
-        {/* ✅ RIMOSSO: pulsante Consonanti (si apre automaticamente) */}
+        <div className="target-box">
+          <div className="target-title">Target:</div>
+          <div className="target-value">{String(lastTarget ?? "—")}</div>
+        </div>
+      </div>
 
+      {/* RIGA 2: Vocali + Soluzione + Passa Turno */}
+      <div className="controls-row-secondary">
         <button
           className="btn-secondary btn-compact"
           onClick={() => !disabled && setPanel(panel === "vow" ? null : "vow")}
@@ -125,7 +132,6 @@ export default function Controls({
           Soluzione
         </button>
 
-        {/* ✅ NUOVO: Pulsante Passa Turno */}
         <button
           className="btn-secondary btn-compact btn-pass"
           onClick={handlePassTurn}
@@ -134,11 +140,6 @@ export default function Controls({
         >
           Passa Turno
         </button>
-
-        <div className="target-box">
-          <div className="target-title">Target:</div>
-          <div className="target-value">{String(lastTarget ?? "—")}</div>
-        </div>
       </div>
 
       <div className="controls-panels">

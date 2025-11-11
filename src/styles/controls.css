@@ -1,19 +1,35 @@
 /* ===========================
-   CONTROLS.CSS - VERSIONE PULITA
+   CONTROLS.CSS - LAYOUT CORRETTO
    =========================== */
 
 /* ===========================
-   LAYOUT PULSANTI
+   📐 LAYOUT PULSANTI - 2 RIGHE
    =========================== */
 
+.controls-root {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+/* RIGA 1: Gira la ruota + Target */
 .controls-buttons {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: nowrap;      /* ← NON va a capo */
+  margin-bottom: 5px;
+}
+
+/* RIGA 2: Vocali + Soluzione + Passa Turno */
+.controls-row-secondary {
   display: flex;
   gap: 8px;
   align-items: center;
   justify-content: center;
-  flex-wrap: wrap;
-  margin-bottom: 10px;
-  max-width: 100%;
+  flex-wrap: nowrap;
 }
 
 /* ===========================
@@ -21,21 +37,20 @@
    =========================== */
 
 .btn-primary {
-  padding: 10px 20px;        /* ← Altezza e larghezza pulsante */
-  font-size: 14px;           /* ← Dimensione testo */
+  padding: 8px 16px;        /* ← PICCOLO come da screenshot */
+  font-size: 13px;
   font-weight: bold;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   border: none;
-  border-radius: 8px;
+  border-radius: 6px;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+  white-space: nowrap;
 }
 
 .btn-primary:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+  transform: translateY(-1px);
 }
 
 .btn-primary:disabled {
@@ -45,12 +60,12 @@
 }
 
 /* ===========================
-   ⚪ PULSANTI "Vocali", "Soluzione", "Passa Turno"
+   ⚪ PULSANTI RIGA 2 (Vocali, Soluzione, Passa Turno)
    =========================== */
 
 .btn-secondary {
-  padding: 8px 12px;         /* ← Altezza e larghezza pulsante */
-  font-size: 12px;           /* ← Dimensione testo */
+  padding: 8px 14px;        /* ← PICCOLI come da screenshot */
+  font-size: 12px;
   font-weight: 600;
   background: #4a5568;
   color: white;
@@ -58,16 +73,18 @@
   border-radius: 6px;
   cursor: pointer;
   transition: all 0.3s ease;
+  white-space: nowrap;
+  flex: 1;                  /* ← Stessa larghezza tutti e 3 */
+  max-width: 120px;
 }
 
 .btn-compact {
-  padding: 6px 10px;         /* ← Ancora più piccoli */
-  font-size: 11px;           /* ← Testo più piccolo */
+  padding: 8px 14px;
+  font-size: 12px;
 }
 
 .btn-secondary:hover:not(:disabled) {
   background: #2d3748;
-  transform: translateY(-1px);
 }
 
 .btn-secondary:disabled {
@@ -86,7 +103,7 @@
 }
 
 /* ===========================
-   📊 BOX "TARGET: 300"
+   📊 BOX "TARGET: 1000"
    =========================== */
 
 .target-box {
@@ -94,37 +111,37 @@
   flex-direction: column;
   align-items: center;
   background: #2d3748;
-  padding: 6px 12px;         /* ← Dimensione box */
-  border-radius: 8px;
-  margin-left: auto;
+  padding: 4px 10px;        /* ← PICCOLO come da screenshot */
+  border-radius: 6px;
 }
 
 .target-title {
-  font-size: 10px;           /* ← Testo "Target:" */
+  font-size: 9px;
   color: #a0aec0;
   text-transform: uppercase;
-  letter-spacing: 1px;
+  letter-spacing: 0.5px;
 }
 
 .target-value {
-  font-size: 16px;           /* ← Numero "300" */
+  font-size: 16px;
   font-weight: bold;
   color: #ffd700;
 }
 
 /* ===========================
-   📦 PANNELLI INPUT (Consonante, Vocale, Soluzione)
+   📦 PANNELLI INPUT - SOTTO IL TABELLONE
    =========================== */
 
 .controls-panels {
-  margin-top: 10px;          /* ← Spazio sopra i pannelli */
+  margin-top: 10px;
+  width: 100%;
 }
 
 .panel {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   align-items: center;
-  padding: 12px;             /* ← Dimensione pannello */
+  padding: 10px;            /* ← PIÙ PICCOLO */
   background: rgba(45, 55, 72, 0.95);
   border-radius: 8px;
   border: 2px solid #4a5568;
@@ -142,23 +159,21 @@
   }
 }
 
-/* Testo "Consonante", "Vocale", "Soluzione" */
 .panel-label {
-  font-size: 12px;           /* ← Dimensione etichetta */
+  font-size: 12px;
   font-weight: 600;
   color: #e2e8f0;
-  min-width: 80px;
+  min-width: 70px;
 }
 
 /* ===========================
-   ✏️ CASELLE DI TESTO (Input)
+   ✏️ INPUT CASELLE
    =========================== */
 
-/* Input NORMALI (per lobby) */
 .panel-input {
   flex: 1;
-  padding: 8px 12px;         /* ← Altezza casella */
-  font-size: 14px;           /* ← Dimensione testo */
+  padding: 8px 12px;        /* ← NORMALE */
+  font-size: 14px;
   border: 2px solid #4a5568;
   border-radius: 6px;
   background: #1a202c;
@@ -167,11 +182,9 @@
   transition: all 0.3s ease;
 }
 
-/* Input PIÙ GRANDI per gioco */
 .panel-input-game {
-  padding: 10px 14px;        /* ← Altezza casella gioco */
-  font-size: 16px;           /* ← Dimensione testo gioco */
-  min-height: auto;          /* ← Rimosso min-height enorme */
+  padding: 8px 12px;        /* ← UGUALE, NON PIÙ GRANDE */
+  font-size: 14px;
 }
 
 .panel-input:focus {
@@ -181,13 +194,12 @@
 
 .panel-input::placeholder {
   color: #718096;
-  font-size: 12px;           /* ← Placeholder più piccolo */
+  font-size: 12px;
 }
 
-/* Pulsante "OK" dentro i pannelli */
 .btn-ok {
-  padding: 8px 16px;         /* ← Dimensione pulsante OK */
-  font-size: 12px;           /* ← Testo pulsante OK */
+  padding: 8px 16px;
+  font-size: 12px;
   font-weight: bold;
   background: #48bb78;
   color: white;
@@ -200,7 +212,6 @@
 
 .btn-ok:hover:not(:disabled) {
   background: #38a169;
-  transform: translateY(-1px);
 }
 
 .btn-ok:disabled {
@@ -210,29 +221,26 @@
 }
 
 /* ===========================
-   💬 BOX MESSAGGI / ALERT
+   💬 BOX MESSAGGI
    =========================== */
 
 .game-alerts {
-  margin: 15px 0;            /* ← Spazio sopra/sotto */
+  margin: 10px 0;
 }
 
-/* Box messaggi normali */
 .alert {
-  padding: 10px 16px;        /* ← Dimensione box messaggio */
+  padding: 8px 14px;        /* ← PIÙ PICCOLO */
   border-radius: 8px;
-  font-size: 13px;           /* ← Dimensione testo messaggio */
+  font-size: 13px;
   font-weight: 500;
   text-align: center;
   animation: fadeIn 0.3s ease;
-  transition: all 0.3s ease;
 }
 
-/* Box messaggi GRANDI (es: "Valore: 300 pt") */
 .alert-enlarged {
-  padding: 10px 16px;        /* ← Dimensione box grande */
-  font-size: 14px;           /* ← Dimensione testo grande */
-  min-height: 40px;          /* ← Altezza minima */
+  padding: 8px 14px;        /* ← PIÙ PICCOLO */
+  font-size: 13px;
+  min-height: 35px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -249,67 +257,59 @@
   }
 }
 
-/* Colori messaggi */
 .alert.success {
   background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
   color: white;
-  box-shadow: 0 4px 15px rgba(72, 187, 120, 0.4);
 }
 
 .alert.error {
   background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);
   color: white;
-  box-shadow: 0 4px 15px rgba(245, 101, 101, 0.4);
 }
 
 .alert.warning {
   background: linear-gradient(135deg, #ed8936 0%, #dd6b20 100%);
   color: white;
-  box-shadow: 0 4px 15px rgba(237, 137, 54, 0.4);
 }
 
 .alert.info {
   background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
   color: white;
-  box-shadow: 0 4px 15px rgba(66, 153, 225, 0.4);
 }
 
 .alert-placeholder {
-  padding: 10px 16px;
+  padding: 8px 14px;
   color: #4a5568;
   text-align: center;
   font-size: 13px;
 }
 
 /* ===========================
-   ❌ PULSANTE "ESCI" (in alto a destra)
+   ❌ PULSANTE ESCI
    =========================== */
 
 .btn-exit-room {
   position: fixed;
-  top: 10px;                 /* ← Distanza dall'alto */
-  right: 10px;               /* ← Distanza da destra */
-  padding: 8px 16px;         /* ← Dimensione pulsante */
-  font-size: 12px;           /* ← Dimensione testo */
+  top: 10px;
+  right: 10px;
+  padding: 6px 12px;
+  font-size: 11px;
   font-weight: bold;
   background: #e53e3e;
   color: white;
   border: none;
-  border-radius: 8px;
+  border-radius: 6px;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(229, 62, 62, 0.4);
   z-index: 1001;
 }
 
 .btn-exit-room:hover {
   background: #c53030;
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(229, 62, 62, 0.6);
 }
 
 /* ===========================
-   🎉 OVERLAY "ROUND VINTO"
+   🎉 OVERLAY ROUND VINTO
    =========================== */
 
 .round-won-overlay {
@@ -323,36 +323,22 @@
   align-items: center;
   justify-content: center;
   z-index: 2000;
-  animation: overlayFadeIn 0.5s ease;
-}
-
-@keyframes overlayFadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
 }
 
 .round-won-box {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  padding: 40px 60px;        /* ← Dimensione box centrale */
+  padding: 40px 60px;
   border-radius: 20px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
   text-align: center;
-  animation: boxBounce 0.6s ease;
   max-width: 500px;
 }
 
-@keyframes boxBounce {
-  0% { transform: scale(0.8); opacity: 0; }
-  50% { transform: scale(1.05); }
-  100% { transform: scale(1); opacity: 1; }
-}
-
 .round-won-title {
-  font-size: 36px;           /* ← "FRASE INDOVINATA!" */
+  font-size: 36px;
   font-weight: bold;
   color: #ffd700;
   margin-bottom: 20px;
-  text-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
   animation: titlePulse 1.5s ease-in-out infinite;
 }
 
@@ -362,51 +348,48 @@
 }
 
 .round-won-winner {
-  font-size: 24px;           /* ← "Marco ha vinto!" */
+  font-size: 24px;
   font-weight: 600;
   color: white;
   margin-bottom: 25px;
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 .round-won-countdown {
-  font-size: 18px;           /* ← "Prossimo round tra..." */
+  font-size: 18px;
   color: #e2e8f0;
   font-weight: 500;
 }
 
 .countdown-number {
   display: inline-block;
-  font-size: 28px;           /* ← Numero countdown */
+  font-size: 28px;
   font-weight: bold;
   color: #ffd700;
-  min-width: 40px;
   animation: countdownBlink 1s ease-in-out infinite;
 }
 
 @keyframes countdownBlink {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.7; transform: scale(1.1); }
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
 }
 
 /* ===========================
-   ⏰ TIMER TURNO (ultimi 10 secondi)
+   ⏰ TIMER
    =========================== */
 
 .turn-timer {
   position: fixed;
-  top: 10px;                 /* ← Distanza dall'alto */
+  top: 10px;
   left: 50%;
   transform: translateX(-50%);
   background: rgba(226, 232, 240, 0.95);
   color: #1a202c;
-  font-size: 24px;           /* ← Dimensione numero */
+  font-size: 24px;
   font-weight: bold;
-  padding: 10px 20px;        /* ← Dimensione box */
+  padding: 10px 20px;
   border-radius: 12px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-  animation: timerPulse 1s ease-in-out infinite;
   z-index: 1000;
+  animation: timerPulse 1s ease-in-out infinite;
 }
 
 @keyframes timerPulse {
@@ -415,56 +398,17 @@
 }
 
 /* ===========================
-   📱 RESPONSIVE (Mobile)
+   📱 RESPONSIVE
    =========================== */
 
 @media (max-width: 768px) {
-  .controls-buttons {
-    flex-direction: column;
-    gap: 6px;
+  .controls-buttons,
+  .controls-row-secondary {
+    flex-wrap: wrap;
   }
 
-  .btn-primary,
   .btn-secondary {
-    width: 100%;
-  }
-
-  .target-box {
-    margin-left: 0;
-    margin-top: 8px;
-    width: 100%;
-  }
-
-  .panel {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .panel-label {
-    min-width: auto;
-  }
-
-  .btn-ok {
-    width: 100%;
-  }
-
-  .round-won-box {
-    padding: 30px 25px;
-    max-width: 90%;
-  }
-
-  .round-won-title {
-    font-size: 28px;
-  }
-
-  .round-won-winner {
-    font-size: 20px;
-  }
-
-  .btn-exit-room {
-    top: 8px;
-    right: 8px;
-    padding: 6px 12px;
-    font-size: 11px;
+    max-width: none;
+    flex: 1 1 30%;
   }
 }
