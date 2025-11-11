@@ -33,6 +33,7 @@
 /* ===== MOBILE (con e senza fullscreen) ===== */
 @media (max-width: 768px) {
   .wheel-wrap-svg {
+    transform-origin: center center;
     position: fixed;
     left: 50%;
     /* Usa dvh che si adatta alle barre del browser */
