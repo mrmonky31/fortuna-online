@@ -1,9 +1,9 @@
-// src/pages/LobbyOnline.jsx
+// src/pages/LobbyOnline.jsx - VERSIONE CORRETTA (MODIFICA MINIMA)
 import React, { useState, useEffect, useRef } from "react";
 import socket from "../socket";
 import LobbyFormMinimal from "../components/LobbyFormMinimal";
 import OnlinePlayers from "../components/OnlinePlayers";
-import "../styles/lobby.css"; // ⭐ IMPORTA IL CSS!
+import "../styles/lobby.css";
 
 export default function LobbyOnline({ onGameStart }) {
   const [room, setRoom] = useState(null);
@@ -12,16 +12,14 @@ export default function LobbyOnline({ onGameStart }) {
   const [roomCode, setRoomCode] = useState("");
   const [error, setError] = useState("");
   const [isFullscreen, setIsFullscreen] = useState(false);
-    const containerRef = useRef(null);
+  const containerRef = useRef(null);
 
-
-  // Controlla se già in fullscreen
   useEffect(() => {
     const checkFullscreen = () => {
       setIsFullscreen(
         document.fullscreenElement ||
         document.webkitFullscreenElement ||
-        window.navigator.standalone // PWA su iOS
+        window.navigator.standalone
       );
     };
     
@@ -35,7 +33,6 @@ export default function LobbyOnline({ onGameStart }) {
     };
   }, []);
 
-    // Funzione per entrare in fullscreen
   const enterFullscreen = () => {
     const elem = containerRef.current || document.documentElement;
 
@@ -48,8 +45,6 @@ export default function LobbyOnline({ onGameStart }) {
       elem.msRequestFullscreen;
 
     if (!request) {
-      // Fallback: su alcuni browser (es. Safari iOS in modalità normale)
-      // il fullscreen non è disponibile via API
       alert(
         "Il tuo browser non permette il fullscreen forzato. " +
         "Prova a ruotare lo schermo o aggiungere il sito alla schermata Home."
@@ -59,7 +54,6 @@ export default function LobbyOnline({ onGameStart }) {
 
     try {
       const result = request.call(elem);
-      // In molti browser requestFullscreen ritorna una Promise
       if (result && typeof result.then === "function") {
         result.then(() => {
           setIsFullscreen(true);
@@ -67,7 +61,6 @@ export default function LobbyOnline({ onGameStart }) {
           console.error("Errore attivando il fullscreen:", err);
         });
       } else {
-        // Browser vecchi / senza Promise
         setIsFullscreen(true);
       }
     } catch (err) {
@@ -75,8 +68,6 @@ export default function LobbyOnline({ onGameStart }) {
     }
   };
 
-
-  // Aggiornamenti di lobby (giocatori / spettatori / rounds)
   useEffect(() => {
     function handleRoomUpdate({ room: updatedRoom, roomCode: code }) {
       setRoom({ ...updatedRoom, roomCode: code || roomCode });
@@ -95,11 +86,20 @@ export default function LobbyOnline({ onGameStart }) {
     };
   }, [roomCode]);
 
-  // Avvio partita sincronizzato
+  // ✅ QUESTA È L'UNICA MODIFICA NECESSARIA!
   useEffect(() => {
     const handleGameStart = (payload) => {
       console.log("🚀 Partita avviata dal server:", payload);
-      if (onGameStart) onGameStart(payload);
+      
+      if (onGameStart) {
+        // ✅ CORRETTO: Passa i dati nel formato che Game.jsx si aspetta
+        onGameStart({
+          room: payload.room,
+          roomCode: payload.roomCode,
+          phrase: payload.gameState?.phrase,
+          category: payload.gameState?.category,
+        });
+      }
     };
 
     socket.on("gameStart", handleGameStart);
@@ -171,15 +171,13 @@ export default function LobbyOnline({ onGameStart }) {
   };
 
   return (
-        <div className="lobby-container" ref={containerRef}>
-      {/* Pulsante Fullscreen (solo se non già in fullscreen e non in stanza) */}
+    <div className="lobby-container" ref={containerRef}>
       {!isFullscreen && !room && (
         <button className="fullscreen-btn" onClick={enterFullscreen}>
           🖥️ FULLSCREEN
         </button>
       )}
 
-      {/* Form iniziale - nascosto quando c'è room */}
       {!room && (
         <LobbyFormMinimal
           onCreate={handleCreate}
@@ -189,7 +187,6 @@ export default function LobbyOnline({ onGameStart }) {
         />
       )}
 
-      {/* Schermata stanza - mostrata solo con room */}
       {room && (
         <div className="lobby-room">
           <OnlinePlayers
