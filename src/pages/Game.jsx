@@ -264,7 +264,12 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
   };
 
   const handleChangePhrase = () => {
-    console.log("🔄 Cambio frase non disponibile online");
+    if (!roomCode) return;
+    socket.emit("changePhrase", { roomCode }, (res) => {
+      if (!res?.ok) {
+        alert(res?.error || "Errore cambio frase");
+      }
+    });
   };
 
   // ✅ Se non c'è gameState, mostra messaggio semplice
