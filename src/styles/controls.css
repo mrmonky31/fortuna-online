@@ -1,10 +1,484 @@
-/* src/styles/controls.css */
+/* controls.css - VERSIONE FINALE COMPLETA */
 
-.btn-spin { background: #4f8ef7; color: #fff; padding: 10px 14px; border: none; border-radius: 8px; cursor: pointer; font-weight: 800; }
-.last-target { margin-top: 6px; font-size: 13px; color: #cfe8ff; }
+/* ===========================
+   PULSANTE ESCI STANZA
+   =========================== */
 
-.panel-body { display: flex; gap: 8px; align-items: center; }
-.btn-primary { background: #1e88e5; color: #fff; padding: 6px 10px; border-radius: 6px; border: none; cursor: pointer; }
-.btn-secondary { background: transparent; border: 1px solid #444; color: #fff; padding: 6px 10px; border-radius: 6px; cursor: pointer; }
-.btn-accent { background: #ffb300; color: #111; padding: 6px 10px; border-radius: 6px; border: none; cursor: pointer; }
-.input-letter, .input-solution { background: #0f1113; border: 1px solid #333; color: #fff; padding: 6px; border-radius: 6px; }
+.btn-exit-room {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: bold;
+  background: #e53e3e;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(229, 62, 62, 0.4);
+  z-index: 1001;
+}
+
+.btn-exit-room:hover {
+  background: #c53030;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(229, 62, 62, 0.6);
+}
+
+.btn-exit-room:active {
+  transform: translateY(0);
+}
+
+/* ===========================
+   OVERLAY ROUND VINTO
+   =========================== */
+
+.round-won-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  animation: overlayFadeIn 0.5s ease;
+}
+
+@keyframes overlayFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.round-won-box {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 60px 80px;
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  text-align: center;
+  animation: boxBounce 0.6s ease;
+  max-width: 600px;
+}
+
+@keyframes boxBounce {
+  0% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.round-won-title {
+  font-size: 48px;
+  font-weight: bold;
+  color: #ffd700;
+  margin-bottom: 20px;
+  text-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+  animation: titlePulse 1.5s ease-in-out infinite;
+}
+
+@keyframes titlePulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+.round-won-winner {
+  font-size: 32px;
+  font-weight: 600;
+  color: white;
+  margin-bottom: 30px;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.round-won-countdown {
+  font-size: 24px;
+  color: #e2e8f0;
+  font-weight: 500;
+}
+
+.countdown-number {
+  display: inline-block;
+  font-size: 36px;
+  font-weight: bold;
+  color: #ffd700;
+  min-width: 50px;
+  animation: countdownBlink 1s ease-in-out infinite;
+}
+
+@keyframes countdownBlink {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.1);
+  }
+}
+
+/* ===========================
+   PULSANTI COMPATTI
+   =========================== */
+
+.controls-buttons {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 15px;
+}
+
+.btn-primary {
+  padding: 12px 24px;
+  font-size: 16px;
+  font-weight: bold;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+}
+
+.btn-primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+.btn-primary:disabled {
+  background: #718096;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.btn-secondary {
+  padding: 10px 18px;
+  font-size: 14px;
+  font-weight: 600;
+  background: #4a5568;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-compact {
+  padding: 8px 14px;
+  font-size: 13px;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: #2d3748;
+  transform: translateY(-1px);
+}
+
+.btn-secondary:disabled {
+  background: #718096;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.btn-pass {
+  background: #e53e3e;
+}
+
+.btn-pass:hover:not(:disabled) {
+  background: #c53030;
+}
+
+.target-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: #2d3748;
+  padding: 8px 16px;
+  border-radius: 8px;
+  margin-left: auto;
+}
+
+.target-title {
+  font-size: 11px;
+  color: #a0aec0;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.target-value {
+  font-size: 20px;
+  font-weight: bold;
+  color: #ffd700;
+}
+
+/* ===========================
+   PANNELLI INPUT
+   =========================== */
+
+.controls-panels {
+  margin-top: 15px;
+}
+
+.panel {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 15px;
+  background: rgba(45, 55, 72, 0.95);
+  border-radius: 8px;
+  border: 2px solid #4a5568;
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.panel-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #e2e8f0;
+  min-width: 100px;
+}
+
+.panel-input {
+  flex: 1;
+  padding: 10px 14px;
+  font-size: 15px;
+  border: 2px solid #4a5568;
+  border-radius: 6px;
+  background: #1a202c;
+  color: white;
+  outline: none;
+  transition: all 0.3s ease;
+}
+
+.panel-input-game {
+  padding: 14px 18px;
+  font-size: 18px;
+  min-height: 50px;
+}
+
+.panel-input:focus {
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+}
+
+.panel-input::placeholder {
+  color: #718096;
+}
+
+.btn-ok {
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: bold;
+  background: #48bb78;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 80px;
+}
+
+.btn-ok:hover:not(:disabled) {
+  background: #38a169;
+  transform: translateY(-1px);
+}
+
+.btn-ok:disabled {
+  background: #718096;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* ===========================
+   ALERT / MESSAGGI
+   =========================== */
+
+.game-alerts {
+  margin: 20px 0;
+}
+
+.alert {
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 500;
+  text-align: center;
+  animation: fadeIn 0.3s ease;
+  transition: all 0.3s ease;
+}
+
+.alert-enlarged {
+  padding: 16px 24px;
+  font-size: 17px;
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.alert.success {
+  background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+  color: white;
+  box-shadow: 0 4px 15px rgba(72, 187, 120, 0.4);
+}
+
+.alert.error {
+  background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);
+  color: white;
+  box-shadow: 0 4px 15px rgba(245, 101, 101, 0.4);
+}
+
+.alert.warning {
+  background: linear-gradient(135deg, #ed8936 0%, #dd6b20 100%);
+  color: white;
+  box-shadow: 0 4px 15px rgba(237, 137, 54, 0.4);
+}
+
+.alert.info {
+  background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+  color: white;
+  box-shadow: 0 4px 15px rgba(66, 153, 225, 0.4);
+}
+
+.alert-placeholder {
+  padding: 12px 20px;
+  color: #4a5568;
+  text-align: center;
+  font-size: 15px;
+}
+
+/* ===========================
+   TIMER TURNO
+   =========================== */
+
+.turn-timer {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(226, 232, 240, 0.95);
+  color: #1a202c;
+  font-size: 32px;
+  font-weight: bold;
+  padding: 15px 25px;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  animation: timerPulse 1s ease-in-out infinite;
+  z-index: 1000;
+}
+
+@keyframes timerPulse {
+  0%, 100% {
+    transform: translateX(-50%) scale(1);
+  }
+  50% {
+    transform: translateX(-50%) scale(1.05);
+  }
+}
+
+/* ===========================
+   RESPONSIVE
+   =========================== */
+
+@media (max-width: 768px) {
+  .controls-buttons {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .btn-primary,
+  .btn-secondary {
+    width: 100%;
+  }
+
+  .target-box {
+    margin-left: 0;
+    margin-top: 10px;
+    width: 100%;
+  }
+
+  .panel {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .panel-label {
+    min-width: auto;
+  }
+
+  .btn-ok {
+    width: 100%;
+  }
+
+  .round-won-box {
+    padding: 40px 30px;
+    max-width: 90%;
+  }
+
+  .round-won-title {
+    font-size: 32px;
+  }
+
+  .round-won-winner {
+    font-size: 24px;
+  }
+
+  .round-won-countdown {
+    font-size: 18px;
+  }
+
+  .countdown-number {
+    font-size: 28px;
+  }
+
+  .btn-exit-room {
+    top: 10px;
+    right: 10px;
+    padding: 8px 16px;
+    font-size: 12px;
+  }
+}

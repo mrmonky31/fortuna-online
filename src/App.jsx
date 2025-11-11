@@ -41,13 +41,26 @@ function App() {
     setScreen("game");
   };
 
+  // ✅ NUOVO: Gestisce uscita dalla partita
+  const handleExitToLobby = () => {
+    setScreen("setup");
+    setPlayers([]);
+    setRounds(1);
+    setGameState(null);
+  };
+
   return (
     <div className="app-fullscreen">
       {screen === "setup" && (
         <LobbyOnline onGameStart={handleOnlineGameStart} />
       )}
       {screen === "game" && (
-        <Game players={players} totalRounds={rounds} state={gameState} />
+        <Game 
+          players={players} 
+          totalRounds={rounds} 
+          state={gameState}
+          onExitToLobby={handleExitToLobby}
+        />
       )}
     </div>
   );

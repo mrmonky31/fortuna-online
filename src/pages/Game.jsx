@@ -1,5 +1,4 @@
-// VERSIONE SENZA TIMER - MOD by MARCO
-// src/pages/Game.jsx
+// src/pages/Game.jsx - VERSIONE COMPLETA CON TUTTE LE MIGLIORIE
 import React, { useEffect, useState } from "react";
 import "../styles/game-layout.css";
 import "../styles/controls.css";
@@ -10,44 +9,137 @@ import PhraseManager from "../components/PhraseManager";
 import Wheel from "../components/Wheel";
 import FinalScoreboard from "../components/FinalScoreboard";
 
-import { testPhrases } from "../game/phrases";
-import { buildBoard, maskBoard } from "../game/GameEngine";
-import {
-  createInitialGameState,
-  startRound,
-  applyWheelSpin,
-  applyWheelOutcome,
-  playConsonant,
-  buyVowel,
-  trySolve,
-  changePhrase,
-  applyCountdownTick
-} from "../game/GameLogic";
+import { maskBoard } from "../game/GameEngine";
 import socket from "../socket";
 
-// Utility: seleziona una frase valida
-function pickValidRandomPhrase(list) {
-  const valid = list.filter((p) => (p.text || "").length <= 56);
-  if (!valid.length) throw new Error("Nessuna frase valida disponibile");
-  const i = Math.floor(Math.random() * valid.length);
-  return valid[i];
-}
-
-export default function Game({ players = [], totalRounds = 3, state }) {
+export default function Game({ players = [], totalRounds = 3, state, onExitToLobby }) {
   const [gameState, setGameState] = useState(null);
+  const [mySocketId, setMySocketId] = useState(null);
+  const [roomCode, setRoomCode] = useState(null);
+
+  const [maskedRows, setMaskedRows] = useState([]);
+  const [revealQueue, setRevealQueue] = useState([]);
+
   const [turnTimer, setTurnTimer] = useState(60);
   const [timerPaused, setTimerPaused] = useState(false);
 
-  const [revealQueue, setRevealQueue] = useState([]);
-  const [maskedRows, setMaskedRows] = useState([]);
+  // ✅ NUOVO: Stato per schermata tra round
+  const [betweenRounds, setBetweenRounds] = useState(false);
+  const [roundCountdown, setRoundCountdown] = useState(0);
+  const [winnerName, setWinnerName] = useState("");
 
-  // Ricalcolo tabellone mascherato dopo ogni lettera
+  // ✅ NUOVO: Salva dati in localStorage per riconnessione
+  useEffect(() => {
+    if (roomCode && mySocketId) {
+      localStorage.setItem("gameSession", JSON.stringify({
+        roomCode,
+        socketId: mySocketId,
+        timestamp: Date.now()
+      }));
+    }
+  }, [roomCode, mySocketId]);
+
+  // ✅ NUOVO: Riconnessione automatica al caricamento
+  useEffect(() => {
+    const savedSession = localStorage.getItem("gameSession");
+    if (savedSession) {
+      try {
+        const { roomCode: savedRoom, timestamp } = JSON.parse(savedSession);
+        // Se la sessione è vecchia di più di 10 minuti, ignorala
+        if (Date.now() - timestamp < 10 * 60 * 1000) {
+          console.log("🔄 Tentativo riconnessione a:", savedRoom);
+          // Il socket.id sarà diverso, ma il server può gestire la riconnessione
+          setRoomCode(savedRoom);
+        } else {
+          localStorage.removeItem("gameSession");
+        }
+      } catch (e) {
+        console.error("Errore parsing sessione:", e);
+      }
+    }
+  }, []);
+
+  // Salva socket ID
+  useEffect(() => {
+    setMySocketId(socket.id);
+  }, []);
+
+  // Salva roomCode
+  useEffect(() => {
+    if (state?.roomCode) {
+      setRoomCode(state.roomCode);
+    }
+  }, [state]);
+
+  // 🎮 ASCOLTA AVVIO PARTITA DAL SERVER
+  useEffect(() => {
+    function handleGameStart({ gameState: serverState }) {
+      console.log("🚀 Partita avviata dal server:", serverState);
+      setGameState(serverState);
+      setTurnTimer(60);
+      setBetweenRounds(false);
+    }
+
+    socket.on("gameStart", handleGameStart);
+
+    return () => {
+      socket.off("gameStart", handleGameStart);
+    };
+  }, []);
+
+  // 🔄 ASCOLTA AGGIORNAMENTI STATO DAL SERVER
+  useEffect(() => {
+    function handleGameStateUpdate({ gameState: serverState }) {
+      console.log("🔄 Aggiornamento stato dal server:", serverState);
+      setGameState(serverState);
+      setTurnTimer(60);
+    }
+
+    socket.on("gameStateUpdate", handleGameStateUpdate);
+
+    return () => {
+      socket.off("gameStateUpdate", handleGameStateUpdate);
+    };
+  }, []);
+
+  // ✅ NUOVO: Ascolta evento "roundWon" dal server
+  useEffect(() => {
+    function handleRoundWon({ winnerName, countdown }) {
+      console.log("🎉 Round vinto da:", winnerName);
+      setWinnerName(winnerName);
+      setBetweenRounds(true);
+      setRoundCountdown(countdown);
+    }
+
+    socket.on("roundWon", handleRoundWon);
+
+    return () => {
+      socket.off("roundWon", handleRoundWon);
+    };
+  }, []);
+
+  // ✅ NUOVO: Countdown tra i round
+  useEffect(() => {
+    if (!betweenRounds || roundCountdown <= 0) return;
+
+    const id = setInterval(() => {
+      setRoundCountdown((prev) => {
+        if (prev <= 1) {
+          setBetweenRounds(false);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(id);
+  }, [betweenRounds, roundCountdown]);
+
+  // Ricalcolo tabellone mascherato
   useEffect(() => {
     if (!gameState) return;
     const rows = Array.isArray(gameState.rows) ? gameState.rows : [];
-
-    let revealed = gameState.revealedLetters;
-    if (revealed && revealed instanceof Set) revealed = Array.from(revealed);
+    const revealed = gameState.revealedLetters || [];
 
     try {
       const m = maskBoard(rows, revealed);
@@ -57,229 +149,132 @@ export default function Game({ players = [], totalRounds = 3, state }) {
     }
   }, [gameState?.rows, gameState?.revealedLetters]);
 
-  const handleRevealDone = () => setRevealQueue([]);
-
-  // 🔌 Ascolta lo stato di gioco dal server (azioni: spin, consonante, vocale, soluzione)
-  useEffect(() => {
-    function handleGameState({ state }) {
-      console.log("📡 Nuovo gameState dal server:", state);
-
-      if (!state || !state.lastAction) return;
-
-      setGameState((prev) => {
-        if (!prev) return prev;
-        switch (state.lastAction) {
-          case "spin":
-            return applyWheelOutcome(prev, state.result);
-          case "consonant":
-            return playConsonant(prev, state.letter);
-          case "vowel":
-            return buyVowel(prev, state.letter);
-          case "solve":
-            return trySolve(prev, state.text);
-          default:
-            return prev;
-        }
-      });
-    }
-
-    socket.on("gameState", handleGameState);
-
-    return () => {
-      socket.off("gameState", handleGameState);
-    };
-  }, []);
-
-  // 🔹 Inizializzazione partita: usa PRIMA i dati del server (state), altrimenti fallback locale
-  useEffect(() => {
-    if (gameState) return;
-
-    // Se arriva dallo stato online (App -> Game)
-    if (state && state.phrase) {
-      const { room, roomCode, phrase, category } = state;
-
-      // Giocatori da stanza server
-      let basePlayers = [];
-      if (room && Array.isArray(room.players) && room.players.length) {
-        basePlayers = room.players.map((p) => ({
-          name: p.name || "GIOCATORE",
-        }));
-      } else if (players.length) {
-        basePlayers = players;
-      } else {
-        basePlayers = [{ name: "GIOCATORE 1" }];
-      }
-
-      // Numero round dal server
-      const baseTotalRounds =
-        room && typeof room.totalRounds === "number" && room.totalRounds > 0
-          ? room.totalRounds
-          : totalRounds || 3;
-
-      const base = createInitialGameState(basePlayers, baseTotalRounds, {
-        vowelCost: 500,
-        debug: false,
-        getNextRoundData: () => ({
-          phrase,
-          rows: buildBoard(phrase, 14, 4),
-          category,
-        }),
-      });
-
-      const rows = buildBoard(phrase, 14, 4);
-      const started = startRound(base, phrase, rows, category);
-      started.totalRounds = baseTotalRounds;
-
-      if (roomCode) {
-        started.roomCode = roomCode;
-      } else if (state.roomCode) {
-        started.roomCode = state.roomCode;
-      }
-
-      setGameState(started);
-      return;
-    }
-
-    // Fallback locale (single-player / nessun server)
-    console.log("🕓 Nessun stato online, inizializzazione locale…");
-
-    const phraseObj = pickValidRandomPhrase(testPhrases);
-    const basePlayers = players.length ? players : [{ name: "GIOCATORE 1" }];
-    const baseTotalRounds = totalRounds || 3;
-
-    const base = createInitialGameState(basePlayers, baseTotalRounds, {
-      vowelCost: 500,
-      debug: false,
-      getNextRoundData: () => ({
-        phrase: phraseObj.text,
-        rows: buildBoard(phraseObj.text, 14, 4),
-        category: phraseObj.category,
-      }),
-    });
-
-    const rows = buildBoard(phraseObj.text, 14, 4);
-    const started = startRound(
-      base,
-      phraseObj.text,
-      rows,
-      phraseObj.category
-    );
-    started.totalRounds = baseTotalRounds;
-
-    setGameState(started);
-  }, [state, gameState, players, totalRounds]);
-
-  // Tick logico (solo per countdown round)
-  useEffect(() => {
-    const id = setInterval(() => {
-      setGameState((prev) => applyCountdownTick(prev));
-    }, 1000);
-    return () => clearInterval(id);
-  }, []);
-
-  // Timer turno: 60s, mostra solo ultimi 10
+  // Timer turno
   useEffect(() => {
     if (!gameState) return;
     if (timerPaused) return;
+
+    const isMyTurn = gameState.currentPlayerId === mySocketId;
+    if (!isMyTurn) return;
 
     const id = setInterval(() => {
       setTurnTimer((prev) => {
         if (prev <= 1) {
           clearInterval(id);
-          try {
-            setGameState((s) => {
-              if (!s) return s;
-              return { ...s, forcePassTurn: true };
-            });
-          } catch (e) {
-            console.error(e);
-          }
-          return 0;
+          handlePassTurn();
+          return 60;
         }
         return prev - 1;
       });
     }, 1000);
 
     return () => clearInterval(id);
-  }, [gameState, timerPaused]);
+  }, [gameState, timerPaused, mySocketId]);
 
-  const isOnline = !!(gameState && gameState.roomCode);
+  const handleRevealDone = () => setRevealQueue([]);
+
+  const handlePanelChange = (panelName) => {
+    setTimerPaused(panelName !== null);
+  };
+
+  // ✅ NUOVO: Handler per uscire dalla stanza
+  const handleExitRoom = () => {
+    const confirmed = window.confirm(
+      "Sei sicuro di voler abbandonare la partita?\nNon potrai più rientrare in questa partita."
+    );
+    
+    if (confirmed) {
+      // Pulisci localStorage
+      localStorage.removeItem("gameSession");
+      
+      // Disconnetti dal server
+      if (roomCode) {
+        socket.emit("leaveRoom", { roomCode });
+      }
+      
+      // Torna alla lobby
+      if (onExitToLobby) {
+        onExitToLobby();
+      } else {
+        window.location.reload();
+      }
+    }
+  };
 
   // === HANDLERS ===
 
   const handleSpin = () => {
-    // spin locale (solo chi ha il controllo)
-    setGameState((s) => applyWheelSpin(s, 500));
+    if (!roomCode) return;
+    console.log("🎡 Richiesta spin al server…");
+
+    socket.emit("spinWheel", { roomCode }, (res) => {
+      if (!res?.ok) {
+        console.error("❌ Errore spin:", res?.error);
+        alert(res?.error || "Errore spin");
+      }
+    });
   };
 
   const handleWheelStop = (outcome) => {
-    if (isOnline && socket) {
-      socket.emit(
-        "action",
-        {
-          roomCode: gameState.roomCode,
-          type: "spin",
-          payload: { result: outcome },
-        },
-        (res) => {
-          if (!res?.ok) console.error("Errore azione spin:", res?.error);
-          else console.log("Spin registrato dal server ✅", res);
-        }
-      );
-    } else {
-      // modalità locale
-      setGameState((s) => applyWheelOutcome(s, outcome));
-    }
+    console.log("🎡 Ruota fermata (solo visivo):", outcome);
   };
 
   const handleConsonant = (letter) => {
-    if (isOnline && socket) {
-      socket.emit("action", {
-        roomCode: gameState.roomCode,
-        type: "consonant",
-        payload: { letter },
-      });
-    } else {
-      setGameState((s) => playConsonant(s, letter));
-    }
+    if (!roomCode) return;
+    console.log("🔤 Invio consonante al server:", letter);
+
+    socket.emit("playConsonant", { roomCode, letter }, (res) => {
+      if (!res?.ok) {
+        console.error("❌ Errore consonante:", res?.error);
+        alert(res?.error || "Errore consonante");
+      }
+    });
   };
 
   const handleVowel = (letter) => {
-    if (isOnline && socket) {
-      socket.emit("action", {
-        roomCode: gameState.roomCode,
-        type: "vowel",
-        payload: { letter },
-      });
-    } else {
-      setGameState((s) => buyVowel(s, letter));
-    }
+    if (!roomCode) return;
+    console.log("🔵 Invio vocale al server:", letter);
+
+    socket.emit("playVowel", { roomCode, letter }, (res) => {
+      if (!res?.ok) {
+        console.error("❌ Errore vocale:", res?.error);
+        alert(res?.error || "Errore vocale");
+      }
+    });
   };
 
   const handleSolution = (text) => {
-    if (isOnline && socket) {
-      socket.emit("action", {
-        roomCode: gameState.roomCode,
-        type: "solve",
-        payload: { text },
-      });
-    } else {
-      setGameState((s) => trySolve(s, text));
-    }
+    if (!roomCode) return;
+    console.log("✅ Invio soluzione al server:", text);
+
+    socket.emit("trySolution", { roomCode, text }, (res) => {
+      if (!res?.ok) {
+        console.error("❌ Errore soluzione:", res?.error);
+        alert(res?.error || "Errore soluzione");
+      }
+    });
+  };
+
+  const handlePassTurn = () => {
+    if (!roomCode) return;
+    console.log("⏩ Invio passa turno al server");
+
+    socket.emit("passTurn", { roomCode }, (res) => {
+      if (!res?.ok) {
+        console.error("❌ Errore passa turno:", res?.error);
+        alert(res?.error || "Errore passa turno");
+      }
+    });
   };
 
   const handleChangePhrase = () => {
-    setGameState((s) => {
-      const phrase = pickValidRandomPhrase(testPhrases);
-      const rows = buildBoard(phrase.text, 14, 4);
-      return changePhrase(s, phrase.text, rows, phrase.category);
-    });
+    console.log("🔄 Cambio frase non implementato in modalità online");
   };
 
   if (!gameState) {
     return (
       <div className="game-loading">
-        <p>Caricamento partita...</p>
+        <p>⏳ In attesa di avvio partita…</p>
       </div>
     );
   }
@@ -287,23 +282,26 @@ export default function Game({ players = [], totalRounds = 3, state }) {
   if (gameState.gameOver) {
     return (
       <div className="game-wrapper">
-        <FinalScoreboard players={gameState.players} />
+        <FinalScoreboard players={gameState.players} onBackToLobby={handleExitRoom} />
       </div>
     );
   }
 
-  const flashType =
-    gameState.countdown?.active
-      ? "success"
-      : gameState.gameMessage?.type === "error" &&
-        gameState.gameMessage?.text === "Soluzione non corretta."
+  const isMyTurn = gameState.currentPlayerId === mySocketId;
+
+  const flashType = betweenRounds ? "success" : 
+    gameState.gameMessage?.type === "error" &&
+    gameState.gameMessage?.text === "Soluzione non corretta."
       ? "error"
       : null;
 
-  const showCenterOverlay = gameState.countdown?.active === true;
-
   return (
     <div className="game-wrapper">
+      {/* ✅ NUOVO: Pulsante Esci in alto a destra */}
+      <button className="btn-exit-room" onClick={handleExitRoom} title="Esci dalla stanza">
+        ❌ Esci
+      </button>
+
       <div className="game-players">
         <h3>Giocatori</h3>
         {gameState.players.map((p, i) => (
@@ -313,7 +311,10 @@ export default function Game({ players = [], totalRounds = 3, state }) {
               i === gameState.currentPlayerIndex ? "player-active" : ""
             }`}
           >
-            <div className="player-name">{p.name}</div>
+            <div className="player-name">
+              {p.name}
+              {p.id === mySocketId && " (Tu)"}
+            </div>
             <div className="player-round-score">{p.roundScore} pt</div>
           </div>
         ))}
@@ -338,8 +339,11 @@ export default function Game({ players = [], totalRounds = 3, state }) {
             onConsonant={handleConsonant}
             onVowel={handleVowel}
             onSolution={handleSolution}
+            onPassTurn={handlePassTurn}
+            onPanelChange={handlePanelChange}
             lastTarget={gameState.lastSpinTarget}
             forceConsonant={gameState.awaitingConsonant === true}
+            disabled={!isMyTurn || betweenRounds}
           />
         </div>
 
@@ -359,11 +363,17 @@ export default function Game({ players = [], totalRounds = 3, state }) {
       <div>
         <div className="game-alerts">
           {gameState.gameMessage ? (
-            <div className={`alert ${gameState.gameMessage.type}`}>
+            <div className={`alert alert-enlarged ${gameState.gameMessage.type}`}>
               {gameState.gameMessage.text}
             </div>
           ) : (
             <div className="alert-placeholder">—</div>
+          )}
+
+          {!isMyTurn && !betweenRounds && (
+            <div className="alert warning">
+              ⏸️ Turno di {gameState.players[gameState.currentPlayerIndex]?.name}
+            </div>
           )}
         </div>
 
@@ -378,14 +388,19 @@ export default function Game({ players = [], totalRounds = 3, state }) {
         </div>
       </div>
 
-      {turnTimer <= 10 && turnTimer > 0 && (
+      {isMyTurn && turnTimer <= 10 && turnTimer > 0 && !betweenRounds && (
         <div className="turn-timer">{turnTimer}</div>
       )}
 
-      {showCenterOverlay && (
-        <div className="center-overlay">
-          <div className="center-box">
-            {gameState.gameMessage?.text || "Prossimo round..."}
+      {/* ✅ NUOVO: Overlay tra i round */}
+      {betweenRounds && (
+        <div className="round-won-overlay">
+          <div className="round-won-box">
+            <div className="round-won-title">🎉 FRASE INDOVINATA! 🎉</div>
+            <div className="round-won-winner">{winnerName} ha vinto il round!</div>
+            <div className="round-won-countdown">
+              Il prossimo round inizia tra <span className="countdown-number">{roundCountdown}</span> secondi...
+            </div>
           </div>
         </div>
       )}

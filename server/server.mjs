@@ -1,4 +1,4 @@
-// server/server.mjs
+// server/server.mjs - VERSIONE FINALE COMPLETA
 import express from "express";
 import http from "http";
 import { Server } from "socket.io";
@@ -6,10 +6,9 @@ import cors from "cors";
 
 const app = express();
 
-// ✅ CORS SOLO PER VERCEL
 app.use(
   cors({
-    origin: ["https://fortuna-online.vercel.app"],
+    origin: ["https://fortuna-online.vercel.app", "http://localhost:5173"],
     methods: ["GET", "POST"],
     credentials: true,
   })
@@ -19,7 +18,7 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: "https://fortuna-online.vercel.app",
+    origin: ["https://fortuna-online.vercel.app", "http://localhost:5173"],
     methods: ["GET", "POST"],
     credentials: true,
   },
@@ -27,10 +26,170 @@ const io = new Server(server, {
 
 const PORT = process.env.PORT || 10000;
 
-// Mappa stanze
+// ==================== LOGICA DI GIOCO ====================
+
+const SPIN_PATTERNS = [
+  [100, 200, 300, 400, 500, 600, 700, "PASSA", 800, 1000, "BANCAROTTA", 200, 400, "RADDOPPIA", 500, 300, "PASSA/BANCAROTTA", 700, 800, 1000],
+  [200, 400, 600, "PASSA", 800, 1000, 1000, 700, "RADDOPPIA", 500, "BANCAROTTA", 300, 400, "PASSA/BANCAROTTA", 800, 700, 600, 500, 300, "BANCAROTTA/RADDOPPIA"],
+];
+
+function normalizeText(str = "") {
+  return String(str)
+    .toUpperCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/['´`']/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function buildBoard(text, maxCols = 14, maxRows = 4) {
+  const words = String(text || "").split(/\s+/).filter(Boolean);
+  const rows = [];
+  let cur = "";
+
+  const flush = () => {
+    rows.push(cur);
+    cur = "";
+  };
+
+  for (let i = 0; i < words.length; i++) {
+    const w = words[i];
+    if (cur.length === 0) {
+      if (w.length <= maxCols) {
+        cur = w;
+      } else {
+        cur = w.slice(0, maxCols);
+        flush();
+        let rest = w.slice(maxCols);
+        while (rest.length > 0) {
+          cur = rest.slice(0, maxCols);
+          flush();
+          rest = rest.slice(maxCols);
+          if (rows.length >= maxRows) break;
+        }
+        cur = "";
+      }
+    } else {
+      if (cur.length + 1 + w.length <= maxCols) {
+        cur += " " + w;
+      } else {
+        flush();
+        i--;
+      }
+    }
+    if (rows.length >= maxRows) break;
+  }
+  if (rows.length < maxRows && cur.length > 0) flush();
+  return rows.slice(0, maxRows);
+}
+
+function generateWheel() {
+  const idx = Math.floor(Math.random() * SPIN_PATTERNS.length);
+  return SPIN_PATTERNS[idx];
+}
+
+function simulateWheelSpin(wheel) {
+  const idx = Math.floor(Math.random() * wheel.length);
+  const slice = wheel[idx];
+
+  if (typeof slice === "string" && slice.includes("/")) {
+    const [a, b] = slice.split("/");
+    const chosen = Math.random() < 0.5 ? a : b;
+
+    if (chosen === "PASSA") return { type: "pass", label: "PASSA" };
+    if (chosen === "BANCAROTTA") return { type: "bankrupt", label: "BANCAROTTA" };
+    if (chosen === "RADDOPPIA") return { type: "double", label: "RADDOPPIA" };
+    if (!isNaN(Number(chosen))) return { type: "points", value: Number(chosen), label: chosen };
+  }
+
+  if (typeof slice === "number") return { type: "points", value: slice, label: slice };
+  if (slice === "PASSA") return { type: "pass", label: "PASSA" };
+  if (slice === "BANCAROTTA") return { type: "bankrupt", label: "BANCAROTTA" };
+  if (slice === "RADDOPPIA") return { type: "double", label: "RADDOPPIA" };
+
+  return { type: "custom", label: String(slice) };
+}
+
+function nextRound(roomCode, room) {
+  const gs = room.gameState;
+
+  gs.currentRound += 1;
+
+  if (gs.currentRound > gs.totalRounds) {
+    gs.gameOver = true;
+    gs.gameMessage = { type: "success", text: "🎉 Partita terminata!" };
+    io.to(roomCode).emit("gameStateUpdate", { gameState: gs });
+    return;
+  }
+
+  const phrases = [
+    { category: "CINEMA", text: "IL SIGNORE DEGLI ANELLI" },
+    { category: "MUSICA", text: "VIVA LA VIDA" },
+    { category: "SPORT", text: "CALCIO DI RIGORE" },
+    { category: "NATURA", text: "ALBERI SECOLARI" },
+    { category: "STORIA", text: "IMPERO ROMANO" },
+    { category: "GEOGRAFIA", text: "TORRE DI PISA" },
+    { category: "CIBO", text: "PIZZA MARGHERITA" },
+    { category: "ANIMALI", text: "LEONE DELLA SAVANA" },
+  ];
+  const random = phrases[Math.floor(Math.random() * phrases.length)];
+
+  gs.players.forEach(p => { p.roundScore = 0; });
+
+  gs.phrase = random.text;
+  gs.rows = buildBoard(random.text, 14, 4);
+  gs.category = random.category;
+
+  gs.revealedLetters = [];
+  gs.usedLetters = [];
+
+  gs.wheel = generateWheel();
+  gs.mustSpin = true;
+  gs.awaitingConsonant = false;
+  gs.pendingDouble = false;
+  gs.lastSpinTarget = 0;
+  gs.spinning = false;
+
+  gs.gameMessage = { type: "info", text: `🎬 Round ${gs.currentRound}/${gs.totalRounds}` };
+
+  io.to(roomCode).emit("gameStateUpdate", { gameState: gs });
+}
+
+function initGameState(players, totalRounds, phrase, category) {
+  return {
+    players: players.map(p => ({ name: p.name, id: p.id, totalScore: 0, roundScore: 0 })),
+    totalRounds,
+    currentRound: 1,
+    currentPlayerIndex: 0,
+    currentPlayerId: players[0].id,
+
+    phrase,
+    rows: buildBoard(phrase, 14, 4),
+    category,
+
+    revealedLetters: [],
+    usedLetters: [],
+
+    wheel: generateWheel(),
+    spinning: false,
+    mustSpin: true,
+    awaitingConsonant: false,
+    pendingDouble: false,
+    lastSpinTarget: 0,
+
+    gameMessage: { type: "info", text: "🎬 Nuovo round!" },
+    gameOver: false,
+  };
+}
+
+// ==================== STANZE ====================
+
 const rooms = {};
 
-// Trova stanza da socket
+// ✅ NUOVO: Traccia timeout disconnessioni
+const disconnectionTimeouts = {};
+
 function findRoomBySocketId(socketId) {
   for (const [code, room] of Object.entries(rooms)) {
     if (room.players?.some((p) => p.id === socketId)) {
@@ -43,18 +202,65 @@ function findRoomBySocketId(socketId) {
   return null;
 }
 
+// ✅ NUOVO: Gestisce disconnessione temporanea
+function handleTemporaryDisconnect(socketId, code, room) {
+  console.log(`⏳ Timeout disconnessione per ${socketId} in ${code}`);
+  
+  const player = room.players?.find(p => p.id === socketId);
+  if (!player) return;
+
+  // Notifica gli altri giocatori
+  io.to(code).emit("playerDisconnected", {
+    playerName: player.name,
+    timeout: 30
+  });
+
+  // Imposta timeout di 30 secondi
+  disconnectionTimeouts[socketId] = setTimeout(() => {
+    console.log(`❌ Timeout scaduto per ${socketId}, rimozione permanente`);
+    
+    const idx = room.players.findIndex((p) => p.id === socketId);
+    if (idx !== -1) {
+      room.players.splice(idx, 1);
+      
+      // Se era il turno del giocatore disconnesso, passa al prossimo
+      if (room.gameState && room.gameState.currentPlayerId === socketId) {
+        room.gameState.currentPlayerIndex = (room.gameState.currentPlayerIndex + 1) % room.players.length;
+        if (room.players.length > 0) {
+          room.gameState.currentPlayerId = room.players[room.gameState.currentPlayerIndex].id;
+        }
+        io.to(code).emit("gameStateUpdate", { gameState: room.gameState });
+      }
+      
+      io.to(code).emit("roomUpdate", { room, roomCode: code });
+      
+      if (room.players.length === 0) {
+        console.log(`🗑️ Stanza ${code} eliminata (nessun giocatore)`);
+        delete rooms[code];
+      }
+    }
+  }, 30000); // 30 secondi
+}
+
+// ==================== SOCKET.IO ====================
+
 io.on("connection", (socket) => {
-  console.log("🔌 Nuova connessione:", socket.id);
+  console.log("🔌 Connessione:", socket.id);
+
+  // ✅ NUOVO: Cancella timeout se il giocatore si riconnette
+  if (disconnectionTimeouts[socket.id]) {
+    clearTimeout(disconnectionTimeouts[socket.id]);
+    delete disconnectionTimeouts[socket.id];
+    console.log("✅ Giocatore riconnesso:", socket.id);
+  }
 
   // CREA STANZA
   socket.on("createRoom", ({ playerName, totalRounds, roomName }, callback) => {
     try {
-      // 🔴 QUI IL BUG: normalizziamo TUTTO in MAIUSCOLO
       const rawName = roomName && String(roomName).trim();
-      const code =
-        rawName && rawName.length > 0
-          ? rawName.toUpperCase()
-          : Math.random().toString(36).substring(2, 7).toUpperCase();
+      const code = rawName && rawName.length > 0
+        ? rawName.toUpperCase()
+        : Math.random().toString(36).substring(2, 7).toUpperCase();
 
       rooms[code] = {
         host: playerName,
@@ -62,16 +268,17 @@ io.on("connection", (socket) => {
         players: [{ id: socket.id, name: playerName }],
         spectators: [],
         totalRounds: totalRounds || 3,
+        gameState: null,
       };
 
       socket.join(code);
-      console.log(`🌀 Stanza creata: ${code} da ${playerName}`);
+      console.log(`🌀 Stanza creata: ${code}`);
 
       if (callback) {
         callback({
           ok: true,
           room: rooms[code],
-          roomCode: code,      // sempre MAIUSCOLO
+          roomCode: code,
           playerName,
         });
       }
@@ -81,10 +288,9 @@ io.on("connection", (socket) => {
     }
   });
 
-  // JOIN COME GIOCATORE
+  // JOIN GIOCATORE
   socket.on("joinRoom", ({ roomCode, playerName }, callback) => {
     try {
-      // 🔴 Normalizziamo anche qui
       const code = String(roomCode || "").trim().toUpperCase();
       const room = rooms[code];
 
@@ -93,13 +299,9 @@ io.on("connection", (socket) => {
         return;
       }
 
-      if (!room.players) room.players = [];
-      if (!room.spectators) room.spectators = [];
-
       room.players.push({ id: socket.id, name: playerName });
-
       socket.join(code);
-      console.log(`🎮 ${playerName} è entrato in ${code}`);
+      console.log(`🎮 ${playerName} → ${code}`);
 
       io.to(code).emit("roomUpdate", { room, roomCode: code });
 
@@ -113,11 +315,11 @@ io.on("connection", (socket) => {
       }
     } catch (err) {
       console.error("Errore joinRoom:", err);
-      if (callback) callback({ ok: false, error: "Errore ingresso stanza" });
+      if (callback) callback({ ok: false, error: "Errore ingresso" });
     }
   });
 
-  // JOIN COME SPETTATORE
+  // JOIN SPETTATORE
   socket.on("joinAsSpectator", ({ roomCode, name }, callback) => {
     try {
       const code = String(roomCode || "").trim().toUpperCase();
@@ -129,64 +331,22 @@ io.on("connection", (socket) => {
       }
 
       if (!room.spectators) room.spectators = [];
-      if (!room.players) room.players = [];
-
       room.spectators.push({ id: socket.id, name: name || "Spettatore" });
 
       socket.join(code);
-      console.log(`👀 ${name} è entrato come spettatore in ${code}`);
+      console.log(`👀 ${name} → ${code}`);
 
       io.to(code).emit("roomUpdate", { room, roomCode: code });
 
       if (callback) callback({ ok: true, room, roomCode: code });
     } catch (err) {
       console.error("Errore joinAsSpectator:", err);
-      if (callback) callback({ ok: false, error: "Errore ingresso spettatore" });
+      if (callback) callback({ ok: false, error: "Errore ingresso" });
     }
   });
 
-  // AVVIO PARTITA (host)
-  socket.on("startGame", ({ roomCode }, callback) => {
-  try {
-    const code = String(roomCode || "").trim().toUpperCase();
-    const room = rooms[code];
-
-    if (!room) {
-      if (callback) callback({ ok: false, error: "Stanza inesistente" });
-      return;
-    }
-
-    console.log(`🚀 startGame richiesto per stanza ${code}`);
-
-    // 🔹 Genera una frase casuale e inviala a tutti
-    const phrases = [
-      { category: "CINEMA", text: "IL SIGNORE DEGLI ANELLI" },
-      { category: "MUSICA", text: "VIVA LA VIDA" },
-      { category: "SPORT", text: "CALCIO DI RIGORE" },
-      { category: "NATURA", text: "ALBERI SECOLARI" },
-      { category: "STORIA", text: "IMPERO ROMANO" },
-    ];
-    const random = phrases[Math.floor(Math.random() * phrases.length)];
-    room.currentPhrase = random.text;
-    room.currentCategory = random.category;
-
-    io.to(code).emit("gameStart", {
-      room,
-      roomCode: code,
-      phrase: random.text,
-      category: random.category,
-    });
-
-    if (callback) callback({ ok: true, phrase: random.text, category: random.category });
-  } catch (err) {
-    console.error("Errore startGame:", err);
-    if (callback) callback({ ok: false, error: "Errore avvio partita" });
-  }
-});
-
-
-  // AZIONI DI GIOCO (spin, consonante, vocale, soluzione, startGame via action)
-  socket.on("action", ({ roomCode, type, payload }, callback) => {
+  // ✅ NUOVO: Lascia stanza volontariamente
+  socket.on("leaveRoom", ({ roomCode }, callback) => {
     try {
       const code = String(roomCode || "").trim().toUpperCase();
       const room = rooms[code];
@@ -196,48 +356,369 @@ io.on("connection", (socket) => {
         return;
       }
 
-      switch (type) {
-        case "startGame":
-          console.log(`🚀 action:startGame su ${code}`);
-          io.to(code).emit("gameStart", { room, roomCode: code });
-          break;
-
-        case "spin":
-          console.log(`🎯 action:spin su ${code}`, payload);
-          io.to(code).emit("gameState", {
-            state: { lastAction: "spin", result: payload?.result },
-          });
-          break;
-
-        case "consonant":
-          console.log(`🔤 action:consonant su ${code}`, payload);
-          io.to(code).emit("gameState", {
-            state: { lastAction: "consonant", letter: payload?.letter },
-          });
-          break;
-
-        case "vowel":
-          console.log(`🟢 action:vowel su ${code}`, payload);
-          io.to(code).emit("gameState", {
-            state: { lastAction: "vowel", letter: payload?.letter },
-          });
-          break;
-
-        case "solve":
-          console.log(`✅ action:solve su ${code}`, payload);
-          io.to(code).emit("gameState", {
-            state: { lastAction: "solve", text: payload?.text },
-          });
-          break;
-
-        default:
-          console.warn("⚠️ Tipo di azione non riconosciuto:", type);
+      const idx = room.players.findIndex((p) => p.id === socket.id);
+      if (idx !== -1) {
+        room.players.splice(idx, 1);
+        console.log(`👋 Player uscito volontariamente: ${code}`);
+        
+        socket.leave(code);
+        io.to(code).emit("roomUpdate", { room, roomCode: code });
+        
+        if (room.players.length === 0) {
+          console.log(`🗑️ Stanza eliminata: ${code}`);
+          delete rooms[code];
+        }
       }
 
       if (callback) callback({ ok: true });
     } catch (err) {
-      console.error("Errore action:", err);
-      if (callback) callback({ ok: false, error: "Errore azione di gioco" });
+      console.error("Errore leaveRoom:", err);
+      if (callback) callback({ ok: false, error: "Errore uscita" });
+    }
+  });
+
+  // AVVIA PARTITA
+  socket.on("startGame", ({ roomCode }, callback) => {
+    try {
+      const code = String(roomCode || "").trim().toUpperCase();
+      const room = rooms[code];
+
+      if (!room) {
+        if (callback) callback({ ok: false, error: "Stanza inesistente" });
+        return;
+      }
+
+      console.log(`🚀 START GAME: ${code}`);
+
+      const phrases = [
+        { category: "CINEMA", text: "IL SIGNORE DEGLI ANELLI" },
+        { category: "MUSICA", text: "VIVA LA VIDA" },
+        { category: "SPORT", text: "CALCIO DI RIGORE" },
+        { category: "NATURA", text: "ALBERI SECOLARI" },
+      ];
+      const random = phrases[Math.floor(Math.random() * phrases.length)];
+
+      room.gameState = initGameState(room.players, room.totalRounds, random.text, random.category);
+
+      io.to(code).emit("gameStart", {
+        room,
+        roomCode: code,
+        gameState: room.gameState,
+      });
+
+      if (callback) callback({ ok: true });
+    } catch (err) {
+      console.error("Errore startGame:", err);
+      if (callback) callback({ ok: false, error: "Errore avvio" });
+    }
+  });
+
+  // GIRA RUOTA
+  socket.on("spinWheel", ({ roomCode }, callback) => {
+    try {
+      const code = String(roomCode || "").trim().toUpperCase();
+      const room = rooms[code];
+
+      if (!room || !room.gameState) {
+        if (callback) callback({ ok: false, error: "Partita non attiva" });
+        return;
+      }
+
+      const gs = room.gameState;
+
+      if (gs.currentPlayerId !== socket.id) {
+        if (callback) callback({ ok: false, error: "Non è il tuo turno" });
+        return;
+      }
+
+      if (!gs.mustSpin) {
+        if (callback) callback({ ok: false, error: "Devi prima giocare una lettera" });
+        return;
+      }
+
+      gs.spinning = true;
+      io.to(code).emit("gameStateUpdate", { gameState: gs });
+
+      setTimeout(() => {
+        const outcome = simulateWheelSpin(gs.wheel);
+        gs.spinning = false;
+
+        if (outcome.type === "points") {
+          gs.lastSpinTarget = outcome.value;
+          gs.mustSpin = false;
+          gs.awaitingConsonant = true;
+          gs.gameMessage = { type: "info", text: `Valore: ${outcome.value} pt. Inserisci una consonante.` };
+        } else if (outcome.type === "double") {
+          gs.pendingDouble = true;
+          gs.mustSpin = false;
+          gs.awaitingConsonant = true;
+          gs.gameMessage = { type: "info", text: "🎯 RADDOPPIA: gioca una consonante!" };
+        } else if (outcome.type === "pass") {
+          gs.currentPlayerIndex = (gs.currentPlayerIndex + 1) % gs.players.length;
+          gs.currentPlayerId = gs.players[gs.currentPlayerIndex].id;
+          gs.mustSpin = true;
+          gs.gameMessage = { type: "warning", text: "PASSA: turno al prossimo." };
+        } else if (outcome.type === "bankrupt") {
+          const i = gs.currentPlayerIndex;
+          gs.players[i].roundScore = 0;
+          gs.players[i].totalScore = 0;
+          gs.currentPlayerIndex = (gs.currentPlayerIndex + 1) % gs.players.length;
+          gs.currentPlayerId = gs.players[gs.currentPlayerIndex].id;
+          gs.mustSpin = true;
+          gs.gameMessage = { type: "error", text: "BANCAROTTA: punteggi azzerati!" };
+        }
+
+        io.to(code).emit("gameStateUpdate", { gameState: gs });
+      }, 3000);
+
+      if (callback) callback({ ok: true });
+    } catch (err) {
+      console.error("Errore spinWheel:", err);
+      if (callback) callback({ ok: false, error: "Errore spin" });
+    }
+  });
+
+  // GIOCA CONSONANTE
+  socket.on("playConsonant", ({ roomCode, letter }, callback) => {
+    try {
+      const code = String(roomCode || "").trim().toUpperCase();
+      const room = rooms[code];
+
+      if (!room || !room.gameState) {
+        if (callback) callback({ ok: false, error: "Partita non attiva" });
+        return;
+      }
+
+      const gs = room.gameState;
+
+      if (gs.currentPlayerId !== socket.id) {
+        if (callback) callback({ ok: false, error: "Non è il tuo turno" });
+        return;
+      }
+
+      const upper = normalizeText(letter).charAt(0);
+      const isVowel = "AEIOU".includes(upper);
+
+      if (isVowel || !/^[A-Z]$/.test(upper)) {
+        if (callback) callback({ ok: false, error: "Inserisci una CONSONANTE" });
+        return;
+      }
+
+      if (gs.usedLetters.includes(upper)) {
+        if (callback) callback({ ok: false, error: "Lettera già usata" });
+        return;
+      }
+
+      gs.usedLetters.push(upper);
+
+      const phrase = normalizeText(gs.phrase);
+      const hits = [...phrase].filter(ch => normalizeText(ch) === upper && !/[AEIOU]/.test(ch)).length;
+
+      if (hits > 0) {
+        const i = gs.currentPlayerIndex;
+        let gained = gs.lastSpinTarget * hits;
+        
+        if (gs.pendingDouble) {
+          gs.players[i].roundScore *= 2;
+          gs.pendingDouble = false;
+        }
+        
+        gs.players[i].roundScore += gained;
+        gs.revealedLetters.push(upper);
+        gs.mustSpin = true;
+        gs.awaitingConsonant = false;
+        gs.gameMessage = { type: "success", text: `Trovate ${hits} ${upper}! +${gained} pt` };
+      } else {
+        gs.currentPlayerIndex = (gs.currentPlayerIndex + 1) % gs.players.length;
+        gs.currentPlayerId = gs.players[gs.currentPlayerIndex].id;
+        gs.mustSpin = true;
+        gs.awaitingConsonant = false;
+        gs.pendingDouble = false;
+        gs.gameMessage = { type: "error", text: `Nessuna ${upper}. Turno al prossimo.` };
+      }
+
+      io.to(code).emit("gameStateUpdate", { gameState: gs });
+
+      if (callback) callback({ ok: true });
+    } catch (err) {
+      console.error("Errore playConsonant:", err);
+      if (callback) callback({ ok: false, error: "Errore consonante" });
+    }
+  });
+
+  // COMPRA VOCALE
+  socket.on("playVowel", ({ roomCode, letter }, callback) => {
+    try {
+      const code = String(roomCode || "").trim().toUpperCase();
+      const room = rooms[code];
+
+      if (!room || !room.gameState) {
+        if (callback) callback({ ok: false, error: "Partita non attiva" });
+        return;
+      }
+
+      const gs = room.gameState;
+
+      if (gs.currentPlayerId !== socket.id) {
+        if (callback) callback({ ok: false, error: "Non è il tuo turno" });
+        return;
+      }
+
+      const upper = normalizeText(letter).charAt(0);
+      const isVowel = "AEIOU".includes(upper);
+
+      if (!isVowel || !/^[A-Z]$/.test(upper)) {
+        if (callback) callback({ ok: false, error: "Inserisci una VOCALE (A,E,I,O,U)" });
+        return;
+      }
+
+      if (gs.usedLetters.includes(upper)) {
+        if (callback) callback({ ok: false, error: "Vocale già usata" });
+        return;
+      }
+
+      const cost = 500;
+      const i = gs.currentPlayerIndex;
+
+      if (gs.players[i].roundScore < cost) {
+        if (callback) callback({ ok: false, error: `Servono almeno ${cost} punti per comprare una vocale` });
+        return;
+      }
+
+      gs.players[i].roundScore -= cost;
+      gs.usedLetters.push(upper);
+
+      const phrase = normalizeText(gs.phrase);
+      const hits = [...phrase].filter(ch => normalizeText(ch) === upper && "AEIOU".includes(ch)).length;
+
+      if (hits > 0) {
+        gs.revealedLetters.push(upper);
+        gs.mustSpin = true;
+        gs.awaitingConsonant = false;
+        gs.gameMessage = { type: "success", text: `Rivelate ${hits} ${upper}! (-${cost} pt)` };
+      } else {
+        gs.mustSpin = true;
+        gs.awaitingConsonant = false;
+        gs.gameMessage = { type: "error", text: `Nessuna ${upper}. (-${cost} pt)` };
+      }
+
+      io.to(code).emit("gameStateUpdate", { gameState: gs });
+
+      if (callback) callback({ ok: true });
+    } catch (err) {
+      console.error("Errore playVowel:", err);
+      if (callback) callback({ ok: false, error: "Errore vocale" });
+    }
+  });
+
+  // RISOLVI FRASE
+  socket.on("trySolution", ({ roomCode, text }, callback) => {
+    try {
+      const code = String(roomCode || "").trim().toUpperCase();
+      const room = rooms[code];
+
+      if (!room || !room.gameState) {
+        if (callback) callback({ ok: false, error: "Partita non attiva" });
+        return;
+      }
+
+      const gs = room.gameState;
+
+      if (gs.currentPlayerId !== socket.id) {
+        if (callback) callback({ ok: false, error: "Non è il tuo turno" });
+        return;
+      }
+
+      const guess = normalizeText(text);
+      const target = normalizeText(gs.phrase);
+
+      if (!guess) {
+        if (callback) callback({ ok: false, error: "Scrivi una soluzione" });
+        return;
+      }
+
+      if (guess === target) {
+        // ✅ SOLUZIONE CORRETTA
+        const i = gs.currentPlayerIndex;
+        const winnerName = gs.players[i].name;
+        
+        gs.players[i].totalScore += gs.players[i].roundScore;
+        const bonus = 1000;
+        gs.players[i].totalScore += bonus;
+
+        // Rivela tutta la frase
+        const allLetters = [...normalizeText(gs.phrase)].filter(ch => /[A-Z]/.test(ch));
+        gs.revealedLetters = [...new Set(allLetters)];
+
+        gs.gameMessage = { type: "success", text: `✅ ${winnerName} ha indovinato! +${bonus} BONUS!` };
+        gs.mustSpin = false;
+        gs.awaitingConsonant = false;
+        gs.pendingDouble = false;
+
+        // ✅ NUOVO: Invia evento roundWon con countdown
+        io.to(code).emit("roundWon", {
+          winnerName,
+          countdown: 7
+        });
+
+        // Aggiorna stato con frase completa
+        io.to(code).emit("gameStateUpdate", { gameState: gs });
+
+        // Avanza al prossimo round dopo 7 secondi
+        setTimeout(() => {
+          nextRound(code, room);
+        }, 7000);
+
+      } else {
+        // ❌ SOLUZIONE SBAGLIATA
+        gs.currentPlayerIndex = (gs.currentPlayerIndex + 1) % gs.players.length;
+        gs.currentPlayerId = gs.players[gs.currentPlayerIndex].id;
+        gs.mustSpin = true;
+        gs.awaitingConsonant = false;
+        gs.pendingDouble = false;
+        gs.gameMessage = { type: "error", text: "Soluzione non corretta. Turno al prossimo." };
+
+        io.to(code).emit("gameStateUpdate", { gameState: gs });
+      }
+
+      if (callback) callback({ ok: true });
+    } catch (err) {
+      console.error("Errore trySolution:", err);
+      if (callback) callback({ ok: false, error: "Errore soluzione" });
+    }
+  });
+
+  // PASSA TURNO
+  socket.on("passTurn", ({ roomCode }, callback) => {
+    try {
+      const code = String(roomCode || "").trim().toUpperCase();
+      const room = rooms[code];
+
+      if (!room || !room.gameState) {
+        if (callback) callback({ ok: false, error: "Partita non attiva" });
+        return;
+      }
+
+      const gs = room.gameState;
+
+      if (gs.currentPlayerId !== socket.id) {
+        if (callback) callback({ ok: false, error: "Non è il tuo turno" });
+        return;
+      }
+
+      gs.currentPlayerIndex = (gs.currentPlayerIndex + 1) % gs.players.length;
+      gs.currentPlayerId = gs.players[gs.currentPlayerIndex].id;
+      gs.mustSpin = true;
+      gs.awaitingConsonant = false;
+      gs.pendingDouble = false;
+      gs.gameMessage = { type: "info", text: "⏩ Turno passato al prossimo giocatore." };
+
+      io.to(code).emit("gameStateUpdate", { gameState: gs });
+
+      if (callback) callback({ ok: true });
+    } catch (err) {
+      console.error("Errore passTurn:", err);
+      if (callback) callback({ ok: false, error: "Errore passa turno" });
     }
   });
 
@@ -245,45 +726,28 @@ io.on("connection", (socket) => {
   socket.on("disconnect", () => {
     const info = findRoomBySocketId(socket.id);
     if (!info) {
-      console.log("❌ Disconnessione (nessuna stanza):", socket.id);
+      console.log("❌ Disconnessione:", socket.id);
       return;
     }
 
     const { code, room, role } = info;
 
     try {
-      if (!room.players) room.players = [];
-      if (!room.spectators) room.spectators = [];
+      if (role === "player") {
+        // ✅ NUOVO: Avvia timeout invece di rimuovere immediatamente
+        handleTemporaryDisconnect(socket.id, code, room);
+      }
 
-      if (role === "player" && Array.isArray(room.players)) {
-        const idx = room.players.findIndex((p) => p.id === socket.id);
+      if (role === "spectator") {
+        const idx = room.spectators?.findIndex((s) => s.id === socket.id);
         if (idx !== -1) {
-          const left = room.players[idx];
-          room.players.splice(idx, 1);
-          console.log(`⬅️ Player uscito da ${code}:`, left?.name);
+          room.spectators.splice(idx, 1);
+          console.log(`👋 Spettatore uscito: ${code}`);
+          io.to(code).emit("roomUpdate", { room, roomCode: code });
         }
-      }
-
-      if (role === "spectator" && Array.isArray(room.spectators)) {
-        const sIdx = room.spectators.findIndex((s) => s.id === socket.id);
-        if (sIdx !== -1) {
-          const left = room.spectators[sIdx];
-          room.spectators.splice(sIdx, 1);
-          console.log(`👋 Spettatore uscito da ${code}:`, left?.name);
-        }
-      }
-
-      const hasPlayers = room.players && room.players.length > 0;
-      const hasSpectators = room.spectators && room.spectators.length > 0;
-
-      if (!hasPlayers && !hasSpectators) {
-        console.log(`🗑️ Eliminazione stanza vuota: ${code}`);
-        delete rooms[code];
-      } else {
-        io.to(code).emit("roomUpdate", { room, roomCode: code });
       }
     } catch (err) {
-      console.error("Errore gestione disconnect:", err);
+      console.error("Errore disconnect:", err);
     }
 
     console.log("❌ Disconnessione:", socket.id);
@@ -291,6 +755,6 @@ io.on("connection", (socket) => {
 });
 
 server.listen(PORT, () => {
-  console.log(`🚀 Server attivo sulla porta ${PORT}`);
-  console.log("✅ CORS abilitato per https://fortuna-online.vercel.app");
+  console.log(`🚀 Server su porta ${PORT}`);
+  console.log("✅ CORS abilitato per localhost e Vercel");
 });

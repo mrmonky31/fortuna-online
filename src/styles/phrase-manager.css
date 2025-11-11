@@ -55,3 +55,9 @@
 .pm-cell.vis.glow {
   filter: drop-shadow(0 0 6px rgba(5, 251, 70, 0.9));
 }
+.pm-cell:not(.vis) span {
+  color: transparent !important;
+}
+.pm-cell:not(.vis) span {
+  color: transparent !important;
+}
