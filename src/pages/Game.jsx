@@ -1,4 +1,4 @@
-// src/pages/Game.jsx - VERSIONE COMPLETA CON TUTTE LE MIGLIORIE
+// src/pages/Game.jsx - SENZA ATTESA, INIZIA SUBITO
 import React, { useEffect, useState } from "react";
 import "../styles/game-layout.css";
 import "../styles/controls.css";
@@ -13,22 +13,56 @@ import { maskBoard } from "../game/GameEngine";
 import socket from "../socket";
 
 export default function Game({ players = [], totalRounds = 3, state, onExitToLobby }) {
-  const [gameState, setGameState] = useState(null);
-  const [mySocketId, setMySocketId] = useState(null);
-  const [roomCode, setRoomCode] = useState(null);
+  const [mySocketId, setMySocketId] = useState(socket.id);
+  const [roomCode, setRoomCode] = useState(state?.roomCode || null);
+
+  // ✅ INIZIALIZZA gameState SUBITO con i dati ricevuti dalla lobby
+  const [gameState, setGameState] = useState(() => {
+    if (!state) return null;
+    
+    // Crea lo stato iniziale con i dati dalla lobby
+    return {
+      players: (state.room?.players || []).map(p => ({
+        name: p.name,
+        id: p.id,
+        totalScore: 0,
+        roundScore: 0
+      })),
+      totalRounds: state.room?.totalRounds || totalRounds || 3,
+      currentRound: 1,
+      currentPlayerIndex: 0,
+      currentPlayerId: (state.room?.players || [])[0]?.id,
+      
+      phrase: state.phrase || "",
+      rows: state.phrase ? state.phrase.split(' ') : [],
+      category: state.category || "",
+      
+      revealedLetters: [],
+      usedLetters: [],
+      
+      wheel: [],
+      spinning: false,
+      mustSpin: true,
+      awaitingConsonant: false,
+      pendingDouble: false,
+      lastSpinTarget: 0,
+      
+      gameMessage: { type: "info", text: "🎬 Inizia il gioco!" },
+      gameOver: false,
+      
+      roomCode: state.roomCode
+    };
+  });
 
   const [maskedRows, setMaskedRows] = useState([]);
   const [revealQueue, setRevealQueue] = useState([]);
-
   const [turnTimer, setTurnTimer] = useState(60);
   const [timerPaused, setTimerPaused] = useState(false);
-
-  // ✅ NUOVO: Stato per schermata tra round
   const [betweenRounds, setBetweenRounds] = useState(false);
   const [roundCountdown, setRoundCountdown] = useState(0);
   const [winnerName, setWinnerName] = useState("");
 
-  // ✅ NUOVO: Salva dati in localStorage per riconnessione
+  // Salva localStorage per riconnessione
   useEffect(() => {
     if (roomCode && mySocketId) {
       localStorage.setItem("gameSession", JSON.stringify({
@@ -39,16 +73,14 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
     }
   }, [roomCode, mySocketId]);
 
-  // ✅ NUOVO: Riconnessione automatica al caricamento
+  // Riconnessione automatica
   useEffect(() => {
     const savedSession = localStorage.getItem("gameSession");
     if (savedSession) {
       try {
         const { roomCode: savedRoom, timestamp } = JSON.parse(savedSession);
-        // Se la sessione è vecchia di più di 10 minuti, ignorala
         if (Date.now() - timestamp < 10 * 60 * 1000) {
           console.log("🔄 Tentativo riconnessione a:", savedRoom);
-          // Il socket.id sarà diverso, ma il server può gestire la riconnessione
           setRoomCode(savedRoom);
         } else {
           localStorage.removeItem("gameSession");
@@ -59,50 +91,40 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
     }
   }, []);
 
-  // Salva socket ID
   useEffect(() => {
     setMySocketId(socket.id);
   }, []);
 
-  // Salva roomCode
-  useEffect(() => {
-    if (state?.roomCode) {
-      setRoomCode(state.roomCode);
-    }
-  }, [state]);
-
-  // 🎮 ASCOLTA AVVIO PARTITA DAL SERVER
+  // Ascolta gameStart dal server (per aggiornare lo stato)
   useEffect(() => {
     function handleGameStart({ gameState: serverState }) {
-      console.log("🚀 Partita avviata dal server:", serverState);
-      setGameState(serverState);
-      setTurnTimer(60);
-      setBetweenRounds(false);
+      console.log("🚀 GameStart dal server:", serverState);
+      if (serverState) {
+        setGameState(serverState);
+        setTurnTimer(60);
+        setBetweenRounds(false);
+      }
     }
 
     socket.on("gameStart", handleGameStart);
-
-    return () => {
-      socket.off("gameStart", handleGameStart);
-    };
+    return () => socket.off("gameStart", handleGameStart);
   }, []);
 
-  // 🔄 ASCOLTA AGGIORNAMENTI STATO DAL SERVER
+  // Ascolta aggiornamenti stato
   useEffect(() => {
     function handleGameStateUpdate({ gameState: serverState }) {
-      console.log("🔄 Aggiornamento stato dal server:", serverState);
-      setGameState(serverState);
-      setTurnTimer(60);
+      console.log("🔄 Update dal server:", serverState);
+      if (serverState) {
+        setGameState(serverState);
+        setTurnTimer(60);
+      }
     }
 
     socket.on("gameStateUpdate", handleGameStateUpdate);
-
-    return () => {
-      socket.off("gameStateUpdate", handleGameStateUpdate);
-    };
+    return () => socket.off("gameStateUpdate", handleGameStateUpdate);
   }, []);
 
-  // ✅ NUOVO: Ascolta evento "roundWon" dal server
+  // Ascolta roundWon
   useEffect(() => {
     function handleRoundWon({ winnerName, countdown }) {
       console.log("🎉 Round vinto da:", winnerName);
@@ -112,13 +134,10 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
     }
 
     socket.on("roundWon", handleRoundWon);
-
-    return () => {
-      socket.off("roundWon", handleRoundWon);
-    };
+    return () => socket.off("roundWon", handleRoundWon);
   }, []);
 
-  // ✅ NUOVO: Countdown tra i round
+  // Countdown tra round
   useEffect(() => {
     if (!betweenRounds || roundCountdown <= 0) return;
 
@@ -177,22 +196,16 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
     setTimerPaused(panelName !== null);
   };
 
-  // ✅ NUOVO: Handler per uscire dalla stanza
   const handleExitRoom = () => {
     const confirmed = window.confirm(
-      "Sei sicuro di voler abbandonare la partita?\nNon potrai più rientrare in questa partita."
+      "Sei sicuro di voler abbandonare la partita?"
     );
     
     if (confirmed) {
-      // Pulisci localStorage
       localStorage.removeItem("gameSession");
-      
-      // Disconnetti dal server
       if (roomCode) {
         socket.emit("leaveRoom", { roomCode });
       }
-      
-      // Torna alla lobby
       if (onExitToLobby) {
         onExitToLobby();
       } else {
@@ -201,31 +214,23 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
     }
   };
 
-  // === HANDLERS ===
-
   const handleSpin = () => {
     if (!roomCode) return;
-    console.log("🎡 Richiesta spin al server…");
-
     socket.emit("spinWheel", { roomCode }, (res) => {
       if (!res?.ok) {
-        console.error("❌ Errore spin:", res?.error);
         alert(res?.error || "Errore spin");
       }
     });
   };
 
   const handleWheelStop = (outcome) => {
-    console.log("🎡 Ruota fermata (solo visivo):", outcome);
+    console.log("🎡 Ruota fermata (visivo):", outcome);
   };
 
   const handleConsonant = (letter) => {
     if (!roomCode) return;
-    console.log("🔤 Invio consonante al server:", letter);
-
     socket.emit("playConsonant", { roomCode, letter }, (res) => {
       if (!res?.ok) {
-        console.error("❌ Errore consonante:", res?.error);
         alert(res?.error || "Errore consonante");
       }
     });
@@ -233,11 +238,8 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
 
   const handleVowel = (letter) => {
     if (!roomCode) return;
-    console.log("🔵 Invio vocale al server:", letter);
-
     socket.emit("playVowel", { roomCode, letter }, (res) => {
       if (!res?.ok) {
-        console.error("❌ Errore vocale:", res?.error);
         alert(res?.error || "Errore vocale");
       }
     });
@@ -245,11 +247,8 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
 
   const handleSolution = (text) => {
     if (!roomCode) return;
-    console.log("✅ Invio soluzione al server:", text);
-
     socket.emit("trySolution", { roomCode, text }, (res) => {
       if (!res?.ok) {
-        console.error("❌ Errore soluzione:", res?.error);
         alert(res?.error || "Errore soluzione");
       }
     });
@@ -257,24 +256,23 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
 
   const handlePassTurn = () => {
     if (!roomCode) return;
-    console.log("⏩ Invio passa turno al server");
-
     socket.emit("passTurn", { roomCode }, (res) => {
       if (!res?.ok) {
-        console.error("❌ Errore passa turno:", res?.error);
         alert(res?.error || "Errore passa turno");
       }
     });
   };
 
   const handleChangePhrase = () => {
-    console.log("🔄 Cambio frase non implementato in modalità online");
+    console.log("🔄 Cambio frase non disponibile online");
   };
 
+  // ✅ Se non c'è gameState, mostra messaggio semplice
   if (!gameState) {
     return (
-      <div className="game-loading">
-        <p>⏳ In attesa di avvio partita…</p>
+      <div className="game-wrapper" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh' }}>
+        <p>Errore: dati partita mancanti</p>
+        <button onClick={() => window.location.reload()}>Ricarica</button>
       </div>
     );
   }
@@ -297,7 +295,6 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
 
   return (
     <div className="game-wrapper">
-      {/* ✅ NUOVO: Pulsante Esci in alto a destra */}
       <button className="btn-exit-room" onClick={handleExitRoom} title="Esci dalla stanza">
         ❌ Esci
       </button>
@@ -392,7 +389,6 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
         <div className="turn-timer">{turnTimer}</div>
       )}
 
-      {/* ✅ NUOVO: Overlay tra i round */}
       {betweenRounds && (
         <div className="round-won-overlay">
           <div className="round-won-box">
