@@ -1,30 +1,19 @@
 /* ===========================
-   CONTROLS.CSS - LAYOUT CORRETTO
+   CONTROLS.CSS - PULSANTI STRETTI
    =========================== */
 
 /* ===========================
-   📐 LAYOUT PULSANTI - 2 RIGHE
+   LAYOUT 2 RIGHE
    =========================== */
 
 .controls-root {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
   width: 100%;
 }
 
-/* RIGA 1: Gira la ruota + Target */
 .controls-buttons {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  justify-content: center;
-  flex-wrap: nowrap;      /* ← NON va a capo */
-  margin-bottom: 5px;
-}
-
-/* RIGA 2: Vocali + Soluzione + Passa Turno */
-.controls-row-secondary {
   display: flex;
   gap: 8px;
   align-items: center;
@@ -32,13 +21,21 @@
   flex-wrap: nowrap;
 }
 
+.controls-row-secondary {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: nowrap;
+}
+
 /* ===========================
-   🔵 PULSANTE "GIRA LA RUOTA"
+   🔵 GIRA LA RUOTA (più grande)
    =========================== */
 
 .btn-primary {
-  padding: 8px 16px;        /* ← PICCOLO come da screenshot */
-  font-size: 13px;
+  padding: 10px 20px;       /* ← PIÙ GRANDE dei secondari */
+  font-size: 15px;
   font-weight: bold;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
@@ -60,11 +57,11 @@
 }
 
 /* ===========================
-   ⚪ PULSANTI RIGA 2 (Vocali, Soluzione, Passa Turno)
+   ⚪ PULSANTI SECONDARI (stretti!)
    =========================== */
 
 .btn-secondary {
-  padding: 8px 14px;        /* ← PICCOLI come da screenshot */
+  padding: 6px 10px;        /* ← STRETTO: solo 3px più grande del testo */
   font-size: 12px;
   font-weight: 600;
   background: #4a5568;
@@ -74,12 +71,10 @@
   cursor: pointer;
   transition: all 0.3s ease;
   white-space: nowrap;
-  flex: 1;                  /* ← Stessa larghezza tutti e 3 */
-  max-width: 120px;
 }
 
 .btn-compact {
-  padding: 8px 14px;
+  padding: 6px 10px;        /* ← Stesso: STRETTO */
   font-size: 12px;
 }
 
@@ -93,7 +88,6 @@
   opacity: 0.6;
 }
 
-/* 🔴 Pulsante "Passa Turno" rosso */
 .btn-pass {
   background: #e53e3e;
 }
@@ -103,7 +97,7 @@
 }
 
 /* ===========================
-   📊 BOX "TARGET: 1000"
+   📊 TARGET BOX (piccolo)
    =========================== */
 
 .target-box {
@@ -111,7 +105,7 @@
   flex-direction: column;
   align-items: center;
   background: #2d3748;
-  padding: 4px 10px;        /* ← PICCOLO come da screenshot */
+  padding: 4px 8px;         /* ← STRETTO */
   border-radius: 6px;
 }
 
@@ -129,7 +123,7 @@
 }
 
 /* ===========================
-   📦 PANNELLI INPUT - SOTTO IL TABELLONE
+   📦 PANNELLI INPUT
    =========================== */
 
 .controls-panels {
@@ -141,7 +135,7 @@
   display: flex;
   gap: 8px;
   align-items: center;
-  padding: 10px;            /* ← PIÙ PICCOLO */
+  padding: 8px;             /* ← STRETTO */
   background: rgba(45, 55, 72, 0.95);
   border-radius: 8px;
   border: 2px solid #4a5568;
@@ -159,20 +153,21 @@
   }
 }
 
+/* ===========================
+   🚫 ETICHETTA NASCOSTA
+   =========================== */
+
 .panel-label {
-  font-size: 12px;
-  font-weight: 600;
-  color: #e2e8f0;
-  min-width: 70px;
+  display: none;            /* ← NASCOSTA! C'è già il placeholder */
 }
 
 /* ===========================
-   ✏️ INPUT CASELLE
+   ✏️ INPUT (solo il box)
    =========================== */
 
 .panel-input {
   flex: 1;
-  padding: 8px 12px;        /* ← NORMALE */
+  padding: 8px 12px;
   font-size: 14px;
   border: 2px solid #4a5568;
   border-radius: 6px;
@@ -183,7 +178,7 @@
 }
 
 .panel-input-game {
-  padding: 8px 12px;        /* ← UGUALE, NON PIÙ GRANDE */
+  padding: 8px 12px;
   font-size: 14px;
 }
 
@@ -198,7 +193,7 @@
 }
 
 .btn-ok {
-  padding: 8px 16px;
+  padding: 8px 14px;        /* ← STRETTO */
   font-size: 12px;
   font-weight: bold;
   background: #48bb78;
@@ -207,7 +202,6 @@
   border-radius: 6px;
   cursor: pointer;
   transition: all 0.3s ease;
-  min-width: 60px;
 }
 
 .btn-ok:hover:not(:disabled) {
@@ -221,7 +215,7 @@
 }
 
 /* ===========================
-   💬 BOX MESSAGGI
+   💬 MESSAGGI
    =========================== */
 
 .game-alerts {
@@ -229,7 +223,7 @@
 }
 
 .alert {
-  padding: 8px 14px;        /* ← PIÙ PICCOLO */
+  padding: 8px 12px;        /* ← STRETTO */
   border-radius: 8px;
   font-size: 13px;
   font-weight: 500;
@@ -238,7 +232,7 @@
 }
 
 .alert-enlarged {
-  padding: 8px 14px;        /* ← PIÙ PICCOLO */
+  padding: 8px 12px;
   font-size: 13px;
   min-height: 35px;
   display: flex;
@@ -278,14 +272,14 @@
 }
 
 .alert-placeholder {
-  padding: 8px 14px;
+  padding: 8px 12px;
   color: #4a5568;
   text-align: center;
   font-size: 13px;
 }
 
 /* ===========================
-   ❌ PULSANTE ESCI
+   ❌ ESCI
    =========================== */
 
 .btn-exit-room {
@@ -300,7 +294,6 @@
   border: none;
   border-radius: 6px;
   cursor: pointer;
-  transition: all 0.3s ease;
   z-index: 1001;
 }
 
@@ -309,7 +302,7 @@
 }
 
 /* ===========================
-   🎉 OVERLAY ROUND VINTO
+   🎉 ROUND VINTO
    =========================== */
 
 .round-won-overlay {
@@ -329,7 +322,6 @@
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   padding: 40px 60px;
   border-radius: 20px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
   text-align: center;
   max-width: 500px;
 }
@@ -361,7 +353,6 @@
 }
 
 .countdown-number {
-  display: inline-block;
   font-size: 28px;
   font-weight: bold;
   color: #ffd700;
@@ -386,7 +377,7 @@
   color: #1a202c;
   font-size: 24px;
   font-weight: bold;
-  padding: 10px 20px;
+  padding: 8px 16px;
   border-radius: 12px;
   z-index: 1000;
   animation: timerPulse 1s ease-in-out infinite;
@@ -405,10 +396,5 @@
   .controls-buttons,
   .controls-row-secondary {
     flex-wrap: wrap;
-  }
-
-  .btn-secondary {
-    max-width: none;
-    flex: 1 1 30%;
   }
 }
