@@ -283,10 +283,10 @@ html, body {
 /* ========== FORZA POSIZIONE RUOTA MOBILE ========== */
 @media (max-width: 768px) {
   .wheel-wrap-svg {
-    bottom: calc(-85dvh + 200px) !important;
+    bottom: calc(-85dvh + 40px) !important;
   }
   
   .wheel-pointer-6 {
-    bottom: calc(-50dvh + 40px) !important;
+    bottom: calc(-20dvh + 40px) !important;
   }
 }
