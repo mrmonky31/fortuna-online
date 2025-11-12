@@ -1,5 +1,5 @@
 // 🎡 VERSIONE A: SEED SINCRONIZZATO
-// ✅ TUE POSIZIONI (non toccate)
+// ✅ TUE POSIZIONI (non toccate.)
 // ✅ TUOI PATTERN (ordine rispettato)
 // ✅ Perno fisso (transform-origin)
 // ✅ Sincronizzazione tramite seed
