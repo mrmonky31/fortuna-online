@@ -1,11 +1,20 @@
 // Game.jsx - CORRETTO per animazione ruota sincronizzata
 import React, { useEffect, useRef, useState } from "react";
+
+// === STILI ===
+import "../styles/game-layout.css";
+
+// === SOCKET ===
 import socket from "../socket";
+
+// === GAME ENGINE ===
 import { maskBoard, letterOccurrences } from "../game/GameEngine";
+
+// === COMPONENTI ===
 import WheelVersionA from "../components/Wheel";
 import Controls from "../components/Controls";
 import Board from "../components/Board";
-import "../styles/game-layout.css";
+
 
 export default function Game({ state, onExitRoom }) {
   const [gameState, setGameState] = useState(null);
