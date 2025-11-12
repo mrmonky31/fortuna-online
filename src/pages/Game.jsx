@@ -1,58 +1,16 @@
-// src/pages/Game.jsx - SENZA ATTESA, INIZIA SUBITO
-import React, { useEffect, useState } from "react";
-import "../styles/game-layout.css";
-import "../styles/controls.css";
-import "../styles/tiles.css";
+// Game.jsx - CORRETTO per animazione ruota sincronizzata
+import React, { useEffect, useRef, useState } from "react";
+import socket from "./socket";
+import { maskBoard, letterOccurrences } from "./game/GameEngine";
+import WheelVersionA from "./components/Wheel";
+import Controls from "./components/Controls";
+import Board from "./components/Board";
+import "./styles/game-layout.css";
 
-import Controls from "../components/Controls";
-import PhraseManager from "../components/PhraseManager";
-import Wheel from "../components/Wheel";
-import FinalScoreboard from "../components/FinalScoreboard";
-
-import { maskBoard } from "../game/GameEngine";
-import socket from "../socket";
-
-export default function Game({ players = [], totalRounds = 3, state, onExitToLobby }) {
-  const [mySocketId, setMySocketId] = useState(socket.id);
-  const [roomCode, setRoomCode] = useState(state?.roomCode || null);
-
-  // ✅ INIZIALIZZA gameState SUBITO con i dati ricevuti dalla lobby
-  const [gameState, setGameState] = useState(() => {
-    if (!state) return null;
-    
-    // Crea lo stato iniziale con i dati dalla lobby
-    return {
-      players: (state.room?.players || []).map(p => ({
-        name: p.name,
-        id: p.id,
-        totalScore: 0,
-        roundScore: 0
-      })),
-      totalRounds: state.room?.totalRounds || totalRounds || 3,
-      currentRound: 1,
-      currentPlayerIndex: 0,
-      currentPlayerId: (state.room?.players || [])[0]?.id,
-      
-      phrase: state.phrase || "",
-      rows: state.phrase ? state.phrase.split(' ') : [],
-      category: state.category || "",
-      
-      revealedLetters: [],
-      usedLetters: [],
-      
-      wheel: [],
-      spinning: false,
-      mustSpin: true,
-      awaitingConsonant: false,
-      pendingDouble: false,
-      lastSpinTarget: 0,
-      
-      gameMessage: { type: "info", text: "🎬 Inizia il gioco!" },
-      gameOver: false,
-      
-      roomCode: state.roomCode
-    };
-  });
+export default function Game({ state, onExitRoom }) {
+  const [gameState, setGameState] = useState(null);
+  const [mySocketId, setMySocketId] = useState(null);
+  const [roomCode, setRoomCode] = useState(null);
 
   const [maskedRows, setMaskedRows] = useState([]);
   const [revealQueue, setRevealQueue] = useState([]);
@@ -62,97 +20,96 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
   const [roundCountdown, setRoundCountdown] = useState(0);
   const [winnerName, setWinnerName] = useState("");
 
-  // Salva localStorage per riconnessione
-  useEffect(() => {
-    if (roomCode && mySocketId) {
-      localStorage.setItem("gameSession", JSON.stringify({
-        roomCode,
-        socketId: mySocketId,
-        timestamp: Date.now()
-      }));
-    }
-  }, [roomCode, mySocketId]);
+  // ⭐ NUOVO: Stati per la ruota
+  const [wheelSpinning, setWheelSpinning] = useState(false);
+  const [wheelSpinSeed, setWheelSpinSeed] = useState(null);
 
-  // Riconnessione automatica
-  useEffect(() => {
-    const savedSession = localStorage.getItem("gameSession");
-    if (savedSession) {
-      try {
-        const { roomCode: savedRoom, timestamp } = JSON.parse(savedSession);
-        if (Date.now() - timestamp < 10 * 60 * 1000) {
-          console.log("🔄 Tentativo riconnessione a:", savedRoom);
-          setRoomCode(savedRoom);
-        } else {
-          localStorage.removeItem("gameSession");
-        }
-      } catch (e) {
-        console.error("Errore parsing sessione:", e);
-      }
-    }
-  }, []);
-
+  // Salva socket ID
   useEffect(() => {
     setMySocketId(socket.id);
   }, []);
 
-  // Ascolta gameStart dal server (per aggiornare lo stato)
+  // Salva roomCode
+  useEffect(() => {
+    if (state?.roomCode) {
+      setRoomCode(state.roomCode);
+    }
+  }, [state]);
+
+  // Inizializza gameState
+  useEffect(() => {
+    if (state) {
+      setGameState({
+        players: state.players || [],
+        totalRounds: state.totalRounds || 3,
+        currentRound: 1,
+        currentPlayerIndex: 0,
+        currentPlayerId: state.players?.[0]?.id || null,
+
+        phrase: state.phrase || "",
+        rows: Array.isArray(state.rows) ? state.rows : [],
+        category: state.category || "",
+
+        revealedLetters: [],
+        usedLetters: [],
+
+        wheel: [],
+        spinning: false,
+        mustSpin: true,
+        awaitingConsonant: false,
+        pendingDouble: false,
+        lastSpinTarget: 0,
+
+        gameMessage: { type: "info", text: "🎬 Inizia il gioco!" },
+        gameOver: false,
+
+        roomCode: state.roomCode,
+      });
+    }
+  }, [state]);
+
+  // 🎮 ASCOLTA AVVIO PARTITA DAL SERVER
   useEffect(() => {
     function handleGameStart({ gameState: serverState }) {
-      console.log("🚀 GameStart dal server:", serverState);
-      if (serverState) {
-        setGameState(serverState);
-        setTurnTimer(60);
-        setBetweenRounds(false);
-      }
+      console.log("🚀 Partita avviata dal server:", serverState);
+      setGameState(serverState);
+      setTurnTimer(60);
+      setBetweenRounds(false);
     }
 
     socket.on("gameStart", handleGameStart);
     return () => socket.off("gameStart", handleGameStart);
   }, []);
 
-  // Ascolta aggiornamenti stato
+  // ⭐ NUOVO: Ascolta wheelSpinStart per ANIMAZIONE
+  useEffect(() => {
+    function handleWheelSpinStart({ spinning, spinSeed }) {
+      console.log("🎡 wheelSpinStart ricevuto:", { spinning, spinSeed });
+      setWheelSpinning(spinning);
+      setWheelSpinSeed(spinSeed);
+    }
+
+    socket.on("wheelSpinStart", handleWheelSpinStart);
+    return () => socket.off("wheelSpinStart", handleWheelSpinStart);
+  }, []);
+
+  // 🔄 ASCOLTA AGGIORNAMENTI STATO DAL SERVER
   useEffect(() => {
     function handleGameStateUpdate({ gameState: serverState }) {
-      console.log("🔄 Update dal server:", serverState);
-      if (serverState) {
-        setGameState(serverState);
-        setTurnTimer(60);
+      console.log("🔄 Aggiornamento stato dal server:", serverState);
+      setGameState(serverState);
+      
+      // ⭐ Quando arriva l'update finale, ferma lo spinning
+      if (serverState && !serverState.spinning) {
+        setWheelSpinning(false);
       }
+      
+      setTurnTimer(60);
     }
 
     socket.on("gameStateUpdate", handleGameStateUpdate);
     return () => socket.off("gameStateUpdate", handleGameStateUpdate);
   }, []);
-
-  // Ascolta roundWon
-  useEffect(() => {
-    function handleRoundWon({ winnerName, countdown }) {
-      console.log("🎉 Round vinto da:", winnerName);
-      setWinnerName(winnerName);
-      setBetweenRounds(true);
-      setRoundCountdown(countdown);
-    }
-
-    socket.on("roundWon", handleRoundWon);
-    return () => socket.off("roundWon", handleRoundWon);
-  }, []);
-
-  // Countdown tra round
-  useEffect(() => {
-    if (!betweenRounds || roundCountdown <= 0) return;
-
-    const id = setInterval(() => {
-      setRoundCountdown((prev) => {
-        if (prev <= 1) {
-          setBetweenRounds(false);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(id);
-  }, [betweenRounds, roundCountdown]);
 
   // Ricalcolo tabellone mascherato
   useEffect(() => {
@@ -168,7 +125,7 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
     }
   }, [gameState?.rows, gameState?.revealedLetters]);
 
-  // Timer turno
+  // Timer turno con pausa
   useEffect(() => {
     if (!gameState) return;
     if (timerPaused) return;
@@ -190,218 +147,237 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
     return () => clearInterval(id);
   }, [gameState, timerPaused, mySocketId]);
 
+  // Countdown tra i round
+  useEffect(() => {
+    if (!betweenRounds || roundCountdown <= 0) return;
+
+    const id = setInterval(() => {
+      setRoundCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(id);
+          setBetweenRounds(false);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(id);
+  }, [betweenRounds, roundCountdown]);
+
   const handleRevealDone = () => setRevealQueue([]);
 
   const handlePanelChange = (panelName) => {
     setTimerPaused(panelName !== null);
   };
 
-  const handleExitRoom = () => {
-    const confirmed = window.confirm(
-      "Sei sicuro di voler abbandonare la partita?"
-    );
-    
-    if (confirmed) {
-      localStorage.removeItem("gameSession");
-      if (roomCode) {
-        socket.emit("leaveRoom", { roomCode });
-      }
-      if (onExitToLobby) {
-        onExitToLobby();
-      } else {
-        window.location.reload();
-      }
-    }
-  };
+  // === HANDLERS ===
 
   const handleSpin = () => {
     if (!roomCode) return;
-    socket.emit("spinWheel", { roomCode }, (res) => {
-      if (!res?.ok) {
-        alert(res?.error || "Errore spin");
+    console.log("🎡 Richiesta spin al server");
+    
+    socket.emit("spinWheel", { roomCode }, (response) => {
+      if (response?.ok) {
+        console.log("✅ Spin avviato");
+      } else {
+        console.error("❌ Errore spin:", response?.error);
+        alert(response?.error || "Errore spin");
       }
     });
   };
 
   const handleWheelStop = (outcome) => {
-    console.log("🎡 Ruota fermata (visivo):", outcome);
+    console.log("🛑 Ruota fermata con outcome:", outcome);
+    // Il server gestisce già l'outcome, non serve fare nulla qui
   };
 
   const handleConsonant = (letter) => {
     if (!roomCode) return;
-    socket.emit("playConsonant", { roomCode, letter }, (res) => {
-      if (!res?.ok) {
-        alert(res?.error || "Errore consonante");
+    console.log("📝 Invio consonante:", letter);
+
+    socket.emit("playConsonant", { roomCode, letter }, (response) => {
+      if (!response?.ok) {
+        alert(response?.error || "Errore consonante");
       }
     });
   };
 
   const handleVowel = (letter) => {
     if (!roomCode) return;
-    socket.emit("playVowel", { roomCode, letter }, (res) => {
-      if (!res?.ok) {
-        alert(res?.error || "Errore vocale");
+    console.log("📝 Invio vocale:", letter);
+
+    socket.emit("buyVowel", { roomCode, letter }, (response) => {
+      if (!response?.ok) {
+        alert(response?.error || "Errore vocale");
       }
     });
   };
 
   const handleSolution = (text) => {
     if (!roomCode) return;
-    socket.emit("trySolution", { roomCode, text }, (res) => {
-      if (!res?.ok) {
-        alert(res?.error || "Errore soluzione");
+    console.log("💡 Tentativo soluzione:", text);
+
+    socket.emit("trySolution", { roomCode, solutionText: text }, (response) => {
+      if (!response?.ok) {
+        alert(response?.error || "Errore soluzione");
       }
     });
   };
 
   const handlePassTurn = () => {
     if (!roomCode) return;
-    socket.emit("passTurn", { roomCode }, (res) => {
-      if (!res?.ok) {
-        alert(res?.error || "Errore passa turno");
+    console.log("⏭️ Passa turno");
+
+    socket.emit("passTurn", { roomCode }, (response) => {
+      if (!response?.ok) {
+        alert(response?.error || "Errore passa turno");
       }
     });
   };
 
-  const handleChangePhrase = () => {
+  const handleChangePhrase = (newPhrase, newCategory) => {
     if (!roomCode) return;
-    socket.emit("changePhrase", { roomCode }, (res) => {
-      if (!res?.ok) {
-        alert(res?.error || "Errore cambio frase");
+    console.log("🔄 Cambio frase:", newPhrase);
+
+    socket.emit("changePhrase", { roomCode, newPhrase, newCategory }, (response) => {
+      if (!response?.ok) {
+        alert(response?.error || "Errore cambio frase");
       }
     });
   };
 
-  // ✅ Se non c'è gameState, mostra messaggio semplice
+  const handleExitRoom = () => {
+    if (roomCode) {
+      socket.emit("leaveRoom", { roomCode });
+      localStorage.removeItem("gameSession");
+    }
+    onExitRoom && onExitRoom();
+  };
+
   if (!gameState) {
     return (
-      <div className="game-wrapper" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh' }}>
-        <p>Errore: dati partita mancanti</p>
-        <button onClick={() => window.location.reload()}>Ricarica</button>
-      </div>
-    );
-  }
-
-  if (gameState.gameOver) {
-    return (
       <div className="game-wrapper">
-        <FinalScoreboard players={gameState.players} onBackToLobby={handleExitRoom} />
+        <div className="center-overlay">
+          <div className="center-box">
+            <p>⏳ Caricamento partita...</p>
+          </div>
+        </div>
       </div>
     );
   }
 
   const isMyTurn = gameState.currentPlayerId === mySocketId;
-
-  const flashType = betweenRounds ? "success" : 
-    gameState.gameMessage?.type === "error" &&
-    gameState.gameMessage?.text === "Soluzione non corretta."
-      ? "error"
-      : null;
+  const currentPlayer = gameState.players?.find((p) => p.id === gameState.currentPlayerId);
 
   return (
     <div className="game-wrapper">
-      <button className="btn-exit-room" onClick={handleExitRoom} title="Esci dalla stanza">
+      {/* USCITA */}
+      <button className="btn-exit-room" onClick={handleExitRoom}>
         ❌ Esci
       </button>
 
-      <div className="game-players">
-        <h3>Giocatori</h3>
-        {gameState.players.map((p, i) => (
-          <div
-            key={i}
-            className={`player-card ${
-              i === gameState.currentPlayerIndex ? "player-active" : ""
-            }`}
-          >
-            <div className="player-name">
-              {p.name}
-              {p.id === mySocketId && " (Tu)"}
+      {/* TIMER */}
+      {isMyTurn && !betweenRounds && (
+        <div className="turn-timer">⏱️ {turnTimer}s</div>
+      )}
+
+      {/* INFO ROUND */}
+      <div className="game-round-info">
+        Round {gameState.currentRound}/{gameState.totalRounds} • {gameState.category || "Categoria"}
+      </div>
+
+      {/* TABELLONE */}
+      <div className="game-board-area">
+        <Board rows={maskedRows} revealQueue={revealQueue} onRevealDone={handleRevealDone} />
+      </div>
+
+      {/* RUOTA - ⭐ USA wheelSpinning e wheelSpinSeed */}
+      <WheelVersionA
+        slices={gameState.wheel || []}
+        spinning={wheelSpinning}
+        spinSeed={wheelSpinSeed}
+        onStop={handleWheelStop}
+      />
+
+      {/* CONTROLLI */}
+      <div className="controls-area">
+        <Controls
+          onSpin={handleSpin}
+          onConsonant={handleConsonant}
+          onVowel={handleVowel}
+          onSolution={handleSolution}
+          onPassTurn={handlePassTurn}
+          lastTarget={gameState.lastSpinTarget}
+          forceConsonant={gameState.awaitingConsonant}
+          disabled={!isMyTurn || betweenRounds}
+          onPanelChange={handlePanelChange}
+        />
+
+        {/* MESSAGGI */}
+        <div className="game-alerts">
+          {gameState.gameMessage ? (
+            <div className={`alert ${gameState.gameMessage.type || "info"} alert-enlarged`}>
+              {gameState.gameMessage.text}
             </div>
-            <div className="player-round-score">{p.roundScore} pt</div>
+          ) : (
+            <div className="alert-placeholder">In attesa di azione...</div>
+          )}
+        </div>
+      </div>
+
+      {/* GIOCATORI */}
+      <div className="game-players">
+        {gameState.players?.map((p) => (
+          <div
+            key={p.id}
+            className={`player-card ${p.id === gameState.currentPlayerId ? "player-active" : ""}`}
+          >
+            <div className="player-name">{p.name}</div>
+            <div className="player-score">{p.roundScore} pt</div>
           </div>
         ))}
       </div>
 
-      <div>
-        <div className="game-round-info">
-          ROUND {gameState.currentRound} / {gameState.totalRounds}
-        </div>
-
-        <div className="game-wheel-area">
-          <Wheel
-            slices={gameState.wheel}
-            spinning={gameState.spinning}
-            onStop={handleWheelStop}
-          />
-        </div>
-
-        <div className="controls-area">
-          <Controls
-            onSpin={handleSpin}
-            onConsonant={handleConsonant}
-            onVowel={handleVowel}
-            onSolution={handleSolution}
-            onPassTurn={handlePassTurn}
-            onPanelChange={handlePanelChange}
-            lastTarget={gameState.lastSpinTarget}
-            forceConsonant={gameState.awaitingConsonant === true}
-            disabled={!isMyTurn || betweenRounds}
-          />
-        </div>
-
-        <div className="game-board-area">
-          <PhraseManager
-            rows={gameState.rows}
-            maskedRows={maskedRows}
-            revealQueue={revealQueue}
-            onRevealDone={handleRevealDone}
-            category={gameState.category || "-"}
-            onChangePhrase={handleChangePhrase}
-            flash={flashType}
-          />
-        </div>
-      </div>
-
-      <div>
-        <div className="game-alerts">
-          {gameState.gameMessage ? (
-            <div className={`alert alert-enlarged ${gameState.gameMessage.type}`}>
-              {gameState.gameMessage.text}
-            </div>
-          ) : (
-            <div className="alert-placeholder">—</div>
-          )}
-
-          {!isMyTurn && !betweenRounds && (
-            <div className="alert warning">
-              ⏸️ Turno di {gameState.players[gameState.currentPlayerIndex]?.name}
-            </div>
-          )}
-        </div>
-
-        <div className="scoreboard">
-          <h4>Classifica</h4>
-          {gameState.players.map((p, i) => (
-            <div key={i} className="score-row">
-              <span className="score-name">{p.name}</span>
-              <span className="score-val">{p.totalScore}</span>
+      {/* CLASSIFICA */}
+      <div className="scoreboard">
+        <h4>🏆 Classifica</h4>
+        {gameState.players
+          ?.slice()
+          .sort((a, b) => b.totalScore - a.totalScore)
+          .map((p) => (
+            <div key={p.id} className="score-row">
+              <span>{p.name}</span>
+              <span>{p.totalScore}</span>
             </div>
           ))}
-        </div>
       </div>
 
-      {isMyTurn && turnTimer <= 10 && turnTimer > 0 && !betweenRounds && (
-        <div className="turn-timer">{turnTimer}</div>
-      )}
-
+      {/* OVERLAY ROUND VINTO */}
       {betweenRounds && (
         <div className="round-won-overlay">
           <div className="round-won-box">
-            <div className="round-won-title">🎉 FRASE INDOVINATA! 🎉</div>
-            <div className="round-won-winner">{winnerName} ha vinto il round!</div>
+            <div className="round-won-title">🎉 ROUND COMPLETATO!</div>
+            <div className="round-won-winner">Vincitore: {winnerName}</div>
             <div className="round-won-countdown">
-              Il prossimo round inizia tra <span className="countdown-number">{roundCountdown}</span> secondi...
+              Prossimo round tra: <span className="countdown-number">{roundCountdown}</span>s
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* GAME OVER */}
+      {gameState.gameOver && (
+        <div className="center-overlay">
+          <div className="center-box">
+            <h2>🏁 PARTITA TERMINATA!</h2>
+            <p>
+              Vincitore:{" "}
+              {gameState.players?.reduce((max, p) => (p.totalScore > max.totalScore ? p : max))?.name}
+            </p>
+            <button className="btn-primary" onClick={handleExitRoom}>
+              Torna alla Lobby
+            </button>
           </div>
         </div>
       )}
