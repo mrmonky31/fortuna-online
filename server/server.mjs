@@ -1,4 +1,9 @@
-// server/server.mjs - 🎯 VERSIONE PERFETTA SINCRONIZZATA
+// server.mjs - 🎯 VERSIONE FINALE COMPLETA
+// ✅ RADDOPPIA corretto (moltiplica DOPO aver trovato la lettera)
+// ✅ Supporto 3 versioni ruota
+// ✅ Cambio frase funzionante
+// ✅ Pulsante consonante gestito
+
 import express from "express";
 import http from "http";
 import { Server } from "socket.io";
@@ -89,30 +94,6 @@ function buildBoard(text, maxCols = 14, maxRows = 4) {
 function generateWheel() {
   const idx = Math.floor(Math.random() * SPIN_PATTERNS.length);
   return SPIN_PATTERNS[idx];
-}
-
-// ✅ FISSO: Spin deterministico per sincronizzazione
-function simulateWheelSpin(wheel, targetIndex = null) {
-  // Se targetIndex è fornito, usa quello (per sincronizzazione)
-  const idx = targetIndex !== null ? targetIndex : Math.floor(Math.random() * wheel.length);
-  const slice = wheel[idx];
-
-  if (typeof slice === "string" && slice.includes("/")) {
-    const [a, b] = slice.split("/");
-    const chosen = Math.random() < 0.5 ? a : b;
-
-    if (chosen === "PASSA") return { type: "pass", label: "PASSA", sliceIndex: idx };
-    if (chosen === "BANCAROTTA") return { type: "bankrupt", label: "BANCAROTTA", sliceIndex: idx };
-    if (chosen === "RADDOPPIA") return { type: "double", label: "RADDOPPIA", sliceIndex: idx };
-    if (!isNaN(Number(chosen))) return { type: "points", value: Number(chosen), label: chosen, sliceIndex: idx };
-  }
-
-  if (typeof slice === "number") return { type: "points", value: slice, label: slice, sliceIndex: idx };
-  if (slice === "PASSA") return { type: "pass", label: "PASSA", sliceIndex: idx };
-  if (slice === "BANCAROTTA") return { type: "bankrupt", label: "BANCAROTTA", sliceIndex: idx };
-  if (slice === "RADDOPPIA") return { type: "double", label: "RADDOPPIA", sliceIndex: idx };
-
-  return { type: "custom", label: String(slice), sliceIndex: idx };
 }
 
 function nextRound(roomCode, room) {
@@ -440,7 +421,7 @@ io.on("connection", (socket) => {
     }
   });
 
-  // ✅ NUOVO: CAMBIA FRASE (solo host)
+  // ✅ CAMBIA FRASE
   socket.on("changePhrase", ({ roomCode }, callback) => {
     try {
       const code = String(roomCode || "").trim().toUpperCase();
@@ -512,11 +493,43 @@ io.on("connection", (socket) => {
       }
 
       gs.spinning = true;
-      io.to(code).emit("gameStateUpdate", { gameState: gs });
+      
+      // ✅ Genera seed per Versione A (seed sincronizzato)
+      const spinSeed = Date.now();
+      
+      io.to(code).emit("wheelSpinStart", { 
+        spinning: true,
+        spinSeed: spinSeed // Per Versione A
+      });
 
-      // ✅ FISSO: Aspetta 4.5 secondi (tempo animazione ruota completa)
+      // ✅ Simula risultato dopo 4 secondi
       setTimeout(() => {
-        const outcome = simulateWheelSpin(gs.wheel);
+        // Genera outcome casuale
+        const sliceIndex = Math.floor(Math.random() * gs.wheel.length);
+        const slice = gs.wheel[sliceIndex];
+
+        let outcome;
+        if (typeof slice === "string" && slice.includes("/")) {
+          const [a, b] = slice.split("/");
+          const chosen = Math.random() < 0.5 ? a : b;
+          
+          if (chosen === "PASSA") outcome = { type: "pass", label: "PASSA" };
+          else if (chosen === "BANCAROTTA") outcome = { type: "bankrupt", label: "BANCAROTTA" };
+          else if (chosen === "RADDOPPIA") outcome = { type: "double", label: "RADDOPPIA" };
+          else if (!isNaN(Number(chosen))) outcome = { type: "points", value: Number(chosen), label: chosen };
+          else outcome = { type: "custom", label: chosen };
+        } else if (typeof slice === "number") {
+          outcome = { type: "points", value: slice, label: slice };
+        } else if (slice === "PASSA") {
+          outcome = { type: "pass", label: "PASSA" };
+        } else if (slice === "BANCAROTTA") {
+          outcome = { type: "bankrupt", label: "BANCAROTTA" };
+        } else if (slice === "RADDOPPIA") {
+          outcome = { type: "double", label: "RADDOPPIA" };
+        } else {
+          outcome = { type: "custom", label: String(slice) };
+        }
+
         gs.spinning = false;
 
         if (outcome.type === "points") {
@@ -528,7 +541,7 @@ io.on("connection", (socket) => {
           gs.pendingDouble = true;
           gs.mustSpin = false;
           gs.awaitingConsonant = true;
-          gs.lastSpinTarget = 0; // ✅ FISSO: Nessun target per RADDOPPIA
+          gs.lastSpinTarget = 0;
           gs.gameMessage = { type: "info", text: "🎯 RADDOPPIA: gioca una consonante!" };
         } else if (outcome.type === "pass") {
           gs.currentPlayerIndex = (gs.currentPlayerIndex + 1) % gs.players.length;
@@ -548,7 +561,7 @@ io.on("connection", (socket) => {
         }
 
         io.to(code).emit("gameStateUpdate", { gameState: gs });
-      }, 4500); // ✅ FISSO: 4.5 secondi per dare tempo all'animazione
+      }, 4000);
 
       if (callback) callback({ ok: true });
     } catch (err) {
@@ -557,7 +570,7 @@ io.on("connection", (socket) => {
     }
   });
 
-  // GIOCA CONSONANTE
+  // ✅ GIOCA CONSONANTE - RADDOPPIA CORRETTO
   socket.on("playConsonant", ({ roomCode, letter }, callback) => {
     try {
       const code = String(roomCode || "").trim().toUpperCase();
@@ -596,21 +609,25 @@ io.on("connection", (socket) => {
       if (hits > 0) {
         const i = gs.currentPlayerIndex;
         
-        // ✅ FISSO: RADDOPPIA corretto
+        // ✅ RADDOPPIA CORRETTO: Moltiplica i punti GUADAGNATI, non il totale
+        let gained = gs.lastSpinTarget * hits;
+        
         if (gs.pendingDouble) {
-          // RADDOPPIA: moltiplica il punteggio PRIMA di aggiungere i nuovi punti
-          gs.players[i].roundScore *= 2;
+          gained *= 2; // ← Raddoppia i punti della lettera trovata
           gs.pendingDouble = false;
-          gs.lastSpinTarget = 0; // Reset target dopo RADDOPPIA
         }
         
-        let gained = gs.lastSpinTarget * hits;
         gs.players[i].roundScore += gained;
         
         gs.revealedLetters.push(upper);
         gs.mustSpin = true;
         gs.awaitingConsonant = false;
-        gs.gameMessage = { type: "success", text: `Trovate ${hits} ${upper}! +${gained} pt` };
+        
+        const message = gs.pendingDouble 
+          ? `Trovate ${hits} ${upper}! +${gained} pt (RADDOPPIATI!)`
+          : `Trovate ${hits} ${upper}! +${gained} pt`;
+        
+        gs.gameMessage = { type: "success", text: message };
       } else {
         gs.currentPlayerIndex = (gs.currentPlayerIndex + 1) % gs.players.length;
         gs.currentPlayerId = gs.players[gs.currentPlayerIndex].id;

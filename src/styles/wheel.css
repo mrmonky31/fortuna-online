@@ -1,53 +1,71 @@
-/* ===== Ruota SVG pulita (DESKTOP) ===== */
-.wheel-wrap-svg {
-  position: absolute;
-  top: 25%;
-  left: 25%;
-  margin-left: -20px; /* Metà della larghezza (780px / 2) */
-  width: 780px;
-  height: 780px;
+/* ===== RUOTA CON PERNO FISSO ===== */
+
+/* Contenitore ruota - FISSO al centro dello schermo */
+.wheel-wrap-fixed {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  width: 400px;
+  height: 400px;
+  transform: translate(-50%, -50%);
+  z-index: 10;
+  pointer-events: none;
 }
 
-.wheel-svg {
+/* SVG ruota - ruota SOLO su se stessa */
+.wheel-svg-fixed {
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
   height: 100%;
-  display: grid;
-  place-items: center;
-  transform-origin: 50% 50%;
+  transform-origin: 50% 50%; /* ← PERNO FISSO AL CENTRO */
+  will-change: transform;
 }
 
-.wheel-pointer-6 {
-  position: absolute;
+/* Puntatore - FISSO sopra la ruota */
+.wheel-pointer-fixed {
+  position: fixed;
+  top: calc(50% - 200px - 35px); /* Sopra la ruota */
   left: 50%;
-  bottom: 44px;
-  transform: translateX(-50%) rotate(180deg);
+  transform: translateX(-50%);
   width: 0;
   height: 0;
-  border-left: 10px solid transparent;
-  border-right: 10px solid transparent;
-  border-top: 32px solid #ffcc00;
-  filter: drop-shadow(0 2px 3px rgba(0,0,0,.6));
+  border-left: 12px solid transparent;
+  border-right: 12px solid transparent;
+  border-top: 35px solid #ffcc00;
+  filter: drop-shadow(0 3px 5px rgba(0,0,0,0.6));
   z-index: 100;
+  pointer-events: none;
 }
 
-/* ===== MOBILE (con e senza fullscreen) ===== */
+/* ===== RESPONSIVE MOBILE ===== */
 @media (max-width: 768px) {
-  .wheel-wrap-svg {
-    transform-origin: center center;
-    position: fixed;
-    left: 50%;
-    /* Usa dvh che si adatta alle barre del browser */
-    bottom: calc(-35dvh + 200px);
-    margin-left: -45vw;
+  .wheel-wrap-fixed {
+    width: 85vw;
+    height: 85vw;
+    max-width: 400px;
+    max-height: 400px;
+  }
+  
+  .wheel-pointer-fixed {
+    top: calc(50% - min(42.5vw, 200px) - 30px);
+    border-left: 10px solid transparent;
+    border-right: 10px solid transparent;
+    border-top: 30px solid #ffcc00;
+  }
+}
+
+@media (max-width: 480px) {
+  .wheel-wrap-fixed {
     width: 90vw;
     height: 90vw;
   }
-
-  .wheel-pointer-6 {
-    position: fixed;
-    left: 50%;
-    bottom: calc(16dvh + 40px);
-    transform: translateX(-50%) rotate(0deg);
-    z-index: 100;
+  
+  .wheel-pointer-fixed {
+    top: calc(50% - 45vw - 25px);
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    border-top: 25px solid #ffcc00;
   }
 }
