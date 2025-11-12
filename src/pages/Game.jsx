@@ -1,6 +1,6 @@
 // Game.jsx - CORRETTO per animazione ruota sincronizzata
 import React, { useEffect, useRef, useState } from "react";
-import socket from "./socket";
+import socket from "../socket";
 import { maskBoard, letterOccurrences } from "./game/GameEngine";
 import WheelVersionA from "./components/Wheel";
 import Controls from "./components/Controls";
