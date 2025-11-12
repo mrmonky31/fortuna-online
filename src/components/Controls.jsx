@@ -1,4 +1,4 @@
-// src/components/Controls.jsx - SINCRONIZZATO + MIGLIORIE
+// src/components/Controls.jsx - CORRETTO
 import React, { useEffect, useRef, useState } from "react";
 
 export default function Controls({
@@ -6,11 +6,11 @@ export default function Controls({
   onConsonant,
   onVowel,
   onSolution,
-  onPassTurn, // ✅ NUOVO: handler per passsa turno
+  onPassTurn,
   lastTarget,
   forceConsonant,
-  disabled = false, // 🔒 disabilita tutto se non è il turno
-  onPanelChange, // ✅ NUOVO: callback per pausa timer
+  disabled = false,
+  onPanelChange,
 }) {
   const [panel, setPanel] = useState(null);
   const [cons, setCons] = useState("");
@@ -21,7 +21,6 @@ export default function Controls({
   const vowRef = useRef(null);
   const solRef = useRef(null);
 
-  // ✅ Notifica al parent quando cambia il pannello (per gestire il timer)
   useEffect(() => {
     if (onPanelChange) {
       onPanelChange(panel);
@@ -34,11 +33,10 @@ export default function Controls({
     if (panel === "sol" && solRef.current) solRef.current.focus();
   }, [panel]);
 
-  // ✅ Apri automaticamente il pannello consonanti dopo lo spin
   useEffect(() => {
     if (forceConsonant && panel === null && !disabled) setPanel("cons");
     if (!forceConsonant && panel === "cons") setPanel(null);
-  }, [forceConsonant, disabled]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [forceConsonant, disabled]);
 
   const handleSpinClick = () => {
     if (disabled) return;
@@ -73,7 +71,6 @@ export default function Controls({
     setPanel(null);
   };
 
-  // ✅ NUOVO: Handler per passa turno
   const handlePassTurn = () => {
     if (disabled) return;
     setPanel(null);
