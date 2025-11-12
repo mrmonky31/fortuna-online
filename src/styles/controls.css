@@ -34,7 +34,7 @@
    =========================== */
 
 .btn-primary {
-  padding: 10px 20px;       /* ← PIÙ GRANDE dei secondari */
+  padding: 6px 15px;       /* ← PIÙ GRANDE dei secondari */
   font-size: 20px;
   font-weight: bold;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -61,7 +61,7 @@
    =========================== */
 
 .btn-secondary {
-  padding: 6px 10px;        /* ← STRETTO: solo 3px più grande del testo */
+  padding: 4px 7px;        /* ← STRETTO: solo 3px più grande del testo */
   font-size: 12px;
   font-weight: 600;
   background: #4a5568;

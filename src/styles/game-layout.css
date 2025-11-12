@@ -60,8 +60,8 @@ position: relative;
 
 /* BOX MESSAGGI (centrato, sotto target) */
 .game-alerts {
-  position: relative;
-  top: 50%;
+  position: absolute;
+  top: 95%;
   left: 50%;
   transform: translateX(-50%);
   z-index: 16;
