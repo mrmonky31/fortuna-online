@@ -287,6 +287,6 @@ position: relative;
   }
   
   .wheel-pointer-6 {
-    bottom: calc(-30dvh + 40px) !important;
+    bottom: calc(-10dvh + 40px) !important;
   }
 }
