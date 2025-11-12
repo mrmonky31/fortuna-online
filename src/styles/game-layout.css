@@ -33,8 +33,8 @@ position: relative;
 /* ---------- CONTROLLI (centrati, sotto ruota visibile) ---------- */
 .controls-area {
   position: absolute;
-  top: 35%;
-  left: 80px;
+  top: 30%;
+  left: 65px;
 }
 
 /* TIMER (sopra i controlli) */
@@ -61,7 +61,7 @@ position: relative;
 /* BOX MESSAGGI (centrato, sotto target) */
 .game-alerts {
   position: absolute;
-  top: 26%;
+  top: 27%;
   left: 50%;
   transform: translateX(-50%);
   z-index: 16;
