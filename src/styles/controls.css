@@ -9,13 +9,13 @@
 .controls-root {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
   width: 100%;
 }
 
 .controls-buttons {
   display: flex;
-  gap: 8px;
+  gap: 5px;
   align-items: center;
   justify-content: center;
   flex-wrap: nowrap;
@@ -23,7 +23,7 @@
 
 .controls-row-secondary {
   display: flex;
-  gap: 6px;
+  gap: 5px;
   align-items: center;
   justify-content: center;
   flex-wrap: nowrap;
@@ -35,7 +35,7 @@
 
 .btn-primary {
   padding: 10px 20px;       /* ← PIÙ GRANDE dei secondari */
-  font-size: 15px;
+  font-size: 20px;
   font-weight: bold;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
@@ -67,7 +67,7 @@
   background: #4a5568;
   color: white;
   border: none;
-  border-radius: 6px;
+  border-radius: 5px;
   cursor: pointer;
   transition: all 0.3s ease;
   white-space: nowrap;
@@ -105,8 +105,8 @@
   flex-direction: column;
   align-items: center;
   background: #2d3748;
-  padding: 4px 8px;         /* ← STRETTO */
-  border-radius: 6px;
+  padding: 4px 6px;         /* ← STRETTO */
+  border-radius: 5px;
 }
 
 .target-title {
@@ -219,7 +219,7 @@
    =========================== */
 
 .game-alerts {
-  margin: 10px 0;
+  margin: 1px 0;
 }
 
 .alert {
