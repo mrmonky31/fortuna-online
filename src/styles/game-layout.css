@@ -16,8 +16,8 @@ html, body {
 }
 
 .game-wrapper {
-
-  top: 30;
+position: relative;
+  top: 30px;
   left: 0;
   right: 0;
   bottom: 0;
