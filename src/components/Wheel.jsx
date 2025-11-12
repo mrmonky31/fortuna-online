@@ -182,8 +182,15 @@ export default function WheelVersionA({ slices = [], spinning = false, onStop, s
 
   return (
     <div className="wheel-wrap-svg">
-      <div className="wheel-svg" ref={wheelRef} style={{ transform: `rotate(${angle}deg)` }}>
-        <svg viewBox={`0 0 ${size} ${size}`} width={size} height={size}>
+      <div 
+        className="wheel-svg" 
+        ref={wheelRef} 
+        style={{ 
+          transform: `rotate(${angle}deg)`,
+          transformOrigin: 'center center'  // ← Ridondante ma esplicito
+        }}
+      >
+        <svg viewBox={`0 0 ${size} ${size}`} width="100%" height="100%">
           <circle cx={cx} cy={cy} r={R + 4} fill="#0b0b0f" stroke="#fff" strokeWidth="4" />
           {sectors.map(renderSector)}
           <circle cx={cx} cy={cy} r={26} fill="#0b0b0f" stroke="#fff" strokeWidth="2" />

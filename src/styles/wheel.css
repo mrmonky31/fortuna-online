@@ -3,17 +3,19 @@
   position: absolute;
   top: 25%;
   left: 25%;
-  margin-left: -20px; /* Metà della larghezza (780px / 2) */
-  width: 780px;
-  height: 780px;
+  width: 380px;  /* ← Dimensione REALE dell'SVG (non 780px!) */
+  height: 380px;
+  /* NESSUN margin negativo - lascia il contenitore dove è */
 }
 
 .wheel-svg {
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
   height: 100%;
-  display: grid;
-  place-items: center;
-  transform-origin: 50% 50%; /* ← PERNO FISSO */
+  transform-origin: center center; /* ← PERNO FISSO AL CENTRO */
+  will-change: transform; /* Ottimizzazione GPU per rotazioni fluide */
 }
 
 .wheel-pointer-6 {
@@ -33,14 +35,22 @@
 /* ===== MOBILE (con e senza fullscreen) ===== */
 @media (max-width: 768px) {
   .wheel-wrap-svg {
-    transform-origin: center center;
     position: fixed;
     left: 50%;
     /* Usa dvh che si adatta alle barre del browser */
     bottom: calc(-35dvh + 200px);
-    margin-left: -45vw;
+    transform: translateX(-50%); /* ← Centra orizzontalmente */
     width: 90vw;
     height: 90vw;
+  }
+
+  .wheel-svg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    transform-origin: center center; /* ← PERNO FISSO */
   }
 
   .wheel-pointer-6 {
