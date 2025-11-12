@@ -1,7 +1,7 @@
 /* ===== Ruota SVG pulita (DESKTOP) ===== */
 .wheel-wrap-svg {
   position: relative;
-  top: 25%;
+  top: 40%;
   left: 25%;
   width: 380px;  /* ← Dimensione REALE dell'SVG (non 780px!) */
   height: 380px;
