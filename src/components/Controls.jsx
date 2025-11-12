@@ -6,7 +6,7 @@ export default function Controls({
   onConsonant,
   onVowel,
   onSolution,
-  onPassTurn, // ✅ NUOVO: handler per passa turno
+  onPassTurn, // ✅ NUOVO: handler per passaa turno
   lastTarget,
   forceConsonant,
   disabled = false, // 🔒 disabilita tutto se non è il turno

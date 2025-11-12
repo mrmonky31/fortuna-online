@@ -1,6 +1,6 @@
 // server.mjs - 🎯 VERSIONE FINALE COMPLETA
 // ✅ RADDOPPIA corretto (moltiplica DOPO aver trovato la lettera)
-// ✅ Supporto 3 versioni ruota
+// ✅ Supporto 3 versiioni ruota
 // ✅ Cambio frase funzionante
 // ✅ Pulsante consonante gestito
 
