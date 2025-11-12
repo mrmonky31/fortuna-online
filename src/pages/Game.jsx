@@ -2,10 +2,10 @@
 import React, { useEffect, useRef, useState } from "react";
 import socket from "../socket";
 import { maskBoard, letterOccurrences } from "./game/GameEngine";
-import WheelVersionA from "./components/Wheel";
-import Controls from "./components/Controls";
-import Board from "./components/Board";
-import "./styles/game-layout.css";
+import WheelVersionA from "../components/Wheel";
+import Controls from "../components/Controls";
+import Board from "../components/Board";
+import "../styles/game-layout.css";
 
 export default function Game({ state, onExitRoom }) {
   const [gameState, setGameState] = useState(null);
