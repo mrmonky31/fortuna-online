@@ -3,7 +3,7 @@
 /* Contenitore ruota - FISSO al centro dello schermo */
 .wheel-wrap-fixed {
   position: fixed;
-  top: 70%;
+  top: 60%;
   left: 50%;
   width: 400px;
   height: 400px;
