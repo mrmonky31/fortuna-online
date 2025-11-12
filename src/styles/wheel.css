@@ -38,7 +38,7 @@
     position: fixed;
     left: 50%;
     /* Usa dvh che si adatta alle barre del browser */
-    bottom: calc(-55dvh + 200px);
+    bottom: calc(-75dvh + 200px);
     transform: translateX(-50%); /* ← Centra orizzontalmente */
     width: 90vw;
     height: 90vw;
