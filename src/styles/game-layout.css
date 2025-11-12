@@ -287,6 +287,6 @@ html, body {
   }
   
   .wheel-pointer-6 {
-    bottom: calc(-20dvh + 40px) !important;
+    bottom: calc(-30dvh + 40px) !important;
   }
 }
