@@ -112,8 +112,17 @@ export default function Controls({
         </div>
       </div>
 
-      {/* RIGA 2: Vocali + Soluzione + Passa Turno */}
+      {/* RIGA 2: Consonante + Vocali + Soluzione + Passa Turno */}
       <div className="controls-row-secondary">
+        <button
+          className="btn-secondary btn-compact"
+          onClick={() => !disabled && setPanel(panel === "cons" ? null : "cons")}
+          disabled={disabled || !forceConsonant}
+          title={disabled ? "Non è il tuo turno" : "Gioca una consonante"}
+        >
+          Consonante
+        </button>
+
         <button
           className="btn-secondary btn-compact"
           onClick={() => !disabled && setPanel(panel === "vow" ? null : "vow")}
