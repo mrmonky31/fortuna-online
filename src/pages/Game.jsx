@@ -64,6 +64,7 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
   // ⭐ NUOVO: Stati per sincronizzazione animazione ruota
   const [wheelSpinning, setWheelSpinning] = useState(false);
   const [wheelSpinSeed, setWheelSpinSeed] = useState(null);
+  const [wheelTargetAngle, setWheelTargetAngle] = useState(null);
 
   // Funzione toggle fullscreen
   const toggleFullscreen = async () => {
@@ -164,10 +165,11 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
 
   // ⭐ NUOVO: Listener per wheelSpinStart
   useEffect(() => {
-    function handleWheelSpinStart({ spinning, spinSeed }) {
-      console.log("🎡 wheelSpinStart ricevuto:", { spinning, spinSeed });
+    function handleWheelSpinStart({ spinning, spinSeed, targetAngle }) {
+      console.log("🎡 wheelSpinStart ricevuto:", { spinning, spinSeed, targetAngle });
       setWheelSpinning(spinning);
       setWheelSpinSeed(spinSeed);
+      setWheelTargetAngle(targetAngle);
     }
 
     socket.on("wheelSpinStart", handleWheelSpinStart);
@@ -403,6 +405,7 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
             slices={gameState.wheel}
             spinning={wheelSpinning}
             spinSeed={wheelSpinSeed}
+            targetAngle={wheelTargetAngle}
             onStop={handleWheelStop}
           />
         </div>

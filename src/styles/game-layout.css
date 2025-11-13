@@ -29,9 +29,6 @@ html, body {
 /*   MODALITÀ NORMALE (schermo non fullscreen) */
 /* ========================================== */
 
-.game-wrapper:not(.fullscreen-mode) {
-  /* Contenitore base per modalità normale */
-}
 
 /* ---------- 1️⃣ TABELLONE ---------- */
 .game-wrapper:not(.fullscreen-mode) .game-board-area {
@@ -178,9 +175,7 @@ html, body {
 /*   MODALITÀ FULLSCREEN                      */
 /* ========================================== */
 
-.game-wrapper.fullscreen-mode {
-  /* Contenitore base per modalità fullscreen */
-}
+
 
 /* ---------- 1️⃣ TABELLONE ---------- */
 .game-wrapper.fullscreen-mode .game-board-area {

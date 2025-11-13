@@ -30,7 +30,7 @@ function seededRandom(seed) {
   return x - Math.floor(x);
 }
 
-export default function WheelVersionA({ slices = [], spinning = false, onStop, spinSeed = null }) {
+export default function WheelVersionA({ slices = [], spinning = false, onStop, spinSeed = null, targetAngle = null }) {
   const wheelRef = useRef(null);
   const [angle, setAngle] = useState(0);
   const [isSpinning, setIsSpinning] = useState(false);
@@ -116,9 +116,9 @@ export default function WheelVersionA({ slices = [], spinning = false, onStop, s
     );
   };
 
-  // ✅ SPIN con SEED sincronizzato
+  // ✅ SPIN con angolo target preciso dal server
   useEffect(() => {
-    if (!spinning || isSpinning || !spinSeed) return;
+    if (!spinning || isSpinning || targetAngle === null) return;
     
     setIsSpinning(true);
     
@@ -129,13 +129,16 @@ export default function WheelVersionA({ slices = [], spinning = false, onStop, s
     }
 
     setTimeout(() => {
-      // ✅ Usa seed per generare rotazione identica
-      const randomFromSeed = seededRandom(spinSeed);
-      const extraSpins = Math.floor(randomFromSeed * 2 + 3); // 3-5 giri
-      const randomAngle = seededRandom(spinSeed + 1) * 360;
+      // ✅ Calcola rotazione per far coincidere puntatore (90°) con target
+      const randomFromSeed = seededRandom(spinSeed || Date.now());
+      const extraSpins = Math.floor(randomFromSeed * 2 + 3); // 3-5 giri completi
       const duration = 3 + randomFromSeed * 1.5; // 3-4.5 secondi
       
-      const totalRotation = extraSpins * 360 + randomAngle;
+      // ✅ Il puntatore è a 90° (in alto)
+      // Dobbiamo ruotare la ruota così che lo spicchio target finisca sotto il puntatore
+      // Formula: rotazione = (90° - targetAngle) + giri completi
+      const finalAngle = (90 - targetAngle + 360) % 360;
+      const totalRotation = extraSpins * 360 + finalAngle;
 
       if (wheelRef.current) {
         wheelRef.current.style.transition = `transform ${duration}s cubic-bezier(0.12, 0.64, 0.24, 1)`;
@@ -145,10 +148,10 @@ export default function WheelVersionA({ slices = [], spinning = false, onStop, s
       setTimeout(() => {
         setIsSpinning(false);
         
-        // ✅ CALCOLO SPICCHIO - Puntatore in alto (90°)
-        const finalAngle = totalRotation % 360;
-        const pointerAngle = 90;
-        const relativeAngle = (pointerAngle - finalAngle + 360) % 360;
+        // ✅ Calcola outcome dallo spicchio target
+        const normalizedAngle = totalRotation % 360;
+        const pointerAngle = 90; // Puntatore sempre a 90°
+        const relativeAngle = (pointerAngle - normalizedAngle + 360) % 360;
         const sliceIndex = Math.floor(relativeAngle / SLICE_DEG);
         const slice = values[sliceIndex];
 
@@ -178,7 +181,7 @@ export default function WheelVersionA({ slices = [], spinning = false, onStop, s
         onStop && onStop(outcome);
       }, duration * 1000);
     }, 50);
-  }, [spinning, spinSeed]);
+  }, [spinning, targetAngle]);
 
   return (
     <div className="wheel-wrap-svg">
