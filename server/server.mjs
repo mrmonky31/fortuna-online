@@ -3,11 +3,21 @@
 // ✅ Supporto 3 versiioni ruota
 // ✅ Cambio frase funzionante
 // ✅ Pulsante consonante gestito
+// ✅ Import dinamico phrases con set personalizzati
 
 import express from "express";
 import http from "http";
 import { Server } from "socket.io";
 import cors from "cors";
+import { fileURLToPath } from "url";
+import { dirname, join } from "path";
+import { existsSync } from "fs";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// ✅ Carica frasi base
+import { testPhrases } from "./game/phrases.js";
 
 const app = express();
 
@@ -108,23 +118,25 @@ function nextRound(roomCode, room) {
     return;
   }
 
-  const phrases = [
-    { category: "CINEMA", text: "IL SIGNORE DEGLI ANELLI" },
-    { category: "MUSICA", text: "VIVA LA VIDA" },
-    { category: "SPORT", text: "CALCIO DI RIGORE" },
-    { category: "NATURA", text: "ALBERI SECOLARI" },
-    { category: "STORIA", text: "IMPERO ROMANO" },
-    { category: "GEOGRAFIA", text: "TORRE DI PISA" },
-    { category: "CIBO", text: "PIZZA MARGHERITA" },
-    { category: "ANIMALI", text: "LEONE DELLA SAVANA" },
-  ];
-  const random = phrases[Math.floor(Math.random() * phrases.length)];
+  // ✅ Usa il set frasi della room
+  const { phrases, mode } = room.phraseSet;
+  
+  let selectedPhrase;
+  if (mode === "sequential") {
+    // Frasi sequenziali (1-20)
+    const index = room.currentPhraseIndex % Math.min(phrases.length, 20);
+    selectedPhrase = phrases[index];
+    room.currentPhraseIndex++;
+  } else {
+    // Frasi random
+    selectedPhrase = phrases[Math.floor(Math.random() * phrases.length)];
+  }
 
   gs.players.forEach(p => { p.roundScore = 0; });
 
-  gs.phrase = random.text;
-  gs.rows = buildBoard(random.text, 14, 4);
-  gs.category = random.category;
+  gs.phrase = selectedPhrase.text;
+  gs.rows = buildBoard(selectedPhrase.text, 14, 4);
+  gs.category = selectedPhrase.category;
 
   gs.revealedLetters = [];
   gs.usedLetters = [];
@@ -172,6 +184,30 @@ function initGameState(players, totalRounds, phrase, category) {
 
 const rooms = {};
 const disconnectionTimeouts = {};
+
+// ✅ Funzione per caricare frasi (personalizzate o random)
+async function loadPhrases(roomName) {
+  const normalized = String(roomName || "").toLowerCase().trim();
+  
+  if (!normalized) {
+    return { phrases: testPhrases, mode: "random", customName: null };
+  }
+  
+  const customPath = join(__dirname, "game", `phrases-${normalized}.js`);
+  
+  if (existsSync(customPath)) {
+    try {
+      const { testPhrases: customPhrases } = await import(customPath);
+      console.log(`✅ Set personalizzato caricato: phrases-${normalized}.js`);
+      return { phrases: customPhrases, mode: "sequential", customName: normalized };
+    } catch (err) {
+      console.error(`❌ Errore caricamento ${customPath}:`, err);
+      return { phrases: testPhrases, mode: "random", customName: null };
+    }
+  }
+  
+  return { phrases: testPhrases, mode: "random", customName: null };
+}
 
 function findRoomBySocketId(socketId) {
   for (const [code, room] of Object.entries(rooms)) {
@@ -233,7 +269,7 @@ io.on("connection", (socket) => {
   }
 
   // CREA STANZA
-  socket.on("createRoom", ({ playerName, totalRounds, roomName }, callback) => {
+  socket.on("createRoom", async ({ playerName, totalRounds, roomName }, callback) => {
     try {
       const rawName = roomName && String(roomName).trim();
       const code = rawName && rawName.length > 0
@@ -246,6 +282,9 @@ io.on("connection", (socket) => {
       }
 
       const name = String(playerName || "").trim() || "Giocatore";
+      
+      // ✅ Carica set frasi (personalizzato o random)
+      const phraseSet = await loadPhrases(rawName);
 
       rooms[code] = {
         host: name,
@@ -253,10 +292,12 @@ io.on("connection", (socket) => {
         spectators: [],
         totalRounds: Number(totalRounds) || 3,
         gameState: null,
+        phraseSet: phraseSet, // ✅ Salva il set frasi nella room
+        currentPhraseIndex: 0, // ✅ Per modalità sequenziale
       };
 
       socket.join(code);
-      console.log(`✅ Stanza creata: ${code} da ${name}`);
+      console.log(`✅ Stanza creata: ${code} da ${name} [${phraseSet.mode === "sequential" ? `SET: ${phraseSet.customName}` : "RANDOM"}]`);
 
       if (callback) callback({
         ok: true,
@@ -396,17 +437,24 @@ io.on("connection", (socket) => {
         return;
       }
 
-      const phrases = [
-        { category: "CINEMA", text: "IL SIGNORE DEGLI ANELLI" },
-        { category: "MUSICA", text: "VIVA LA VIDA" },
-        { category: "SPORT", text: "CALCIO DI RIGORE" },
-        { category: "NATURA", text: "ALBERI SECOLARI" },
-      ];
-      const random = phrases[Math.floor(Math.random() * phrases.length)];
+      // ✅ Usa il set frasi della room
+      const { phrases, mode } = room.phraseSet;
+      
+      let selectedPhrase;
+      if (mode === "sequential") {
+        // Frasi sequenziali (1-20)
+        const index = room.currentPhraseIndex % Math.min(phrases.length, 20);
+        selectedPhrase = phrases[index];
+        room.currentPhraseIndex++;
+      } else {
+        // Frasi random
+        selectedPhrase = phrases[Math.floor(Math.random() * phrases.length)];
+      }
 
-      room.gameState = initGameState(room.players, room.totalRounds, random.text, random.category);
+      room.gameState = initGameState(room.players, room.totalRounds, selectedPhrase.text, selectedPhrase.category);
+      room.gameState.phraseMode = mode; // ✅ Salva la modalità nel gameState
 
-      console.log("🚀 START GAME:", code);
+      console.log("🚀 START GAME:", code, `[${selectedPhrase.category}]`, selectedPhrase.text);
 
       io.to(code).emit("gameStart", {
         room,
@@ -432,22 +480,20 @@ io.on("connection", (socket) => {
         return;
       }
 
+      // ✅ BLOCCA se modalità sequenziale
+      if (room.gameState.phraseMode === "sequential") {
+        if (callback) callback({ ok: false, error: "Cambio frase disabilitato in modalità sequenziale" });
+        return;
+      }
+
       const hostPlayer = room.players.find((p) => p.isHost);
       if (!hostPlayer || hostPlayer.id !== socket.id) {
         if (callback) callback({ ok: false, error: "Solo l'host può cambiare la frase" });
         return;
       }
 
-      const phrases = [
-        { category: "CINEMA", text: "IL SIGNORE DEGLI ANELLI" },
-        { category: "MUSICA", text: "VIVA LA VIDA" },
-        { category: "SPORT", text: "CALCIO DI RIGORE" },
-        { category: "NATURA", text: "ALBERI SECOLARI" },
-        { category: "STORIA", text: "IMPERO ROMANO" },
-        { category: "GEOGRAFIA", text: "TORRE DI PISA" },
-        { category: "CIBO", text: "PIZZA MARGHERITA" },
-        { category: "ANIMALI", text: "LEONE DELLA SAVANA" },
-      ];
+      // ✅ Usa il set frasi della room
+      const { phrases } = room.phraseSet;
       const random = phrases[Math.floor(Math.random() * phrases.length)];
 
       const gs = room.gameState;

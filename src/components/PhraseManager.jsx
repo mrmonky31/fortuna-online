@@ -57,7 +57,7 @@ export default function PhraseManager({
     marginBottom: 8,
   }}
 >
-  <button className="btn-secondary" onClick={onChangePhrase}>
+  <button className="btn-secondary" onClick={() => onChangePhrase()}>
     Cambia frase
   </button>
 
