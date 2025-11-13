@@ -21,7 +21,7 @@ export const eqMatch = (a, b) => normalize(a) === normalize(b);
    buildBoard: spezza una frase
    in righe maxCols x maxRows
    ========================= */
-export function buildBoard(text, maxCols = 14, maxRows = 4) {
+export function buildBoard(text, maxCols = 14, maxRows = 5) {
   const raw = String(text || "");
   const words = raw.split(/\s+/).filter(Boolean);
 

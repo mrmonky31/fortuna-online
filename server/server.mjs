@@ -60,7 +60,7 @@ function normalizeText(str = "") {
     .trim();
 }
 
-function buildBoard(text, maxCols = 14, maxRows = 4) {
+function buildBoard(text, maxCols = 14, maxRows = 5) {
   const words = String(text || "").split(/\s+/).filter(Boolean);
   const rows = [];
   let cur = "";
@@ -135,7 +135,7 @@ function nextRound(roomCode, room) {
   gs.players.forEach(p => { p.roundScore = 0; });
 
   gs.phrase = selectedPhrase.text;
-  gs.rows = buildBoard(selectedPhrase.text, 14, 4);
+  gs.rows = buildBoard(selectedPhrase.text, 14, 5);
   gs.category = selectedPhrase.category;
 
   gs.revealedLetters = [];
@@ -162,7 +162,7 @@ function initGameState(players, totalRounds, phrase, category) {
     currentPlayerId: players[0].id,
 
     phrase,
-    rows: buildBoard(phrase, 14, 4),
+    rows: buildBoard(phrase, 14, 5),
     category,
 
     revealedLetters: [],
@@ -498,7 +498,7 @@ io.on("connection", (socket) => {
 
       const gs = room.gameState;
       gs.phrase = random.text;
-      gs.rows = buildBoard(random.text, 14, 4);
+      gs.rows = buildBoard(random.text, 14, 5);
       gs.category = random.category;
       gs.revealedLetters = [];
       gs.usedLetters = [];
