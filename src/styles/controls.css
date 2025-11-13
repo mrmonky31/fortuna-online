@@ -128,7 +128,7 @@
 
 .controls-panels {
   position: absolute;
-  top: 95%;  /* ← Sotto il tabellone */
+  top: 85%;  /* ← Alzato da 95% a 85% */
   left: 50%;
   transform: translateX(-50%);
   width: 90vw;
@@ -222,10 +222,6 @@
 /* ===========================
    💬 MESSAGGI
    =========================== */
-
-.game-alerts {
-  margin: 1px 0;
-}
 
 .alert {
   padding: 8px 12px;        /* ← STRETTO */
