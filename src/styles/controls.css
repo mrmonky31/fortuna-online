@@ -8,17 +8,18 @@
 
 .controls-root {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   gap: 4px;
   width: 100%;
 }
 
 .controls-buttons {
   display: flex;
-  gap: 5px;
+  gap: 3px;
   align-items: center;
   justify-content: center;
   flex-wrap: nowrap;
+  flex-direction: row;
 }
 
 .controls-row-secondary {
@@ -27,6 +28,7 @@
   align-items: center;
   justify-content: center;
   flex-wrap: nowrap;
+  flex-direction: row;
 }
 
 /* ===========================
