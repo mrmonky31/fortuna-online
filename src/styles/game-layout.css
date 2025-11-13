@@ -28,9 +28,9 @@ html, body {
 /* ---------- 1️⃣ TABELLONE (giallo - in alto) ---------- */
 .game-board-area {
   position: absolute;
-  top: 2vh;
+  top: 1vh;
   left: 50%;
-  transform: translateX(-50%) scale(0.5);
+  transform:  scale(0.5);
   z-index: 8;
 }
 
