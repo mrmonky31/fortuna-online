@@ -329,7 +329,6 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
             spinning={wheelSpinning}
             spinSeed={wheelSpinSeed}
             onStop={handleWheelStop}
-            roomCode={roomCode}
           />
         </div>
 

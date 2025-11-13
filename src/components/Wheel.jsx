@@ -1,13 +1,11 @@
-// 🎡 VERSIONE A: SEED SINCRONIZZATO + INVIA OUTCOME AL SERVER
+// 🎡 VERSIONE A: SEED SINCRONIZZATO
 // ✅ TUE POSIZIONI (non toccate)
 // ✅ TUOI PATTERN (ordine rispettato)
 // ✅ Perno fisso (transform-origin)
 // ✅ Sincronizzazione tramite seed
-// ✅ Outcome inviato al server
 
 import React, { useEffect, useRef, useState } from "react";
 import "../styles/wheel.css";
-import socket from "../socket";
 
 const SLICE_COUNT = 20;
 const SLICE_DEG = 360 / SLICE_COUNT; // 18°
@@ -32,7 +30,7 @@ function seededRandom(seed) {
   return x - Math.floor(x);
 }
 
-export default function WheelVersionA({ slices = [], spinning = false, onStop, spinSeed = null, roomCode }) {
+export default function WheelVersionA({ slices = [], spinning = false, onStop, spinSeed = null }) {
   const wheelRef = useRef(null);
   const [angle, setAngle] = useState(0);
   const [isSpinning, setIsSpinning] = useState(false);
@@ -178,23 +176,21 @@ export default function WheelVersionA({ slices = [], spinning = false, onStop, s
         }
 
         onStop && onStop(outcome);
-        
-        // ✅ Invia outcome al server
-        if (roomCode) {
-          socket.emit("wheelResult", { roomCode, outcome }, (res) => {
-            if (!res?.ok) {
-              console.error("Errore invio risultato ruota:", res?.error);
-            }
-          });
-        }
       }, duration * 1000);
     }, 50);
-  }, [spinning, spinSeed, roomCode]);
+  }, [spinning, spinSeed]);
 
   return (
     <div className="wheel-wrap-svg">
-      <div className="wheel-svg" ref={wheelRef} style={{ transform: `rotate(${angle}deg)` }}>
-        <svg viewBox={`0 0 ${size} ${size}`} width={size} height={size}>
+      <div 
+        className="wheel-svg" 
+        ref={wheelRef} 
+        style={{ 
+          transform: `rotate(${angle}deg)`,
+          transformOrigin: 'center center'  // ← Ridondante ma esplicito
+        }}
+      >
+        <svg viewBox={`0 0 ${size} ${size}`} width="100%" height="100%">
           <circle cx={cx} cy={cy} r={R + 4} fill="#0b0b0f" stroke="#fff" strokeWidth="4" />
           {sectors.map(renderSector)}
           <circle cx={cx} cy={cy} r={26} fill="#0b0b0f" stroke="#fff" strokeWidth="2" />
