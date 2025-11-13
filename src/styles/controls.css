@@ -8,18 +8,17 @@
 
 .controls-root {
   display: flex;
-  flex-direction: col;
+  flex-direction: column;
   gap: 4px;
   width: 100%;
 }
 
 .controls-buttons {
   display: flex;
-  gap: 3px;
+  gap: 5px;
   align-items: center;
   justify-content: center;
   flex-wrap: nowrap;
-  
 }
 
 .controls-row-secondary {
@@ -28,7 +27,6 @@
   align-items: center;
   justify-content: center;
   flex-wrap: nowrap;
-  
 }
 
 /* ===========================
@@ -66,7 +64,6 @@
   padding: 4px 7px;        /* ← STRETTO: solo 3px più grande del testo */
   font-size: 12px;
   font-weight: 600;
-  flex-direction: row;
   background: #4a5568;
   color: white;
   border: none;
