@@ -1,8 +1,8 @@
 /* ===========================
-   WHEEL.CSS - RUOTA IN BASSO
+   WHEEL.CSS - RUOTA A 72% (misurato)
    =========================== */
 
-/* DESKTOP (nascosto, non usato) */
+/* DESKTOP */
 .wheel-wrap-svg {
   position: absolute;
   top: 60%;
@@ -36,13 +36,13 @@
 }
 
 /* ===========================
-   📱 MOBILE - RUOTA IN BASSO (13)
+   📱 MOBILE - 1️⃣3️⃣ RUOTA (72vh dal disegno)
    =========================== */
 
 @media (max-width: 768px) {
   .wheel-wrap-svg {
     position: absolute;
-    top: 78vh;
+    top: 72vh;
     left: 50%;
     transform: translateX(-50%);
     width: 90vw;

@@ -1,6 +1,5 @@
 /* ========================================== */
-/*   GAME LAYOUT – MOBILE FULLSCREEN          */
-/*   Layout basato su disegno utente          */
+/*   GAME LAYOUT – MISURATO DAL DISEGNO       */
 /* ========================================== */
 
 html, body {
@@ -25,24 +24,24 @@ html, body {
   overflow: hidden;
 }
 
-/* ---------- 1️⃣ TABELLONE (giallo - in alto) ---------- */
+/* ---------- 1️⃣ TABELLONE (5% dall'alto, dimensioni reali) ---------- */
 .game-board-area {
   position: absolute;
-  top: 2vh;
+  top: 5vh;
   left: 50%;
-  transform: translateX(-50%) scale(0.5);
+  transform: translateX(-50%);
   z-index: 8;
 }
 
-/* ---------- 2️⃣ BOX MESSAGGI + INPUT (blu - sotto tabellone) ---------- */
+/* ---------- 2️⃣ BOX MESSAGGI (38% dall'alto) ---------- */
 .game-alerts {
   position: absolute;
-  top: 28vh;
+  top: 38vh;
   left: 50%;
   transform: translateX(-50%);
   z-index: 16;
   width: 90vw;
-  max-width: 400px;
+  max-width: 600px;
   text-align: center;
 }
 
@@ -50,10 +49,10 @@ html, body {
   background: #ffffff;
   border: 2px solid #000;
   border-radius: 8px;
-  padding: 8px;
+  padding: 10px;
   font-weight: bold;
   color: #000;
-  font-size: 0.85em;
+  font-size: 0.9em;
   margin-bottom: 5px;
 }
 .alert.success { border-color: #00ff55; color: #00aa33; }
@@ -61,27 +60,27 @@ html, body {
 .alert.warning { border-color: #ffcc00; color: #996600; }
 .alert.info    { border-color: #5555ff; color: #3333cc; }
 
-/* ---------- 3️⃣ TARGET (azzurro - sinistra) ---------- */
+/* ---------- 3️⃣ TARGET (45% dall'alto, 5% da sinistra) ---------- */
 .target-box {
   position: absolute;
-  top: 35vh;
-  left: 2vw;
+  top: 45vh;
+  left: 5vw;
   z-index: 15;
 }
 
-/* ---------- 4️⃣ GIRA LA RUOTA (azzurro - centro) ---------- */
+/* ---------- 4️⃣ GIRA LA RUOTA (48% dall'alto, centrato) ---------- */
 .controls-area {
   position: absolute;
-  top: 35vh;
+  top: 48vh;
   left: 50%;
   transform: translateX(-50%);
   z-index: 15;
 }
 
-/* ---------- 5️⃣6️⃣7️⃣8️⃣ PULSANTI SECONDARI (viola - sotto gira ruota) ---------- */
+/* ---------- 5️⃣6️⃣7️⃣8️⃣ PULSANTI SECONDARI (53% dall'alto) ---------- */
 .controls-row-secondary {
   position: absolute;
-  top: 43vh;
+  top: 53vh;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
@@ -91,11 +90,11 @@ html, body {
   z-index: 15;
 }
 
-/* ---------- 9️⃣🔟1️⃣1️⃣1️⃣2️⃣ GIOCATORI (verde - sinistra) ---------- */
+/* ---------- 9️⃣🔟1️⃣1️⃣1️⃣2️⃣ GIOCATORI (60% dall'alto, 5% sinistra) ---------- */
 .game-players {
   position: absolute;
-  top: 50vh;
-  left: 2vw;
+  top: 60vh;
+  left: 5vw;
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -117,7 +116,7 @@ html, body {
   color: #fff;
   transition: box-shadow 180ms ease, border-color 180ms ease;
   backdrop-filter: blur(5px);
-  font-size: 0.8em;
+  font-size: 0.85em;
 }
 
 .player-card.player-active {
@@ -125,11 +124,11 @@ html, body {
   box-shadow: 0 0 12px #00ff55;
 }
 
-/* ---------- CLASSIFICA (verde - destra sotto giocatori) ---------- */
+/* ---------- CLASSIFICA (sotto giocatori) ---------- */
 .scoreboard {
   position: absolute;
-  top: 70vh;
-  left: 2vw;
+  top: 80vh;
+  left: 5vw;
   background: rgba(17, 19, 26, 0.9);
   border: 2px solid #fff;
   border-radius: 8px;
@@ -156,9 +155,6 @@ html, body {
   font-size: 0.85em;
 }
 .score-row:last-child { border-bottom: none; }
-
-/* ---------- 1️⃣3️⃣ RUOTA (rosso - in basso) ---------- */
-/* LA RUOTA È GESTITA DA wheel.css */
 
 /* ---------- ROUND INFO (in alto a destra) ---------- */
 .game-round-info {
@@ -192,7 +188,7 @@ html, body {
 /* ---------- TIMER ---------- */
 .turn-timer {
   position: absolute;
-  top: 45vh;
+  top: 50vh;
   left: 50%;
   transform: translateX(-50%);
   font-size: 2rem;
@@ -228,7 +224,7 @@ html, body {
   max-width: 85vw;
 }
 
-/* ---------- EFFETTI TABELLONE ---------- */
+/* ---------- EFFETTI ---------- */
 .flash-green { animation: flashGreen 0.25s ease-in-out 10; }
 .flash-red   { animation: flashRed 0.4s ease-in-out 1; }
 
