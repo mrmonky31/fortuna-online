@@ -17,14 +17,14 @@ html, body {
 
 .game-wrapper {
 position: relative;
-  top: 60px;
+  top: 0px;
   left: 0;
   right: 0;
   bottom: 0;
   width: 100vw;
   height: 100vh;
   height: 100dvh;
-  overflow: hidden;
+  
 }
 
 /* ---------- RUOTA ---------- */
@@ -88,15 +88,13 @@ position: relative;
 /* ---------- TABELLONE (parte bassa, ridotto) ---------- */
 .game-board-area {
   position: absolute;
-  bottom: 70%;
+  bottom: 60%;
   left: 10px;
  transform: translateX(-28%);
   z-index: 8;
   max-width: 100vw;
-}
-.game-board-area-inner {
   transform: scale(0.5);
-  transform-origin: center bottom;
+  transform-origin: center center;
 }
 /* ---------- CASELLE DEL TABELLONE ---------- */
 .tile {
