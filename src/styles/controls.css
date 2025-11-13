@@ -24,7 +24,7 @@
 .controls-row-secondary {
   display: flex;
   gap: 5px;
-  align-items: center;
+  
   justify-content: center;
   flex-wrap: nowrap;
 }
@@ -129,7 +129,7 @@
    =========================== */
 
 .controls-panels {
-  margin-top: -130px;
+  margin-top: -180px;
   width: 100%;
 }
 
