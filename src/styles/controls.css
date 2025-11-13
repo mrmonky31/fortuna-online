@@ -34,7 +34,7 @@
    =========================== */
 
 .btn-primary {
-  padding: 6px 15px;       /* ← PIÙ GRANDE dei secondari */
+  padding: 10px 20px;       /* ← PIÙ GRANDE dei secondari */
   font-size: 20px;
   font-weight: bold;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -61,7 +61,7 @@
    =========================== */
 
 .btn-secondary {
-  padding: 4px 7px;        /* ← STRETTO: solo 3px più grande del testo */
+  padding: 6px 10px;        /* ← STRETTO: solo 3px più grande del testo */
   font-size: 12px;
   font-weight: 600;
   background: #4a5568;
@@ -123,19 +123,24 @@
 }
 
 /* ===========================
-   📦 PANNELLI INPUT
+   📦 PANNELLI INPUT - SOTTO TABELLONE
    =========================== */
 
 .controls-panels {
-  margin-top: 10px;
-  width: 100%;
+  position: absolute;
+  top: 95%;  /* ← Sotto il tabellone */
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90vw;
+  max-width: 400px;
+  z-index: 17;  /* ← Sopra messaggi */
 }
 
 .panel {
   display: flex;
   gap: 8px;
   align-items: center;
-  padding: 8px;             /* ← STRETTO */
+  padding: 8px;
   background: rgba(45, 55, 72, 0.95);
   border-radius: 8px;
   border: 2px solid #4a5568;
