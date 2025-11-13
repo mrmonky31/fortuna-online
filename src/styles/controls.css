@@ -1,9 +1,5 @@
 /* ===========================
-   CONTROLS.CSS - PULSANTI STRETTI
-   =========================== */
-
-/* ===========================
-   LAYOUT 2 RIGHE
+   CONTROLS.CSS - LAYOUT NUOVO
    =========================== */
 
 .controls-root {
@@ -11,6 +7,7 @@
   flex-direction: column;
   gap: 4px;
   width: 100%;
+  align-items: center;
 }
 
 .controls-buttons {
@@ -24,19 +21,18 @@
 .controls-row-secondary {
   display: flex;
   gap: 5px;
-  
+  align-items: center;
   justify-content: center;
   flex-wrap: nowrap;
 }
 
 /* ===========================
-   🔵 GIRA LA RUOTA (più grande)
+   🔵 GIRA LA RUOTA
    =========================== */
 
 .btn-primary {
-  padding: 6px 15px; 
-  top: 250px;      /* ← PIÙ GRANDE dei secondari */
-  font-size: 20px;
+  padding: 10px 20px;
+  font-size: 18px;
   font-weight: bold;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
@@ -58,11 +54,11 @@
 }
 
 /* ===========================
-   ⚪ PULSANTI SECONDARI (stretti!)
+   ⚪ PULSANTI SECONDARI
    =========================== */
 
 .btn-secondary {
-  padding: 4px 7px;        /* ← STRETTO: solo 3px più grande del testo */
+  padding: 6px 10px;
   font-size: 12px;
   font-weight: 600;
   background: #4a5568;
@@ -72,11 +68,10 @@
   cursor: pointer;
   transition: all 0.3s ease;
   white-space: nowrap;
-  transform: scale(0.7);
 }
 
 .btn-compact {
-  padding: 6px 10px;        /* ← Stesso: STRETTO */
+  padding: 6px 10px;
   font-size: 12px;
 }
 
@@ -99,7 +94,7 @@
 }
 
 /* ===========================
-   📊 TARGET BOX (piccolo)
+   📊 TARGET BOX
    =========================== */
 
 .target-box {
@@ -107,7 +102,7 @@
   flex-direction: column;
   align-items: center;
   background: #2d3748;
-  padding: 4px 6px;         /* ← STRETTO */
+  padding: 6px 10px;
   border-radius: 5px;
 }
 
@@ -119,25 +114,30 @@
 }
 
 .target-value {
-  font-size: 16px;
+  font-size: 18px;
   font-weight: bold;
   color: #ffd700;
 }
 
 /* ===========================
-   📦 PANNELLI INPUT
+   📦 PANNELLI INPUT (sotto messaggi)
    =========================== */
 
 .controls-panels {
-  margin-top: -180px;
-  width: 100%;
+  position: absolute;
+  top: 32vh;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90vw;
+  max-width: 400px;
+  z-index: 17;
 }
 
 .panel {
   display: flex;
   gap: 8px;
   align-items: center;
-  padding: 8px;             /* ← STRETTO */
+  padding: 8px;
   background: rgba(45, 55, 72, 0.95);
   border-radius: 8px;
   border: 2px solid #4a5568;
@@ -155,17 +155,9 @@
   }
 }
 
-/* ===========================
-   🚫 ETICHETTA NASCOSTA
-   =========================== */
-
 .panel-label {
-  display: none;            /* ← NASCOSTA! C'è già il placeholder */
+  display: none;
 }
-
-/* ===========================
-   ✏️ INPUT (solo il box)
-   =========================== */
 
 .panel-input {
   flex: 1;
@@ -195,7 +187,7 @@
 }
 
 .btn-ok {
-  padding: 8px 14px;        /* ← STRETTO */
+  padding: 8px 14px;
   font-size: 12px;
   font-weight: bold;
   background: #48bb78;
@@ -220,12 +212,8 @@
    💬 MESSAGGI
    =========================== */
 
-.game-alerts {
-  margin: 1px 0;
-}
-
 .alert {
-  padding: 8px 12px;        /* ← STRETTO */
+  padding: 8px 12px;
   border-radius: 8px;
   font-size: 13px;
   font-weight: 500;
@@ -281,29 +269,6 @@
 }
 
 /* ===========================
-   ❌ ESCI
-   =========================== */
-
-.btn-exit-room {
-  position: fixed;
-  top: 10px;
-  right: 10px;
-  padding: 6px 12px;
-  font-size: 11px;
-  font-weight: bold;
-  background: #e53e3e;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  z-index: 1001;
-}
-
-.btn-exit-room:hover {
-  background: #c53030;
-}
-
-/* ===========================
    🎉 ROUND VINTO
    =========================== */
 
@@ -313,7 +278,7 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.6);    /* ← ERA 0.85, ora 0.6 per vedere meglio */
+  background: rgba(0, 0, 0, 0.6);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -388,15 +353,4 @@
 @keyframes timerPulse {
   0%, 100% { transform: translateX(-50%) scale(1); }
   50% { transform: translateX(-50%) scale(1.05); }
-}
-
-/* ===========================
-   📱 RESPONSIVE
-   =========================== */
-
-@media (max-width: 768px) {
-  .controls-buttons,
-  .controls-row-secondary {
-    flex-wrap: wrap;
-  }
 }

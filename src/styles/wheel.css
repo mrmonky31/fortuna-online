@@ -1,11 +1,14 @@
-/* ===== Ruota SVG pulita (DESKTOP) ===== */
+/* ===========================
+   WHEEL.CSS - RUOTA IN BASSO
+   =========================== */
+
+/* DESKTOP (nascosto, non usato) */
 .wheel-wrap-svg {
-  position: relative;
+  position: absolute;
   top: 60%;
   left: 25%;
-  width: 380px;  /* ← Dimensione REALE dell'SVG (non 780px!) */
+  width: 380px;
   height: 380px;
-  /* NESSUN margin negativo - lascia il contenitore dove è */
 }
 
 .wheel-svg {
@@ -14,8 +17,8 @@
   left: 0;
   width: 100%;
   height: 100%;
-  transform-origin: center center; /* ← PERNO FISSO AL CENTRO */
-  will-change: transform; /* Ottimizzazione GPU per rotazioni fluide */
+  transform-origin: center center;
+  will-change: transform;
 }
 
 .wheel-pointer-6 {
@@ -32,16 +35,20 @@
   z-index: 100;
 }
 
-/* ===== MOBILE (con e senza fullscreen) ===== */
+/* ===========================
+   📱 MOBILE - RUOTA IN BASSO (13)
+   =========================== */
+
 @media (max-width: 768px) {
   .wheel-wrap-svg {
     position: absolute;
+    top: 78vh;
     left: 50%;
-    /* Usa dvh che si adatta alle barre del browser */
-    bottom: calc(-85dvh + 200px);  /* ← MODIFICATO: -45dvh invece di -35dvh (più in basso) */
-    transform: translateX(-50%); /* ← Centra orizzontalmente */
+    transform: translateX(-50%);
     width: 90vw;
     height: 90vw;
+    max-width: 500px;
+    max-height: 500px;
   }
 
   .wheel-svg {
@@ -50,13 +57,13 @@
     left: 0;
     width: 100%;
     height: 100%;
-    transform-origin: center center; /* ← PERNO FISSO */
+    transform-origin: center center;
   }
 
   .wheel-pointer-6 {
-    position: fixed;
+    position: absolute;
     left: 50%;
-    bottom: calc(6dvh + 40px);  /* ← MODIFICATO: 6dvh invece di 16dvh (segue la ruota) */
+    top: -5px;
     transform: translateX(-50%) rotate(0deg);
     z-index: 100;
   }
