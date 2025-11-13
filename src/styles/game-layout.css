@@ -33,7 +33,7 @@ position: relative;
 /* ---------- CONTROLLI (centrati, sotto ruota visibile) ---------- */
 .controls-area {
   position: absolute;
-  top: 30%;
+  top: 40%;
   left: 65px;
 }
 
@@ -88,7 +88,7 @@ position: relative;
 /* ---------- TABELLONE (parte bassa, ridotto) ---------- */
 .game-board-area {
   position: absolute;
-  bottom: 70%;
+  bottom: 65%;
   left: 10px;
   transform: translateX(-28%) scale(0.5);
   transform-origin: center bottom;
