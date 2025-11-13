@@ -29,7 +29,7 @@ html, body {
 .game-board-area {
   position: absolute;
   top: 1vh;
-  left: 50%;
+  left: 1%;
   transform:  scale(0.5);
   z-index: 8;
 }
@@ -37,7 +37,7 @@ html, body {
 /* ---------- 2️⃣ BOX MESSAGGI + INPUT (blu - sotto tabellone) ---------- */
 .game-alerts {
   position: absolute;
-  top: 28vh;
+  top: 30vh;
   left: 50%;
   transform: translateX(-50%);
   z-index: 16;
