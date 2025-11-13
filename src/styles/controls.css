@@ -34,7 +34,8 @@
    =========================== */
 
 .btn-primary {
-  padding: 6px 15px;       /* ← PIÙ GRANDE dei secondari */
+  padding: 6px 15px; 
+  top: 250px;      /* ← PIÙ GRANDE dei secondari */
   font-size: 20px;
   font-weight: bold;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -128,7 +129,7 @@
    =========================== */
 
 .controls-panels {
-  margin-top: -50px;
+  margin-top: -90px;
   width: 100%;
 }
 
