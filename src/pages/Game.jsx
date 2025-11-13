@@ -13,6 +13,7 @@ import { maskBoard } from "../game/GameEngine";
 import socket from "../socket";
 
 export default function Game({ players = [], totalRounds = 3, state, onExitToLobby }) {
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const [mySocketId, setMySocketId] = useState(socket.id);
   const [roomCode, setRoomCode] = useState(state?.roomCode || null);
 
@@ -64,6 +65,39 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
   const [wheelSpinning, setWheelSpinning] = useState(false);
   const [wheelSpinSeed, setWheelSpinSeed] = useState(null);
 
+  // Funzione toggle fullscreen
+  const toggleFullscreen = async () => {
+    const wrapper = document.querySelector('.game-wrapper');
+    
+    if (!isFullscreen) {
+      try {
+        wrapper?.classList.add('fullscreen-mode');
+        const element = document.documentElement;
+        if (element.requestFullscreen) {
+          await element.requestFullscreen();
+        } else if (element.webkitRequestFullscreen) {
+          await element.webkitRequestFullscreen();
+        }
+        setIsFullscreen(true);
+      } catch (error) {
+        console.error('Errore fullscreen:', error);
+        wrapper?.classList.remove('fullscreen-mode');
+      }
+    } else {
+      try {
+        wrapper?.classList.remove('fullscreen-mode');
+        if (document.exitFullscreen) {
+          await document.exitFullscreen();
+        } else if (document.webkitExitFullscreen) {
+          await document.webkitExitFullscreen();
+        }
+        setIsFullscreen(false);
+      } catch (error) {
+        console.error('Errore uscita fullscreen:', error);
+      }
+    }
+  };
+
   useEffect(() => {
     if (roomCode && mySocketId) {
       localStorage.setItem("gameSession", JSON.stringify({
@@ -94,6 +128,25 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
   useEffect(() => {
     setMySocketId(socket.id);
   }, []);
+
+  // Listener per uscita fullscreen con ESC
+  useEffect(() => {
+    const handleChange = () => {
+      const isFull = !!(document.fullscreenElement || document.webkitFullscreenElement);
+      if (!isFull && isFullscreen) {
+        document.querySelector('.game-wrapper')?.classList.remove('fullscreen-mode');
+        setIsFullscreen(false);
+      }
+    };
+
+    document.addEventListener('fullscreenchange', handleChange);
+    document.addEventListener('webkitfullscreenchange', handleChange);
+
+    return () => {
+      document.removeEventListener('fullscreenchange', handleChange);
+      document.removeEventListener('webkitfullscreenchange', handleChange);
+    };
+  }, [isFullscreen]);
 
   useEffect(() => {
     function handleGameStart({ gameState: serverState }) {
@@ -298,6 +351,28 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
     <div className="game-wrapper">
       <button className="btn-exit-room" onClick={handleExitRoom} title="Esci dalla stanza">
         ❌ Esci
+      </button>
+
+      <button 
+        className="btn-fullscreen" 
+        onClick={toggleFullscreen}
+        style={{
+          position: 'absolute',
+          top: '1vh',
+          right: '12vw',
+          padding: '6px 12px',
+          fontSize: '11px',
+          fontWeight: 'bold',
+          background: '#4299e1',
+          color: 'white',
+          border: 'none',
+          borderRadius: '6px',
+          cursor: 'pointer',
+          zIndex: 1001
+        }}
+        title={isFullscreen ? "Esci da fullscreen" : "Vai fullscreen"}
+      >
+        {isFullscreen ? '⊡' : '⛶'}
       </button>
 
       <div className="game-players">
