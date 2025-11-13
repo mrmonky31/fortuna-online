@@ -8,7 +8,7 @@
   background: #0e0e12;
   border: 2px solid #000;
   border-radius: 8px;
-  box-shadow: 0 0 12px rgba(0, 179, 255, 0.873);
+  box-shadow: 0 0 15px rgba(0, 179, 255, 0.919);
   min-height: 380px;
 }
 
@@ -16,8 +16,8 @@
 .pm-row {
   display: grid;
   grid-template-columns: repeat(14, 50px);
-  gap: 6px;
-  margin: 6px 0;
+  gap: 5px;
+  margin: 5px 0;
   justify-content: center;
 }
 
