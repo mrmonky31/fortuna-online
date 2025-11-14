@@ -116,7 +116,7 @@ export default function WheelVersionA({ slices = [], spinning = false, onStop, s
     );
   };
 
-  // ✅ SPIN con angolo target preciso dal server
+  // ✅ SPIN con angolo target preciso + rimbalzo realistico
   useEffect(() => {
     if (!spinning || isSpinning || targetAngle === null) return;
     
@@ -129,57 +129,78 @@ export default function WheelVersionA({ slices = [], spinning = false, onStop, s
     }
 
     setTimeout(() => {
-      // ✅ Calcola rotazione per far coincidere puntatore (90°) con target
       const randomFromSeed = seededRandom(spinSeed || Date.now());
       const extraSpins = Math.floor(randomFromSeed * 2 + 3); // 3-5 giri completi
       const duration = 3 + randomFromSeed * 1.5; // 3-4.5 secondi
       
-      // ✅ Il puntatore è a 90° (ore 12, in alto)
-      // Gli spicchi partono da -90° (indice 0 è a ore 12 quando ruota = 0°)
+      // ✅ NUOVO: Aggiungi variazione casuale ±9° per non fermarsi sempre al centro
+      const variation = (seededRandom(spinSeed + 100) - 0.5) * 18; // ±9° (metà spicchio)
+      
+      // ✅ Lo spicchio target deve finire sotto il puntatore fisso (ore 12)
+      // Il puntatore è nell'asse invisibile fisso, la ruota gira
+      // Gli spicchi nella ruota partono da -90° (indice 0 a ore 12 quando angle=0)
       // Per far finire lo spicchio N sotto il puntatore:
-      // dobbiamo ruotare la ruota di -targetAngle (in senso orario)
-      const finalAngle = 360 - targetAngle; // Rotazione necessaria
-      const totalRotation = extraSpins * 360 + finalAngle;
+      const finalAngle = 360 - targetAngle + variation;
+      
+      // ✅ FASE 1: Rotazione principale con overshoot (va oltre il target)
+      const overshoot = 3.6; // Gradi di overshoot (0.2 spicchi = 3.6°)
+      const totalRotationWithOvershoot = extraSpins * 360 + finalAngle + overshoot;
 
       if (wheelRef.current) {
+        // Animazione principale con overshoot
         wheelRef.current.style.transition = `transform ${duration}s cubic-bezier(0.12, 0.64, 0.24, 1)`;
-        setAngle(totalRotation);
+        setAngle(totalRotationWithOvershoot);
       }
 
+      // ✅ FASE 2: Dopo l'overshoot, rimbalza indietro al punto esatto
       setTimeout(() => {
-        setIsSpinning(false);
+        const bounceBackDuration = 0.3; // 300ms per il rimbalzo
+        const finalRotation = extraSpins * 360 + finalAngle;
         
-        // ✅ Calcola outcome dallo spicchio target
-        const normalizedAngle = totalRotation % 360;
-        const pointerAngle = 90; // Puntatore sempre a 90°
-        const relativeAngle = (pointerAngle - normalizedAngle + 360) % 360;
-        const sliceIndex = Math.floor(relativeAngle / SLICE_DEG);
-        const slice = values[sliceIndex];
-
-        let outcome;
-        if (typeof slice === "string" && slice.includes("/")) {
-          const [a, b] = slice.split("/");
-          const localAngle = relativeAngle - sliceIndex * SLICE_DEG;
-          const chosen = localAngle < SLICE_DEG / 2 ? a : b;
-          
-          if (chosen === "PASSA") outcome = { type: "pass", label: "PASSA" };
-          else if (chosen === "BANCAROTTA") outcome = { type: "bankrupt", label: "BANCAROTTA" };
-          else if (chosen === "RADDOPPIA") outcome = { type: "double", label: "RADDOPPIA" };
-          else if (!isNaN(Number(chosen))) outcome = { type: "points", value: Number(chosen), label: chosen };
-          else outcome = { type: "custom", label: chosen };
-        } else if (typeof slice === "number") {
-          outcome = { type: "points", value: slice, label: slice };
-        } else if (slice === "PASSA") {
-          outcome = { type: "pass", label: "PASSA" };
-        } else if (slice === "BANCAROTTA") {
-          outcome = { type: "bankrupt", label: "BANCAROTTA" };
-        } else if (slice === "RADDOPPIA") {
-          outcome = { type: "double", label: "RADDOPPIA" };
-        } else {
-          outcome = { type: "custom", label: String(slice) };
+        if (wheelRef.current) {
+          wheelRef.current.style.transition = `transform ${bounceBackDuration}s cubic-bezier(0.36, 0, 0.66, 0.04)`;
+          setAngle(finalRotation);
         }
 
-        onStop && onStop(outcome);
+        // ✅ FASE 3: Calcola outcome dopo il rimbalzo
+        setTimeout(() => {
+          setIsSpinning(false);
+          
+          // Calcola quale spicchio è sotto il puntatore fisso
+          const normalizedAngle = finalRotation % 360;
+          
+          // Il puntatore fisso è a 90° (ore 12)
+          // Gli spicchi partono da -90° quando angle=0
+          // Spicchio sotto puntatore = (90 + angle) / SLICE_DEG
+          const angleUnderPointer = (90 + normalizedAngle) % 360;
+          const sliceIndex = Math.floor(angleUnderPointer / SLICE_DEG) % values.length;
+          const slice = values[sliceIndex];
+
+          let outcome;
+          if (typeof slice === "string" && slice.includes("/")) {
+            const [a, b] = slice.split("/");
+            const localAngle = angleUnderPointer - (sliceIndex * SLICE_DEG);
+            const chosen = localAngle < SLICE_DEG / 2 ? a : b;
+            
+            if (chosen === "PASSA") outcome = { type: "pass", label: "PASSA" };
+            else if (chosen === "BANCAROTTA") outcome = { type: "bankrupt", label: "BANCAROTTA" };
+            else if (chosen === "RADDOPPIA") outcome = { type: "double", label: "RADDOPPIA" };
+            else if (!isNaN(Number(chosen))) outcome = { type: "points", value: Number(chosen), label: chosen };
+            else outcome = { type: "custom", label: chosen };
+          } else if (typeof slice === "number") {
+            outcome = { type: "points", value: slice, label: slice };
+          } else if (slice === "PASSA") {
+            outcome = { type: "pass", label: "PASSA" };
+          } else if (slice === "BANCAROTTA") {
+            outcome = { type: "bankrupt", label: "BANCAROTTA" };
+          } else if (slice === "RADDOPPIA") {
+            outcome = { type: "double", label: "RADDOPPIA" };
+          } else {
+            outcome = { type: "custom", label: String(slice) };
+          }
+
+          onStop && onStop(outcome);
+        }, bounceBackDuration * 1000);
       }, duration * 1000);
     }, 50);
   }, [spinning, targetAngle]);

@@ -76,9 +76,9 @@ html, body {
 /* ---------- 5️⃣-8️⃣ PULSANTI SECONDARI ---------- */
 .game-wrapper:not(.fullscreen-mode) .controls-row-secondary {
   position: absolute;
-  top: 33vh;
+  top: 31vh;
   left: 50%;
-  transform: translateX(-50%) scale(0.75);
+  transform: translateX(-50%) scale(0.65);
   transform-origin: center top;
   display: flex;
   gap: 5px;
@@ -226,9 +226,9 @@ html, body {
 /* ---------- 5️⃣-8️⃣ PULSANTI SECONDARI ---------- */
 .game-wrapper.fullscreen-mode .controls-row-secondary {
   position: absolute;
-  top: 28vh;
+  top: 26vh;
   left: 50%;
-  transform: translateX(-50%) scale(0.75);
+  transform: translateX(-50%) scale(0.65);
   transform-origin: center top;
   display: flex;
   gap: 5px;
@@ -493,7 +493,7 @@ html, body {
 /* Pannelli input */
 .controls-panels {
   position: absolute;
-  top: 28vh;
+  top: 24vh;
   left: 50%;
   transform: translateX(-50%);
   width: 90vw;

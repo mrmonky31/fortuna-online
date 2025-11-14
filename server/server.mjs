@@ -558,7 +558,7 @@ io.on("connection", (socket) => {
         sliceIndex: sliceIndex     // ✅ NUOVO: indice spicchio
       });
 
-      // ✅ Simula risultato dopo 4 secondi
+      // ✅ Simula risultato dopo 5 secondi (durata max animazione 4.5s + rimbalzo 0.3s)
       setTimeout(() => {
         const slice = targetSlice;
 
@@ -615,7 +615,7 @@ io.on("connection", (socket) => {
         }
 
         io.to(code).emit("gameStateUpdate", { gameState: gs });
-      }, 4000);
+      }, 5000);
 
       if (callback) callback({ ok: true });
     } catch (err) {
