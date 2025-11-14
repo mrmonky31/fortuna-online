@@ -62,6 +62,26 @@ html, body {
   left: 50%;
   transform: translateX(-180px);
   z-index: 15;
+  /* Stili visivi */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: #2d3748;
+  padding: 6px 10px;
+  border-radius: 5px;
+}
+
+.target-title {
+  font-size: 9px;
+  color: #a0aec0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.target-value {
+  font-size: 18px;
+  font-weight: bold;
+  color: #ffd700;
 }
 
 /* ---------- 4️⃣ GIRA LA RUOTA (pulsante principale) ---------- */
@@ -212,6 +232,13 @@ html, body {
   left: 50%;
   transform: translateX(-180px);
   z-index: 15;
+  /* Stili visivi */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: #2d3748;
+  padding: 6px 10px;
+  border-radius: 5px;
 }
 
 /* ---------- 4️⃣ GIRA LA RUOTA ---------- */
@@ -510,6 +537,59 @@ html, body {
   border-radius: 8px;
   border: 2px solid #4a5568;
   animation: slideDown 0.3s ease;
+}
+
+.panel-label {
+  display: none;
+}
+
+.panel-input {
+  flex: 1;
+  padding: 8px 12px;
+  font-size: 14px;
+  border: 2px solid #4a5568;
+  border-radius: 6px;
+  background: #1a202c;
+  color: white;
+  outline: none;
+  transition: all 0.3s ease;
+}
+
+.panel-input-game {
+  padding: 8px 12px;
+  font-size: 14px;
+}
+
+.panel-input:focus {
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+}
+
+.panel-input::placeholder {
+  color: #718096;
+  font-size: 12px;
+}
+
+.btn-ok {
+  padding: 8px 14px;
+  font-size: 12px;
+  font-weight: bold;
+  background: #48bb78;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-ok:hover:not(:disabled) {
+  background: #38a169;
+}
+
+.btn-ok:disabled {
+  background: #718096;
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
 @keyframes slideDown {
