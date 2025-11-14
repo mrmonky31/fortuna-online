@@ -5,8 +5,8 @@
 
 html, body {
   width: 100vw;
-  height: 97vh;
-  height: 97dvh;
+  height: 96vh;
+  height: 96dvh;
   margin: 0;
   padding: 0;
   overflow: hidden;
@@ -262,7 +262,7 @@ html, body {
 /* ---------- 9️⃣-12️⃣ GIOCATORI ---------- */
 .game-wrapper.fullscreen-mode .game-players {
   position: absolute;
-  top: 43vh;
+  top: 44vh;
   left: 39%;
   transform: translateX(-150px);
   display: flex;
