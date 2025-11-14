@@ -5,8 +5,8 @@
 
 html, body {
   width: 100vw;
-  height: 96vh;
-  height: 96dvh;
+  height: 99vh;
+  height: 99dvh;
   margin: 0;
   padding: 0;
   overflow: hidden;
@@ -17,7 +17,7 @@ html, body {
 
 .game-wrapper {
   position: relative;
-  top: 3vh;
+  top: 4vh;
   left: 0;
   width: 100vw;
   height: 100vh;
