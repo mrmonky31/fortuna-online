@@ -33,7 +33,7 @@ html, body {
 /* ---------- 1️⃣ TABELLONE ---------- */
 .game-wrapper:not(.fullscreen-mode) .game-board-area {
   position: absolute;
-  top: 5vh;
+  top: 3vh;
   left: 50%;
   transform: translateX(-50%) scale(0.45);
   transform-origin: center top;
@@ -55,7 +55,7 @@ html, body {
 /* ---------- 3️⃣ TARGET BOX ---------- */
 .game-wrapper:not(.fullscreen-mode) .target-box {
   position: absolute;
-  top: 1vh;
+  top: -1vh;
   left: 50%;
   transform: translateX(-180px);
   z-index: 15;
@@ -93,7 +93,7 @@ html, body {
 /* ---------- 5️⃣-8️⃣ PULSANTI SECONDARI ---------- */
 .game-wrapper:not(.fullscreen-mode) .controls-row-secondary {
   position: absolute;
-  top: 15vh;
+  top: 5vh;
   left: 50%;
   transform: translateX(-50%) scale(0.65);
   transform-origin: center top;
@@ -107,7 +107,7 @@ html, body {
 /* ---------- 9️⃣-12️⃣ GIOCATORI ---------- */
 .game-wrapper:not(.fullscreen-mode) .game-players {
   position: absolute;
-  top: 56vh;
+  top: 80vh;
   left: 50%;
   transform: translateX(-150px);
   display: flex;
@@ -121,7 +121,7 @@ html, body {
 .game-wrapper:not(.fullscreen-mode) .scoreboard {
   position: absolute;
   top: 70vh;
-  left: 180%;
+  left: 100%;
   transform: translateX(-150px);
   background: rgba(17, 19, 26, 0.9);
   border: 2px solid #fff;
@@ -138,7 +138,7 @@ html, body {
 /* ---------- 13️⃣ RUOTA ---------- */
 .game-wrapper:not(.fullscreen-mode) .wheel-wrap-svg {
   position: absolute;
-  top: 75vh;
+  top: 70vh;
   left: 50%;
   transform: translateX(-50%);
   width: 85vw;
@@ -166,7 +166,7 @@ html, body {
 .game-wrapper:not(.fullscreen-mode) .btn-exit-room {
   position: absolute;
   top: 1vh;
-  left: 75%;
+  left: 95%;
   transform: translateX(-80px);
   padding: 6px 12px;
   font-size: 11px;
@@ -201,7 +201,7 @@ html, body {
 /* ---------- 1️⃣ TABELLONE ---------- */
 .game-wrapper.fullscreen-mode .game-board-area {
   position: absolute;
-  top: 7vh;
+  top: 10vh;
   left: 50%;
   transform: translateX(-50%) scale(0.5);
   transform-origin: center top;
@@ -223,7 +223,7 @@ html, body {
 /* ---------- 3️⃣ TARGET BOX ---------- */
 .game-wrapper.fullscreen-mode .target-box {
   position: absolute;
-  top: 1vh;
+  top: -1vh;
   left: 50%;
   transform: translateX(-180px);
   z-index: 15;
@@ -248,7 +248,7 @@ html, body {
 /* ---------- 5️⃣-8️⃣ PULSANTI SECONDARI ---------- */
 .game-wrapper.fullscreen-mode .controls-row-secondary {
   position: absolute;
-  top: 9vh;
+  top: 7vh;
   left: 50%;
   transform: translateX(-50%) scale(0.65);
   transform-origin: center top;
@@ -262,8 +262,8 @@ html, body {
 /* ---------- 9️⃣-12️⃣ GIOCATORI ---------- */
 .game-wrapper.fullscreen-mode .game-players {
   position: absolute;
-  top: 47vh;
-  left: 50%;
+  top: 70vh;
+  left: 20%;
   transform: translateX(-150px);
   display: flex;
   flex-direction: column;
@@ -276,7 +276,7 @@ html, body {
 .game-wrapper.fullscreen-mode .scoreboard {
   position: absolute;
   top: 67vh;
-  left: 100%;
+  left: 80%;
   transform: translateX(-80px);
   background: rgba(17, 19, 26, 0.9);
   border: 2px solid #fff;
@@ -321,7 +321,7 @@ html, body {
 .game-wrapper.fullscreen-mode .btn-exit-room {
   position: absolute;
   top: 1vh;
-  left: 80%;
+  left: 90%;
   transform: translateX(-120px);
   padding: 6px 12px;
   font-size: 11px;
@@ -597,24 +597,5 @@ html, body {
     transform: translateY(0);
   }
 }
-/* ========================================== */
-/* SAFE AREA PER NOTCH + BOTTOM SPACING       */
-/* ========================================== */
-
-.safe-area-padding {
-  position: fixed;
-  left: 0;
-  right: 0;
-  z-index: 9999;
-  pointer-events: none;
-}
-
-/* Spazio protetto superiore (notch) */
-.safe-area-top {
-  top: 0;
-  height: env(safe-area-inset-top);
-  background: #0b0b0f;
-}
-
 
 
