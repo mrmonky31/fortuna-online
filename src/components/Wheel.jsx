@@ -134,10 +134,11 @@ export default function WheelVersionA({ slices = [], spinning = false, onStop, s
       const extraSpins = Math.floor(randomFromSeed * 2 + 3); // 3-5 giri completi
       const duration = 3 + randomFromSeed * 1.5; // 3-4.5 secondi
       
-      // ✅ Il puntatore è a 90° (in alto)
-      // Dobbiamo ruotare la ruota così che lo spicchio target finisca sotto il puntatore
-      // Formula: rotazione = (90° - targetAngle) + giri completi
-      const finalAngle = (90 - targetAngle + 360) % 360;
+      // ✅ Il puntatore è a 90° (ore 12, in alto)
+      // Gli spicchi partono da -90° (indice 0 è a ore 12 quando ruota = 0°)
+      // Per far finire lo spicchio N sotto il puntatore:
+      // dobbiamo ruotare la ruota di -targetAngle (in senso orario)
+      const finalAngle = 360 - targetAngle; // Rotazione necessaria
       const totalRotation = extraSpins * 360 + finalAngle;
 
       if (wheelRef.current) {
