@@ -5,8 +5,8 @@
 
 html, body {
   width: 100vw;
-  height: 96vh;
-  height: 95dvh;
+  height: 97vh;
+  height: 97dvh;
   margin: 0;
   padding: 0;
   overflow: hidden;
@@ -120,7 +120,7 @@ html, body {
 /* ---------- CLASSIFICA ---------- */
 .game-wrapper:not(.fullscreen-mode) .scoreboard {
   position: absolute;
-  top: 42vh;
+  top: 48vh;
   left: 110%;
   transform: translateX(-150px);
   background: rgba(17, 19, 26, 0.9);
