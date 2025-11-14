@@ -5,7 +5,7 @@
 
 html, body {
   width: 100vw;
-  height: 95vh;
+  height: 96vh;
   height: 95dvh;
   margin: 0;
   padding: 0;
@@ -43,7 +43,7 @@ html, body {
 /* ---------- 2️⃣ MESSAGGI + INPUT ---------- */
 .game-wrapper:not(.fullscreen-mode) .game-alerts {
   position: absolute;
-  top: 33vh;
+  top: 30vh;
   left: 50%;
   transform: translateX(-50%);
   z-index: 16;
@@ -55,7 +55,7 @@ html, body {
 /* ---------- 3️⃣ TARGET BOX ---------- */
 .game-wrapper:not(.fullscreen-mode) .target-box {
   position: absolute;
-  top: -1vh;
+  top: -5vh;
   left: 50%;
   transform: translateX(-180px);
   z-index: 15;
@@ -84,7 +84,7 @@ html, body {
 /* ---------- 4️⃣ GIRA LA RUOTA (pulsante principale) ---------- */
 .game-wrapper:not(.fullscreen-mode) .controls-area {
   position: absolute;
-  top: 48vh;
+  top: 38vh;
   left: 50%;
   transform: translateX(-50%);
   z-index: 15;
@@ -107,8 +107,8 @@ html, body {
 /* ---------- 9️⃣-12️⃣ GIOCATORI ---------- */
 .game-wrapper:not(.fullscreen-mode) .game-players {
   position: absolute;
-  top: 68vh;
-  left: 50%;
+  top: 50vh;
+  left: 40%;
   transform: translateX(-150px);
   display: flex;
   flex-direction: column;
@@ -120,7 +120,7 @@ html, body {
 /* ---------- CLASSIFICA ---------- */
 .game-wrapper:not(.fullscreen-mode) .scoreboard {
   position: absolute;
-  top: 65vh;
+  top: 55vh;
   left: 110%;
   transform: translateX(-150px);
   background: rgba(17, 19, 26, 0.9);
@@ -166,7 +166,7 @@ html, body {
 .game-wrapper:not(.fullscreen-mode) .btn-exit-room {
   position: absolute;
   top: 1vh;
-  left: 90%;
+  left: 88%;
   transform: translateX(-80px);
   padding: 6px 12px;
   font-size: 11px;
@@ -201,7 +201,7 @@ html, body {
 /* ---------- 1️⃣ TABELLONE ---------- */
 .game-wrapper.fullscreen-mode .game-board-area {
   position: absolute;
-  top: 4vh;
+  top: 2vh;
   left: 50%;
   transform: translateX(-50%) scale(0.5);
   transform-origin: center top;
@@ -211,7 +211,7 @@ html, body {
 /* ---------- 2️⃣ MESSAGGI + INPUT ---------- */
 .game-wrapper.fullscreen-mode .game-alerts {
   position: absolute;
-  top: 34vh;
+  top: 28vh;
   left: 50%;
   transform: translateX(-50%);
   z-index: 16;
@@ -239,7 +239,7 @@ html, body {
 /* ---------- 4️⃣ GIRA LA RUOTA ---------- */
 .game-wrapper.fullscreen-mode .controls-area {
   position: absolute;
-  top: 39vh;
+  top: 34vh;
   left: 50%;
   transform: translateX(-50%);
   z-index: 15;
@@ -262,8 +262,8 @@ html, body {
 /* ---------- 9️⃣-12️⃣ GIOCATORI ---------- */
 .game-wrapper.fullscreen-mode .game-players {
   position: absolute;
-  top: 65vh;
-  left: 33%;
+  top: 55vh;
+  left: 39%;
   transform: translateX(-150px);
   display: flex;
   flex-direction: column;
@@ -275,8 +275,8 @@ html, body {
 /* ---------- CLASSIFICA ---------- */
 .game-wrapper.fullscreen-mode .scoreboard {
   position: absolute;
-  top: 67vh;
-  left: 80%;
+  top: 55vh;
+  left: 87%;
   transform: translateX(-80px);
   background: rgba(17, 19, 26, 0.9);
   border: 2px solid #fff;
