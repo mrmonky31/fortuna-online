@@ -46,7 +46,7 @@ html, body {
 /* ---------- 2️⃣ MESSAGGI + INPUT ---------- */
 .game-wrapper:not(.fullscreen-mode) .game-alerts {
   position: absolute;
-  top: 28vh;
+  top: 33vh;
   left: 50%;
   transform: translateX(-50%);
   z-index: 16;
@@ -58,7 +58,7 @@ html, body {
 /* ---------- 3️⃣ TARGET BOX ---------- */
 .game-wrapper:not(.fullscreen-mode) .target-box {
   position: absolute;
-  top: 30vh;
+  top: 10vh;
   left: 50%;
   transform: translateX(-180px);
   z-index: 15;
@@ -87,7 +87,7 @@ html, body {
 /* ---------- 4️⃣ GIRA LA RUOTA (pulsante principale) ---------- */
 .game-wrapper:not(.fullscreen-mode) .controls-area {
   position: absolute;
-  top: 33vh;
+  top: 40vh;
   left: 50%;
   transform: translateX(-50%);
   z-index: 15;
@@ -96,7 +96,7 @@ html, body {
 /* ---------- 5️⃣-8️⃣ PULSANTI SECONDARI ---------- */
 .game-wrapper:not(.fullscreen-mode) .controls-row-secondary {
   position: absolute;
-  top: 25vh;
+  top: 23vh;
   left: 50%;
   transform: translateX(-50%) scale(0.65);
   transform-origin: center top;
@@ -110,7 +110,7 @@ html, body {
 /* ---------- 9️⃣-12️⃣ GIOCATORI ---------- */
 .game-wrapper:not(.fullscreen-mode) .game-players {
   position: absolute;
-  top: 50vh;
+  top: 56vh;
   left: 50%;
   transform: translateX(-150px);
   display: flex;
@@ -124,7 +124,7 @@ html, body {
 .game-wrapper:not(.fullscreen-mode) .scoreboard {
   position: absolute;
   top: 70vh;
-  left: 50%;
+  left: 60%;
   transform: translateX(-150px);
   background: rgba(17, 19, 26, 0.9);
   border: 2px solid #fff;
@@ -141,7 +141,7 @@ html, body {
 /* ---------- 13️⃣ RUOTA ---------- */
 .game-wrapper:not(.fullscreen-mode) .wheel-wrap-svg {
   position: absolute;
-  top: 59vh;
+  top: 65vh;
   left: 50%;
   transform: translateX(-50%);
   width: 85vw;
@@ -155,7 +155,7 @@ html, body {
 .game-wrapper:not(.fullscreen-mode) .game-round-info {
   position: absolute;
   top: 1vh;
-  left: 50%;
+  left: 25%;
   transform: translateX(80px);
   font-weight: bold;
   font-size: 0.75em;
@@ -170,7 +170,7 @@ html, body {
   position: absolute;
   top: 1vh;
   left: 50%;
-  transform: translateX(-120px);
+  transform: translateX(-80px);
   padding: 6px 12px;
   font-size: 11px;
   font-weight: bold;
@@ -216,7 +216,7 @@ html, body {
 /* ---------- 2️⃣ MESSAGGI + INPUT ---------- */
 .game-wrapper.fullscreen-mode .game-alerts {
   position: absolute;
-  top: 28vh;
+  top: 33vh;
   left: 50%;
   transform: translateX(-50%);
   z-index: 16;
@@ -228,7 +228,7 @@ html, body {
 /* ---------- 3️⃣ TARGET BOX ---------- */
 .game-wrapper.fullscreen-mode .target-box {
   position: absolute;
-  top: 25vh;
+  top: 20vh;
   left: 50%;
   transform: translateX(-180px);
   z-index: 15;
@@ -244,7 +244,7 @@ html, body {
 /* ---------- 4️⃣ GIRA LA RUOTA ---------- */
 .game-wrapper.fullscreen-mode .controls-area {
   position: absolute;
-  top: 28vh;
+  top: 33vh;
   left: 50%;
   transform: translateX(-50%);
   z-index: 15;
@@ -253,7 +253,7 @@ html, body {
 /* ---------- 5️⃣-8️⃣ PULSANTI SECONDARI ---------- */
 .game-wrapper.fullscreen-mode .controls-row-secondary {
   position: absolute;
-  top: 15vh;
+  top: 12vh;
   left: 50%;
   transform: translateX(-50%) scale(0.65);
   transform-origin: center top;
@@ -282,7 +282,7 @@ html, body {
   position: absolute;
   top: 67vh;
   left: 50%;
-  transform: translateX(-150px);
+  transform: translateX(-80px);
   background: rgba(17, 19, 26, 0.9);
   border: 2px solid #fff;
   border-radius: 8px;
@@ -298,7 +298,7 @@ html, body {
 /* ---------- 13️⃣ RUOTA ---------- */
 .game-wrapper.fullscreen-mode .wheel-wrap-svg {
   position: absolute;
-  top: 58vh;
+  top: 65vh;
   left: 50%;
   transform: translateX(-50%);
   width: 90vw;
@@ -312,7 +312,7 @@ html, body {
 .game-wrapper.fullscreen-mode .game-round-info {
   position: absolute;
   top: 1vh;
-  left: 50%;
+  left: 25%;
   transform: translateX(80px);
   font-weight: bold;
   font-size: 0.75em;
@@ -520,7 +520,7 @@ html, body {
 /* Pannelli input */
 .controls-panels {
   position: absolute;
-  top: 10vh;
+  top: 1vh;
   left: 50%;
   transform: translateX(-50%);
   width: 90vw;
