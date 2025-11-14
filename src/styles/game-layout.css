@@ -58,7 +58,7 @@ html, body {
   top: -1vh;
   left: 50%;
   transform: translateX(-180px);
-  z-index: 15;
+  z-index: 1;
   /* Stili visivi */
   display: flex;
   flex-direction: column;
@@ -226,7 +226,7 @@ html, body {
   top: 0vh;
   left: 50%;
   transform: translateX(-180px);
-  z-index: 15;
+  z-index: 1;
   /* Stili visivi */
   display: flex;
   flex-direction: column;
@@ -520,7 +520,7 @@ html, body {
   transform: translateX(-50%);
   width: 90vw;
   max-width: 400px;
-  z-index: 1;
+  z-index: 9999;
 }
 
 .panel {
