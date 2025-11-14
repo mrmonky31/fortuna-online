@@ -84,7 +84,7 @@ html, body {
 /* ---------- 4️⃣ GIRA LA RUOTA (pulsante principale) ---------- */
 .game-wrapper:not(.fullscreen-mode) .controls-area {
   position: absolute;
-  top: 40vh;
+  top: 48vh;
   left: 50%;
   transform: translateX(-50%);
   z-index: 15;
@@ -107,7 +107,7 @@ html, body {
 /* ---------- 9️⃣-12️⃣ GIOCATORI ---------- */
 .game-wrapper:not(.fullscreen-mode) .game-players {
   position: absolute;
-  top: 80vh;
+  top: 68vh;
   left: 50%;
   transform: translateX(-150px);
   display: flex;
@@ -120,8 +120,8 @@ html, body {
 /* ---------- CLASSIFICA ---------- */
 .game-wrapper:not(.fullscreen-mode) .scoreboard {
   position: absolute;
-  top: 70vh;
-  left: 100%;
+  top: 65vh;
+  left: 110%;
   transform: translateX(-150px);
   background: rgba(17, 19, 26, 0.9);
   border: 2px solid #fff;
@@ -138,7 +138,7 @@ html, body {
 /* ---------- 13️⃣ RUOTA ---------- */
 .game-wrapper:not(.fullscreen-mode) .wheel-wrap-svg {
   position: absolute;
-  top: 70vh;
+  top: 65vh;
   left: 50%;
   transform: translateX(-50%);
   width: 85vw;
@@ -166,7 +166,7 @@ html, body {
 .game-wrapper:not(.fullscreen-mode) .btn-exit-room {
   position: absolute;
   top: 1vh;
-  left: 95%;
+  left: 90%;
   transform: translateX(-80px);
   padding: 6px 12px;
   font-size: 11px;
@@ -201,7 +201,7 @@ html, body {
 /* ---------- 1️⃣ TABELLONE ---------- */
 .game-wrapper.fullscreen-mode .game-board-area {
   position: absolute;
-  top: 10vh;
+  top: 4vh;
   left: 50%;
   transform: translateX(-50%) scale(0.5);
   transform-origin: center top;
@@ -262,8 +262,8 @@ html, body {
 /* ---------- 9️⃣-12️⃣ GIOCATORI ---------- */
 .game-wrapper.fullscreen-mode .game-players {
   position: absolute;
-  top: 70vh;
-  left: 20%;
+  top: 65vh;
+  left: 33%;
   transform: translateX(-150px);
   display: flex;
   flex-direction: column;
@@ -293,7 +293,7 @@ html, body {
 /* ---------- 13️⃣ RUOTA ---------- */
 .game-wrapper.fullscreen-mode .wheel-wrap-svg {
   position: absolute;
-  top: 75vh;
+  top: 65vh;
   left: 50%;
   transform: translateX(-50%);
   width: 90vw;
@@ -307,7 +307,7 @@ html, body {
 .game-wrapper.fullscreen-mode .game-round-info {
   position: absolute;
   top: 1vh;
-  left: 20%;
+  left: 17%;
   transform: translateX(80px);
   font-weight: bold;
   font-size: 0.75em;
@@ -321,7 +321,7 @@ html, body {
 .game-wrapper.fullscreen-mode .btn-exit-room {
   position: absolute;
   top: 1vh;
-  left: 90%;
+  left: 92%;
   transform: translateX(-120px);
   padding: 6px 12px;
   font-size: 11px;
