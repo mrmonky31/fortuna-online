@@ -106,7 +106,7 @@ html, body {
 
 /* ---------- 9️⃣-12️⃣ GIOCATORI ---------- */
 .game-wrapper:not(.fullscreen-mode) .game-players {
-  position: flex;
+  position: absolute;
   top: 43vh;
   left: 40%;
   transform: translateX(-150px);
