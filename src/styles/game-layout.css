@@ -108,13 +108,13 @@ html, body {
 .game-wrapper:not(.fullscreen-mode) .game-players {
   position: absolute;
   top: 45vh;
-  left: 37%;
+  left: 39%;
   transform: translateX(-150px);
   display: flex;
   flex-direction: row;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 5px;
   z-index: 20;
   max-width: 35vw;
 }
@@ -264,12 +264,14 @@ html, body {
 /* ---------- 9️⃣-12️⃣ GIOCATORI ---------- */
 .game-wrapper.fullscreen-mode .game-players {
   position: absolute;
-  top: 44vh;
+  top: 43vh;
   left: 39%;
   transform: translateX(-150px);
   display: flex;
   flex-direction: row;
-  gap: 6px;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
   z-index: 20;
   max-width: 35vw;
 }
