@@ -107,8 +107,8 @@ html, body {
 /* ---------- 9️⃣-12️⃣ GIOCATORI ---------- */
 .game-wrapper:not(.fullscreen-mode) .game-players {
   position: absolute;
-  top: 55vh;
-  left: 45%;
+  top: 45vh;
+  left: 37%;
   transform: translateX(-150px);
   display: flex;
   flex-direction: row;
@@ -268,7 +268,7 @@ html, body {
   left: 39%;
   transform: translateX(-150px);
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   gap: 6px;
   z-index: 20;
   max-width: 35vw;
