@@ -106,12 +106,12 @@ html, body {
 
 /* ---------- 9️⃣-12️⃣ GIOCATORI ---------- */
 .game-wrapper:not(.fullscreen-mode) .game-players {
-  position: absolute;
+  position: flex;
   top: 43vh;
   left: 40%;
   transform: translateX(-150px);
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
   gap: 6px;
   z-index: 20;
@@ -599,13 +599,7 @@ html, body {
   }
 }
 /* --- PLAYERS PANEL ORIZZONTALE --- */
-.players-panel {
-  display: flex;
-  flex-direction: row;
-  gap: 10px;
-  justify-content: center;
-  align-items: flex-start;
-}
+
 
 /* Box singolo giocatore */
 .player-box {
