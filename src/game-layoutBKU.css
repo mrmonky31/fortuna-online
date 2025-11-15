@@ -598,41 +598,4 @@ html, body {
   }
 }
 
-/* --- PLAYERS PANEL ORIZZONTALE --- */
-.players-panel {
-  display: flex;
-  flex-direction: row;
-  gap: 14px;
-  width: 100%;
-  justify-content: center;
-  align-items: flex-start;
-  padding: 10px 0;
-}
-
-.player-box {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  background: #ffffff20;
-  padding: 8px 14px;
-  border-radius: 8px;
-  min-width: 120px;
-  text-align: center;
-}
-
-.player-name {
-  font-size: 26px;
-  font-weight: 700;
-}
-
-.player-round {
-  font-size: 20px;
-  margin-top: 4px;
-}
-
-.player-total {
-  font-size: 14px;
-  margin-top: 2px;
-  opacity: 0.8;
-}
 
