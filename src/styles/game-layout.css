@@ -264,8 +264,8 @@ html, body {
 /* ---------- 9️⃣-12️⃣ GIOCATORI ---------- */
 .game-wrapper.fullscreen-mode .game-players {
   position: absolute;
-  top: 43vh;
-  left: 39%;
+  top: 44vh;
+  left: 40%;
   transform: translateX(-150px);
   display: flex;
   flex-direction: row;
@@ -612,16 +612,22 @@ html, body {
   padding: 6px 10px;
   border-radius: 8px;
   background: rgba(17, 19, 26, 0.9);
-  min-width: 110px;
+  width: calc(25% - 20px); /* 4 box per riga */
+  max-width: 180px;        
+  min-width: 120px;        
   text-align: center;
 }
 
+
 /* Nome giocatore - font 26 */
 .player-name {
-  font-size: 20px;
   font-weight: 700;
   line-height: 1.1;
+  width: 100%;
+  display: block;
+  font-size: clamp(14px, 4vw, 26px);
 }
+
 
 /* Punti round - font 20 */
 .player-round {
