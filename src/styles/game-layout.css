@@ -112,6 +112,7 @@ html, body {
   transform: translateX(-150px);
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 6px;
   z-index: 20;
   max-width: 35vw;
@@ -620,21 +621,21 @@ html, body {
 
 /* Nome giocatore - font 26 */
 .player-name {
-  font-size: 26px;
+  font-size: 20px;
   font-weight: 700;
   line-height: 1.1;
 }
 
 /* Punti round - font 20 */
 .player-round {
-  font-size: 20px;
+  font-size: 16px;
   margin-top: 4px;
   line-height: 1.1;
 }
 
 /* Punti totali - font 14 */
 .player-total {
-  font-size: 14px;
+  font-size: 10px;
   margin-top: 2px;
   opacity: 0.8;
   line-height: 1.1;
