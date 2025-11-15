@@ -33,7 +33,7 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
       currentPlayerId: (state.room?.players || [])[0]?.id,
       
       phrase: state.phrase || "",
-      rows: state.phrase ? state.phrase.split(' ') : [],
+      rows: [],
       category: state.category || "",
       
       revealedLetters: [],
