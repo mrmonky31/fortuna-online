@@ -378,7 +378,6 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
       </button>
 
       <div className="game-players">
-        <h3>Giocatori</h3>
         {gameState.players.map((p, i) => (
           <div
             key={i}
