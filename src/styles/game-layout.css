@@ -103,22 +103,20 @@ html, body {
   flex-wrap: nowrap;
   z-index: 15;
 }
-
+/* ---------- 9️⃣-12️⃣ GIOCATORI ---------- */
 .game-wrapper:not(.fullscreen-mode) .game-players {
   position: absolute;
   top: 44vh;
-  left: 40%;
+  left: 50%;
   transform: translateX(-50%);
-  
-  display: flex;
-  flex-wrap: wrap;         /* 2 sopra + 2 sotto */
-  justify-content: center;
-  gap: 3px;
 
-  width: 90vw;             /* spazio reale per i box */
-  max-width: 90vw;         /* niente limite ridicolo */
+  width: 90vw;
+  max-width: 90vw;
   z-index: 20;
+
+  display: block;   /* 💣 IL FIX CHE SBLOCCA TUTTO */
 }
+
 
 
 /* ---------- CLASSIFICA ------ ---- */
@@ -269,16 +267,14 @@ html, body {
   top: 46vh;
   left: 50%;
   transform: translateX(-50%);
-
-  display: flex;
-  flex-wrap: wrap;        /* 2 sopra + 2 sotto */
-  justify-content: center;
-  gap: 3px;
-
-  width: 90vw;            /* spazio reale per i box */
+  
+  width: 90vw;
   max-width: 90vw;
   z-index: 20;
+
+  display: block;  /* 💣 FIX */
 }
+
 
 
 
