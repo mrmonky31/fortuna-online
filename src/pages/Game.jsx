@@ -378,21 +378,26 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
       </button>
 
       <div className="game-players">
-        {gameState.players.map((p, i) => (
-          <div
-            key={i}
-            className={`player-card ${
-              i === gameState.currentPlayerIndex ? "player-active" : ""
-            }`}
-          >
-            <div className="player-name">
-              {p.name}
-              {p.id === mySocketId && " (Tu)"}
-            </div>
-            <div className="player-round-score">{p.roundScore} pt</div>
-          </div>
-        ))}
+  {gameState.players.map((p, i) => (
+    <div
+      key={i}
+      className={`player-card ${
+        i === gameState.currentPlayerIndex ? "player-active" : ""
+      }`}
+    >
+      <div className="player-name">
+        {p.name}
+        {p.id === mySocketId && " (Tu)"}
       </div>
+      <div className="player-round">
+        Round: <strong>{p.roundScore}</strong>
+      </div>
+      <div className="player-total">
+        Totale: <strong>{p.totalScore}</strong>
+      </div>
+    </div>
+  ))}
+</div>
 
       <div>
         <div className="game-round-info">
