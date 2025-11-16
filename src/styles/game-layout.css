@@ -616,9 +616,10 @@ html, body {
 /* Box singolo giocatore */
 .players-panel {
   display: flex;
-  width: 100%;
-  gap: 6px;
+  flex-wrap: wrap;      /* permette 2 righe */
   justify-content: center;
+  gap: 6px;
+  width: 100%;
 }
 
 .player-box {
@@ -630,10 +631,11 @@ html, body {
   background: rgba(17, 19, 26, 0.9);
   text-align: center;
 
-  /* Nuovo comportamento flessibile */
-  flex: 1;
-  min-width: 0;
+  /* 2x2: sempre massimo 2 per riga */
+  flex: 0 0 calc(50% - 12px);
+  max-width: calc(50% - 12px);
 }
+
 
 
 
