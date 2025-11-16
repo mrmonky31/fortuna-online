@@ -667,10 +667,27 @@ io.on("connection", (socket) => {
         return;
       }
 
-      if (gs.usedLetters.includes(upper)) {
-        if (callback) callback({ ok: false, error: "Lettera già usata" });
-        return;
-      }
+      // ❌ Se la consonante è già usata → PASSA IL TURNO
+if (gs.usedLetters.includes(upper)) {
+  // annulla eventuale raddoppia
+  gs.pendingDouble = false;
+  gs.awaitingConsonant = false;
+  gs.mustSpin = true;
+
+  // passa al prossimo giocatore
+  gs.currentPlayerIndex = (gs.currentPlayerIndex + 1) % gs.players.length;
+  gs.currentPlayerId = gs.players[gs.currentPlayerIndex].id;
+
+  gs.gameMessage = {
+    type: "error",
+    text: `❌ ${upper} già usata. Turno al prossimo.`
+  };
+
+  io.to(code).emit("gameStateUpdate", { gameState: gs });
+  if (callback) callback({ ok: true });
+  return;
+}
+
 
       gs.usedLetters.push(upper);
 
