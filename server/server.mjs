@@ -23,7 +23,7 @@ const app = express();
 
 app.use(
   cors({
-    origin: ["https://fortuna-online.vercel.app", "http://localhost:5173"],
+    origin: ["https://fortuna-online.vercel.app", ],
     methods: ["GET", "POST"],
     credentials: true,
   })
@@ -33,7 +33,7 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: ["https://fortuna-online.vercel.app", "http://localhost:5173"],
+    origin: ["https://fortuna-online.vercel.app", ],
     methods: ["GET", "POST"],
     credentials: true,
   },
@@ -461,6 +461,27 @@ io.on("connection", (socket) => {
         roomCode: code,
         gameState: room.gameState,
       });
+      // 🔥 FIX: auto-cambia frase una sola volta all'inizio per forzare il tabellone
+setTimeout(() => {
+  // NON usare sequenziale
+  if (room.gameState.phraseMode === "sequential") return;
+
+  const { phrases } = room.phraseSet;
+  const random = phrases[Math.floor(Math.random() * phrases.length)];
+
+  const gs = room.gameState;
+  gs.phrase = random.text;
+  gs.rows = buildBoard(random.text, 14, 4);
+  gs.category = random.category;
+  gs.revealedLetters = [];
+  gs.usedLetters = [];
+  gs.mustSpin = true;
+  gs.awaitingConsonant = false;
+  gs.gameMessage = { type: "info", text: "📝 Frase iniziale caricata!" };
+
+  io.to(code).emit("gameStateUpdate", { gameState: gs });
+}, 200);
+
 
       if (callback) callback({ ok: true });
     } catch (err) {
