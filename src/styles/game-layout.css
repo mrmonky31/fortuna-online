@@ -107,13 +107,13 @@ html, body {
 .game-wrapper:not(.fullscreen-mode) .game-players {
   position: absolute;
   top: 44vh;
-  left: 50%;
+  left: 40%;
   transform: translateX(-50%);
   
   display: flex;
   flex-wrap: wrap;         /* 2 sopra + 2 sotto */
   justify-content: center;
-  gap: 10px;
+  gap: 3px;
 
   width: 90vw;             /* spazio reale per i box */
   max-width: 90vw;         /* niente limite ridicolo */
@@ -273,7 +273,7 @@ html, body {
   display: flex;
   flex-wrap: wrap;        /* 2 sopra + 2 sotto */
   justify-content: center;
-  gap: 10px;
+  gap: 3px;
 
   width: 90vw;            /* spazio reale per i box */
   max-width: 90vw;
