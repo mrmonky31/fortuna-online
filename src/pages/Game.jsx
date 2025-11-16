@@ -3,7 +3,6 @@ import React, { useEffect, useState } from "react";
 import "../styles/game-layout.css";
 import "../styles/controls.css";
 import "../styles/tiles.css";
-import PlayersPanel from "../components/PlayersPanel";
 
 import Controls from "../components/Controls";
 import PhraseManager from "../components/PhraseManager";
