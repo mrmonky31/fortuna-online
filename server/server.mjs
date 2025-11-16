@@ -813,10 +813,27 @@ if (gs.usedLetters.includes(upper)) {
         return;
       }
 
-      if (gs.usedLetters.includes(upper)) {
-        if (callback) callback({ ok: false, error: "Vocale già usata" });
-        return;
-      }
+      // ❌ Se la vocale è già usata → PASSA IL TURNO
+if (gs.usedLetters.includes(upper)) {
+  // Annulla eventuali stati speciali
+  gs.pendingDouble = false;
+  gs.awaitingConsonant = false;
+  gs.mustSpin = true;
+
+  // Passa turno
+  gs.currentPlayerIndex = (gs.currentPlayerIndex + 1) % gs.players.length;
+  gs.currentPlayerId = gs.players[gs.currentPlayerIndex].id;
+
+  gs.gameMessage = {
+    type: "error",
+    text: `❌ ${upper} già usata. Turno al prossimo.`
+  };
+
+  io.to(code).emit("gameStateUpdate", { gameState: gs });
+  if (callback) callback({ ok: true });
+  return;
+}
+
 
       const cost = 500;
       const i = gs.currentPlayerIndex;
