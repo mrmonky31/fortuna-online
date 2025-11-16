@@ -56,14 +56,14 @@ html, body {
 .game-wrapper:not(.fullscreen-mode) .target-box {
   position: absolute;
   top: 28vh;
-  left: 155%;
+  left: 154%;
   transform: translateX(-180px);
   z-index: 1;
   /* Stili visivi */
   display: flex;
   flex-direction: column;
   align-items: center;
-  background: #2d3748;
+  background: #2d374830;
   padding: 6px 10px;
   border-radius: 5px;
 }
@@ -226,14 +226,14 @@ html, body {
 .game-wrapper.fullscreen-mode .target-box {
   position: absolute;
   top: 25vh;
-  left: 155%;
+  left: 154%;
   transform: translateX(-180px);
   z-index: 1;
   /* Stili visivi */
   display: flex;
   flex-direction: column;
   align-items: center;
-  background: #2d3748;
+  background: #2d37483b;
   padding: 6px 10px;
   border-radius: 5px;
 }
