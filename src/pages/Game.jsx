@@ -389,9 +389,11 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
         {p.name}
         {p.id === mySocketId && " (Tu)"}
       </div>
+
       <div className="player-round">
         Round: <strong>{p.roundScore}</strong>
       </div>
+
       <div className="player-total">
         Totale: <strong>{p.totalScore}</strong>
       </div>
