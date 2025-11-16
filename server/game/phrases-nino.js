@@ -1,3 +1,4 @@
+export const phraseMode = "sequential";
 export const testPhrases = [
 
 

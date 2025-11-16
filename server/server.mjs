@@ -197,14 +197,27 @@ async function loadPhrases(roomName) {
   
   if (existsSync(customPath)) {
     try {
-      const { testPhrases: customPhrases } = await import(customPath);
-      console.log(`✅ Set personalizzato caricato: phrases-${normalized}.js`);
-      return { phrases: customPhrases, mode: "sequential", customName: normalized };
-    } catch (err) {
-      console.error(`❌ Errore caricamento ${customPath}:`, err);
-      return { phrases: testPhrases, mode: "random", customName: null };
-    }
+  const module = await import(customPath);
+
+  const customPhrases = module.testPhrases;
+  const mode = module.phraseMode === "sequential" ? "sequential" : "random";
+
+  console.log(`✅ Set personalizzato caricato: phrases-${normalized}.js [${mode}]`);
+
+  return {
+    phrases: customPhrases,
+    mode,
+    customName: normalized
+  };
+} catch (err) {
+  console.error(`❌ Errore caricamento ${customPath}:`, err);
+  return {
+    phrases: testPhrases,
+    mode: "random",
+    customName: null};
   }
+}
+
   
   return { phrases: testPhrases, mode: "random", customName: null };
 }

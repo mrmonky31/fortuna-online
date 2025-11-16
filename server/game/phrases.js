@@ -4,7 +4,7 @@
 // Ogni frase ha:
 // - category → appare nel box sotto il tabellone
 // - text     → è la frase da indovinare
-
+export const phraseMode = "random";
 export const testPhrases = [
   { category: "PROVERBIO", text: "CHI TROPPO VUOLE NULLA STRINGE" },
 
