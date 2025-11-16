@@ -263,7 +263,7 @@ html, body {
   z-index: 15;
 }
 
-/* ---------- 9️⃣-12️⃣ GIOCATORI ---------- */
+/* ---------- 9️⃣-12️⃣ GIOCATORI ------- --- */
 .game-wrapper.fullscreen-mode .game-players {
   position: absolute;
   top: 46vh;
