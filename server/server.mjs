@@ -461,26 +461,17 @@ io.on("connection", (socket) => {
         roomCode: code,
         gameState: room.gameState,
       });
-      // 🔥 FIX: auto-cambia frase una sola volta all'inizio per forzare il tabellone
-setTimeout(() => {
-  // NON usare sequenziale
-  if (room.gameState.phraseMode === "sequential") return;
+            // 🔥 FIX: dopo che la schermata di gioco è montata,
+      // rimandiamo la stessa frase una volta sola con gameStateUpdate
+      setTimeout(() => {
+        const gs = room.gameState;
+        if (!gs) return;
 
-  const { phrases } = room.phraseSet;
-  const random = phrases[Math.floor(Math.random() * phrases.length)];
+        // per sicurezza ricalcoliamo le righe dal testo
+        gs.rows = buildBoard(gs.phrase, 14, 5);
 
-  const gs = room.gameState;
-  gs.phrase = random.text;
-  gs.rows = buildBoard(random.text, 14, 4);
-  gs.category = random.category;
-  gs.revealedLetters = [];
-  gs.usedLetters = [];
-  gs.mustSpin = true;
-  gs.awaitingConsonant = false;
-  gs.gameMessage = { type: "info", text: "📝 Frase iniziale caricata!" };
-
-  io.to(code).emit("gameStateUpdate", { gameState: gs });
-}, 200);
+        io.to(code).emit("gameStateUpdate", { gameState: gs });
+      }, 200);
 
 
       if (callback) callback({ ok: true });

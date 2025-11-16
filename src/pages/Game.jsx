@@ -9,7 +9,7 @@ import PhraseManager from "../components/PhraseManager";
 import Wheel from "../components/Wheel";
 import FinalScoreboard from "../components/FinalScoreboard";
 
-import { maskBoard } from "../game/GameEngine";
+import { maskBoard, buildBoard } from "../game/GameEngine";
 import socket from "../socket";
 
 export default function Game({ players = [], totalRounds = 3, state, onExitToLobby }) {
@@ -33,7 +33,7 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
       currentPlayerId: (state.room?.players || [])[0]?.id,
       
       phrase: state.phrase || "",
-      rows: [],
+      rows: state.phrase ? state.phrase.split(' ') : [],
       category: state.category || "",
       
       revealedLetters: [],

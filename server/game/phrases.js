@@ -198,9 +198,7 @@ export const testPhrases = [
   { category: "PROVERBIO", text: "OGNI MEDAGLIA HA IL SUO ROVESCIO" },
   { category: "PROVERBIO", text: "CHI FA DA SE FA PER TRE" },
 
-  // =========================
-  // ✅ CATEGORIA: FRASE CELEBRE
-  // =========================
+  
   { category: "FRASE CELEBRE", text: "LA LOGICA TI PORTA DA A A B L IMMAGINAZIONE OVUNQUE" },
   { category: "FRASE CELEBRE", text: "SII IL CAMBIAMENTO CHE VUOI VEDERE NEL MONDO" },
   { category: "FRASE CELEBRE", text: "SEMBRA IMPOSSIBILE FINCHE NON VIENE FATTO" },
@@ -225,9 +223,7 @@ export const testPhrases = [
   { category: "FRASE CELEBRE", text: "LA VERA FELICITA STA NELLE PICCOLE COSE" },
   { category: "FRASE CELEBRE", text: "LA BELLEZZA E PROMESSA DI FELICITA" },
   { category: "FRASE CELEBRE", text: "IL TEMPO E CIO CHE DI PIU PREZIOSO ABBIAMO" },
-  // ======================
-  // ✅ CATEGORIA: CURIOSITA
-  // ======================
+  
   { category: "CURIOSITA", text: "IL MIELE NON SCADRA MAI NATURALMENTE" },
   { category: "CURIOSITA", text: "LE TARTARUGHE RESPIRANO ATTRAVERSO IL SEDERE" },
   { category: "CURIOSITA", text: "LA BANANA E UNA BACCA MA LA FRAGOLA NO" },
@@ -244,9 +240,7 @@ export const testPhrases = [
   { category: "CURIOSITA", text: "IL SOLE OCCUPA IL NOVANTANOVE PER CENTO DEL SISTEMA SOLARE" },
   { category: "CURIOSITA", text: "LE BALENE COMUNICANO CON SUONI A BASSA FREQUENZA" },
 
-  // ======================
-  // ✅ CATEGORIA: MESTIERI
-  // ======================
+  
   { category: "MESTIERI", text: "IL MEDICO SALVA VITE OGNI GIORNO" },
   { category: "MESTIERI", text: "IL MURATORE COSTRUISCE LE FONDAMENTA DEL MONDO" },
   { category: "MESTIERI", text: "L INSEGNANTE APRE LA STRADA DEL FUTURO" },
@@ -267,9 +261,7 @@ export const testPhrases = [
   { category: "MESTIERI", text: "L ELETTRICISTA PORTA LA LUCE DOVE SERVE" },
   { category: "MESTIERI", text: "IL CARABINIERE PROTEGGE I CITTADINI" },
   { category: "MESTIERI", text: "IL PASTICCERE CREA DOLCI EMOZIONI" },
-  // ======================
-  // ✅ CATEGORIA: OGGETTI
-  // ======================
+ 
   { category: "OGGETTI", text: "IL TELEFONO SQUILLA ALL IMPROVVISO" },
   { category: "OGGETTI", text: "LA SEDIA DI LEGNO E STABILE" },
   { category: "OGGETTI", text: "LO SPECCHIO RIFLETTE LA REALTA" },
@@ -286,9 +278,7 @@ export const testPhrases = [
   { category: "OGGETTI", text: "IL TELESCOPIO OSSERVA LE STELLE" },
   { category: "OGGETTI", text: "LA CORDA PUO SERVIRE A SALVARE UNA VITA" },
 
-  // ======================
-  // ✅ CATEGORIA: CASA
-  // ======================
+  
   { category: "CASA", text: "IL DIVANO E COMODO PER RIPOSARE" },
   { category: "CASA", text: "LA CUCINA PROFUMA DI CAFFE" },
   { category: "CASA", text: "LA DOCCIA SCORRE ACQUA CALDA" },
@@ -305,9 +295,7 @@ export const testPhrases = [
   { category: "CASA", text: "LA SOFFITTA NASCONDE ANTICHI SEGRETI" },
   { category: "CASA", text: "LA PORTA SI CHIUDE CON UN RUMORE SECCO" },
 
-  // ======================
-  // ✅ CATEGORIA: SCUOLA
-  // ======================
+ 
   { category: "SCUOLA", text: "IL MAESTRO SPIEGA LA LEZIONE" },
   { category: "SCUOLA", text: "LA CAMPANELLA SEGNA LA RICREAZIONE" },
   { category: "SCUOLA", text: "IL QUADERNO E PIENO DI APPUNTI" },
@@ -324,9 +312,7 @@ export const testPhrases = [
   { category: "SCUOLA", text: "LA PENNA BLU SCRIVE UN TEMA IMPORTANTE" },
   { category: "SCUOLA", text: "IL LIBRO DI STORIA RACCONTA IL PASSATO" },
 
-  // ======================
-  // ✅ CATEGORIA: SPORT
-  // ======================
+  
   { category: "SPORT", text: "MICHAEL JORDAN HA RISCRITTO LA STORIA DEL BASKET" },
   { category: "SPORT", text: "CRISTIANO RONALDO SEGNA IN OGNI CAMPIONATO" },
   { category: "SPORT", text: "VALENTINO ROSSI E IL DOTTORE DELLA MOTOGP" },
@@ -342,9 +328,7 @@ export const testPhrases = [
   { category: "SPORT", text: "IL CICLISMO SFIDA LA FORZA DELLE GAMBE" },
   { category: "SPORT", text: "IL PUGILATO E UNO SPORT DI CORAGGIO" },
   { category: "SPORT", text: "LE OLIMPIADI RIUNISCONO NAZIONI DI TUTTO IL MONDO" },
-  // ======================
-  // ✅ CATEGORIA: FILM
-  // ======================
+ 
   { category: "FILM", text: "IL SIGNORE DEGLI ANELLI LA COMPAGNIA DELL ANELLO" },
   { category: "FILM", text: "RITORNO AL FUTURO E UN CLASSICO DEL CINEMA" },
   { category: "FILM", text: "IL GLADIATORE HA VINTO MOLTI PREMI OSCAR" },
@@ -361,9 +345,7 @@ export const testPhrases = [
   { category: "FILM", text: "LA VITA E BELLA DI BENIGNI HA VINTO L OSCAR" },
   { category: "FILM", text: "IL CAVALIERE OSCURO HA UN JOKER EPICO" },
 
-  // ======================
-  // ✅ CATEGORIA: CANZONI
-  // ======================
+  
   { category: "CANZONI", text: "VOLARE NEL BLU DIPINTO DI BLU E UNA CANZONE ICONICA" },
   { category: "CANZONI", text: "ALBACHIARA DI VASCO ROSSI E UN CLASSICO ITALIANO" },
   { category: "CANZONI", text: "IMAGINE DI JOHN LENNON PARLA DI PACE" },
@@ -380,9 +362,7 @@ export const testPhrases = [
   { category: "CANZONI", text: "JINGLE BELLS E UNA CANZONE DI NATALE FAMOSA" },
   { category: "CANZONI", text: "CIAO ADIOS DI DUA LIPA RACCONTA UNA ROTTURA AMOROSA" },
 
-  // ======================
-  // ✅ CATEGORIA: STORIA
-  // ======================
+  
   { category: "STORIA", text: "GIULIO CESARE FU UN FAMOSO CONDOTTIERO ROMANO" },
   { category: "STORIA", text: "CLEOPATRA FU L ULTIMA REGINA D EGITTO" },
   { category: "STORIA", text: "CRISTOFORO COLOMBO SCOPRI L AMERICA NEL MILLEQUATTROCENTONOVANTADUE" },
@@ -398,9 +378,7 @@ export const testPhrases = [
   { category: "STORIA", text: "MARTIN LUTHER KING AVEVA UN SOGNO PER L UMANITA" },
   { category: "STORIA", text: "ABRAMO LINCOLN ABOLI LA SCHIAVITU NEGLI STATI UNITI" },
   { category: "STORIA", text: "MARIA CURIE SCOPRI IL RADIO" },
-  // ======================
-  // ✅ CATEGORIA: CULTURA
-  // ======================
+ 
   { category: "CULTURA", text: "ROMA E LA CAPITALE D ITALIA" },
   { category: "CULTURA", text: "IL COLOSSEO E UN SIMBOLO DI ROMA" },
   { category: "CULTURA", text: "LA TORRE EIFFEL SI TROVA A PARIGI" },
@@ -417,9 +395,7 @@ export const testPhrases = [
   { category: "CULTURA", text: "IL DNA CONTIENE LE INFORMAZIONI GENETICHE" },
   { category: "CULTURA", text: "IL TEMPO SI MISURA IN MINUTI ORE E SECONDI" },
 
-  // ======================
-  // ✅ CATEGORIA: CITTA
-  // ======================
+  
   { category: "CITTA", text: "ROMA E CONOSCIUTA COME LA CITTA ETERNA" },
   { category: "CITTA", text: "NEW YORK E LA CITTA CHE NON DORME MAI" },
   { category: "CITTA", text: "TOKYO E UNA DELLE CITTA PIU TECNOLOGICHE" },
@@ -436,9 +412,7 @@ export const testPhrases = [
   { category: "CITTA", text: "DUBAI E RICCA DI GRATTACIELI" },
   { category: "CITTA", text: "BARCELLONA HA LA FAMOSA SAGRADA FAMILIA" },
 
-  // ======================
-  // ✅ CATEGORIA: ESPRESSIONI
-  // ======================
+  
   { category: "ESPRESSIONI", text: "ACQUA IN BOCCA" },
   { category: "ESPRESSIONI", text: "CHI LA DURA LA VINCE" },
   { category: "ESPRESSIONI", text: "TEMPO AL TEMPO" },
@@ -455,9 +429,7 @@ export const testPhrases = [
   { category: "ESPRESSIONI", text: "MEGLIO TARDI CHE MAI" },
   { category: "ESPRESSIONI", text: "UNA VALETA NON FA PRIMAVERA" },
 
-  // ======================
-  // ✅ CATEGORIA: PERSONAGGI FAMOSI
-  // ======================
+  
   { category: "PERSONAGGI FAMOSI", text: "ALBERT EINSTEIN ERA UN GENIO DELLA FISICA" },
   { category: "PERSONAGGI FAMOSI", text: "LEONARDO DA VINCI ERA UN UOMO UNIVERSALE" },
   { category: "PERSONAGGI FAMOSI", text: "NAPOLEONE BONAPARTE HA DOMINATO L EUROPA" },
@@ -468,9 +440,7 @@ export const testPhrases = [
   { category: "PERSONAGGI FAMOSI", text: "MICHELANGELO HA DIPINTO LA CAPPELLA SISTINA" },
   { category: "PERSONAGGI FAMOSI", text: "PABLO PICASSO HA CAMBIATO L ARTE MODERNA" },
   { category: "PERSONAGGI FAMOSI", text: "MARILYN MONROE ERA UN ICONA DI BELLEZZA" },
-  // ======================
-  // ✅ CATEGORIA: ANIMALI
-  // ======================
+ 
   { category: "ANIMALI", text: "IL LEONE E CONSIDERATO IL RE DELLA SAVANA" },
   { category: "ANIMALI", text: "IL CANE E IL MIGLIOR AMICO DELL UOMO" },
   { category: "ANIMALI", text: "IL GATTO AMA DORMIRE AL SOLE" },
@@ -482,9 +452,7 @@ export const testPhrases = [
   { category: "ANIMALI", text: "IL LUPO VIVE IN BRANCO" },
   { category: "ANIMALI", text: "IL PANDA SI NUTRE DI BAMBU" },
 
-  // ======================
-  // ✅ CATEGORIA: TEMPO LIBERO
-  // ======================
+  
   { category: "TEMPO LIBERO", text: "LEGGERE UN LIBRO RILASSA LA MENTE" },
   { category: "TEMPO LIBERO", text: "FARE SPORT AIUTA A RESTARE IN FORMA" },
   { category: "TEMPO LIBERO", text: "ASCOLTARE MUSICA MIGLIORA L UMORE" },
@@ -496,9 +464,7 @@ export const testPhrases = [
   { category: "TEMPO LIBERO", text: "SUONARE UNO STRUMENTO E UN ARTE" },
   { category: "TEMPO LIBERO", text: "DISEGNARE LIBERA LA FANTASIA" },
 
-  // ======================
-  // ✅ CATEGORIA: MISTE
-  // ======================
+  
   { category: "MISTE", text: "LA VITA E FATTA DI SFIDE" },
   { category: "MISTE", text: "IL TEMPO E LA COSA PIU PREZIOSA CHE ABBIAMO" },
   { category: "MISTE", text: "LA CONOSCENZA E POTERE" },
