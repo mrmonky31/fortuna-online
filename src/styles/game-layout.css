@@ -56,7 +56,7 @@ html, body {
 .game-wrapper:not(.fullscreen-mode) .target-box {
   position: absolute;
   top: 28vh;
-  left: 160%;
+  left: 155%;
   transform: translateX(-180px);
   z-index: 1;
   /* Stili visivi */
@@ -226,7 +226,7 @@ html, body {
 .game-wrapper.fullscreen-mode .target-box {
   position: absolute;
   top: 25vh;
-  left: 160%;
+  left: 155%;
   transform: translateX(-180px);
   z-index: 1;
   /* Stili visivi */
