@@ -118,7 +118,7 @@ html, body {
   max-width: 25vw;
 }
 
-/* ---------- CLASSIFICA ---------- */
+/* ---------- CLASSIFICA ------ ---- */
 .game-wrapper:not(.fullscreen-mode) .scoreboard {
   position: absolute;
   top: 53vh;
