@@ -43,7 +43,7 @@ html, body {
 /* ---------- 2️⃣ MESSAGGI + INPUT ---------- */
 .game-wrapper:not(.fullscreen-mode) .game-alerts {
   position: absolute;
-  top: 26vh;
+  top: 25vh;
   left: 50%;
   transform: translateX(-50%);
   z-index: 16;
@@ -55,8 +55,8 @@ html, body {
 /* ---------- 3️⃣ TARGET BOX ---------- */
 .game-wrapper:not(.fullscreen-mode) .target-box {
   position: absolute;
-  top: 35vh;
-  left: 89%;
+  top: 28vh;
+  left: 100%;
   transform: translateX(-180px);
   z-index: 1;
   /* Stili visivi */
@@ -84,7 +84,7 @@ html, body {
 /* ---------- 4️⃣ GIRA LA RUOTA (pulsante principale) ---------- */
 .game-wrapper:not(.fullscreen-mode) .controls-area {
   position: absolute;
-  top: 33vh;
+  top: 31vh;
   left: 50%;
   transform: translateX(-50%);
   z-index: 15;
@@ -93,7 +93,7 @@ html, body {
 /* ---------- 5️⃣-8️⃣ PULSANTI SECONDARI ---------- */
 .game-wrapper:not(.fullscreen-mode) .controls-row-secondary {
   position: absolute;
-  top: 7vh;
+  top: 6vh;
   left: 50%;
   transform: translateX(-50%) scale(0.65);
   transform-origin: center top;
@@ -107,7 +107,7 @@ html, body {
 /* ---------- 9️⃣-12️⃣ GIOCATORI ---------- */
 .game-wrapper:not(.fullscreen-mode) .game-players {
   position: absolute;
-  top: 46vh;
+  top: 45vh;
   left: 39%;
   transform: translateX(-150px);
   display: flex;
@@ -213,7 +213,7 @@ html, body {
 /* ---------- 2️⃣ MESSAGGI + INPUT ---------- */
 .game-wrapper.fullscreen-mode .game-alerts {
   position: absolute;
-  top: 30vh;
+  top: 29vh;
   left: 50%;
   transform: translateX(-50%);
   z-index: 16;
@@ -225,8 +225,8 @@ html, body {
 /* ---------- 3️⃣ TARGET BOX ---------- */
 .game-wrapper.fullscreen-mode .target-box {
   position: absolute;
-  top: 25vh;
-  left: 80%;
+  top: 23vh;
+  left: 100%;
   transform: translateX(-180px);
   z-index: 1;
   /* Stili visivi */
@@ -241,7 +241,7 @@ html, body {
 /* ---------- 4️⃣ GIRA LA RUOTA ---------- */
 .game-wrapper.fullscreen-mode .controls-area {
   position: absolute;
-  top: 35vh;
+  top: 34vh;
   left: 50%;
   transform: translateX(-50%);
   z-index: 15;
@@ -250,7 +250,7 @@ html, body {
 /* ---------- 5️⃣-8️⃣ PULSANTI SECONDARI ---------- */
 .game-wrapper.fullscreen-mode .controls-row-secondary {
   position: absolute;
-  top: 7vh;
+  top: 6vh;
   left: 50%;
   transform: translateX(-50%) scale(0.65);
   transform-origin: center top;
@@ -280,7 +280,7 @@ html, body {
 .game-wrapper.fullscreen-mode .scoreboard {
   position: absolute;
   top: 53vh;
-  left: 89%;
+  left: 90%;
   transform: translateX(-80px);
   background: rgba(17, 19, 26, 0.9);
   border: 2px solid #fff;
