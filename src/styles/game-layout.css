@@ -2,7 +2,8 @@
 /*   GAME LAYOUT UNIFICATO - MOBILE           */
 /*   Tutte le coordinate centrate             */
 /* ========================================== */
-
+/* TEST */
+body { background: red !important; }
 html, body {
   width: 100vw;
   height: 99vh;
