@@ -264,15 +264,17 @@ html, body {
 .game-wrapper.fullscreen-mode .game-players {
   position: absolute;
   top: 46vh;
-  left: 40%;
-  transform: translateX(-150px);
+  left: 50%;
+  transform: translateX(-50%);
+
   display: flex;
-  flex-direction: row;
-  align-items: center;
-  
-  gap: 5px;
+  flex-wrap: wrap;        /* 2 sopra + 2 sotto */
+  justify-content: center;
+  gap: 10px;
+
+  width: 90vw;            /* spazio reale per i box */
+  max-width: 90vw;
   z-index: 20;
-  max-width: 25vw;
 }
 
 
