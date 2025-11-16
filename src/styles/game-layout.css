@@ -43,7 +43,7 @@ html, body {
 /* ---------- 2️⃣ MESSAGGI + INPUT ---------- */
 .game-wrapper:not(.fullscreen-mode) .game-alerts {
   position: absolute;
-  top: 25vh;
+  top: 27vh;
   left: 50%;
   transform: translateX(-50%);
   z-index: 16;
@@ -56,7 +56,7 @@ html, body {
 .game-wrapper:not(.fullscreen-mode) .target-box {
   position: absolute;
   top: 28vh;
-  left: 130%;
+  left: 150%;
   transform: translateX(-180px);
   z-index: 1;
   /* Stili visivi */
@@ -225,8 +225,8 @@ html, body {
 /* ---------- 3️⃣ TARGET BOX ---------- */
 .game-wrapper.fullscreen-mode .target-box {
   position: absolute;
-  top: 24vh;
-  left: 130%;
+  top: 25vh;
+  left: 150%;
   transform: translateX(-180px);
   z-index: 1;
   /* Stili visivi */
