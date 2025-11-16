@@ -614,6 +614,13 @@ html, body {
 
 
 /* Box singolo giocatore */
+.players-panel {
+  display: flex;
+  width: 100%;
+  gap: 6px;
+  justify-content: center;
+}
+
 .player-box {
   display: flex;
   flex-direction: column;
@@ -621,11 +628,14 @@ html, body {
   padding: 6px 10px;
   border-radius: 8px;
   background: rgba(17, 19, 26, 0.9);
-  width: calc(25% - 20px); /* 4 box per riga */
-  max-width: 120px;        
-  min-width: 120px;        
   text-align: center;
+
+  /* Nuovo comportamento flessibile */
+  flex: 1;
+  min-width: 0;
 }
+
+
 
 
 /* Nome giocatore - font 26 */
