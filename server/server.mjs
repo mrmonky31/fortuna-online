@@ -604,11 +604,16 @@ io.on("connection", (socket) => {
           gs.awaitingConsonant = true;
           gs.gameMessage = { type: "info", text: `Valore: ${outcome.value} pt. Inserisci una consonante.` };
         } else if (outcome.type === "double") {
-          gs.pendingDouble = true;
-          gs.mustSpin = false;
-          gs.awaitingConsonant = true;
-          gs.lastSpinTarget = 0;
-          gs.gameMessage = { type: "info", text: "🎯 RADDOPPIA: gioca una consonante!" };
+  // 🎯 Lo spicchio RADDOPPIA NON assegna punti ora.
+  // Attende una consonante per decidere se raddoppiare o no.
+  gs.pendingDouble = true;
+  gs.mustSpin = false;
+  gs.awaitingConsonant = true;
+  gs.lastSpinTarget = 100; // valore base se roundScore era 0
+  gs.gameMessage = {
+    type: "info",
+    text: "🎯 RADDOPPIA: inserisci una consonante!"
+  };
         } else if (outcome.type === "pass") {
           gs.currentPlayerIndex = (gs.currentPlayerIndex + 1) % gs.players.length;
           gs.currentPlayerId = gs.players[gs.currentPlayerIndex].id;
@@ -679,9 +684,48 @@ io.on("connection", (socket) => {
         let gained = gs.lastSpinTarget * hits;
         
         if (gs.pendingDouble) {
-          gained *= 2; // ← Raddoppia i punti della lettera trovata
-          gs.pendingDouble = false;
-        }
+  const i = gs.currentPlayerIndex;
+  const roundScore = gs.players[i].roundScore;
+
+  if (hits > 0) {
+    // 🎯 Se la consonante è trovata:
+    if (roundScore > 0) {
+      // Caso 1: ci sono già punti → raddoppia tutto il round
+      gs.players[i].roundScore = roundScore * 2;
+      gained = 0; // nessun nuovo guadagno da consonante
+      gs.gameMessage = {
+        type: "success",
+        text: `🎯 RADDOPPIA riuscito! Punteggio raddoppiato a ${gs.players[i].roundScore}!`
+      };
+    } else {
+      // Caso 2: nessun punto → comportarsi come spicchio 100
+      gained = hits * 100;
+      gs.players[i].roundScore += gained;
+      gs.gameMessage = {
+        type: "success",
+        text: `🎯 Lettere trovate! +${gained} pt (valore 100 per RADDOPPIA)`
+      };
+    }
+  } else {
+    // ❌ Consonante NON trovata → passa turno e niente raddoppio
+    gs.pendingDouble = false;
+    gs.awaitingConsonant = false;
+    gs.mustSpin = true;
+    gs.currentPlayerIndex = (gs.currentPlayerIndex + 1) % gs.players.length;
+    gs.currentPlayerId = gs.players[gs.currentPlayerIndex].id;
+    gs.gameMessage = {
+      type: "error",
+      text: "❌ Nessuna lettera. RADDOPPIA annullato, turno al prossimo."
+    };
+
+    io.to(code).emit("gameStateUpdate", { gameState: gs });
+    if (callback) callback({ ok: true });
+    return;
+  }
+
+  gs.pendingDouble = false;
+}
+
         
         gs.players[i].roundScore += gained;
         
