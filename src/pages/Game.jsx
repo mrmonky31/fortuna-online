@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import "../styles/game-layout.css";
 import "../styles/controls.css";
 import "../styles/tiles.css";
+import PlayersPanel from "../components/PlayersPanel";
 
 import Controls from "../components/Controls";
 import PhraseManager from "../components/PhraseManager";
@@ -378,28 +379,12 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
       </button>
 
       <div className="game-players">
-  {gameState.players.map((p, i) => (
-    <div
-      key={i}
-      className={`player-card ${
-        i === gameState.currentPlayerIndex ? "player-active" : ""
-      }`}
-    >
-      <div className="player-name">
-        {p.name}
-        {p.id === mySocketId && " (Tu)"}
-      </div>
-
-      <div className="player-round">
-        Round: <strong>{p.roundScore}</strong>
-      </div>
-
-      <div className="player-total">
-        Totale: <strong>{p.totalScore}</strong>
-      </div>
-    </div>
-  ))}
+  <PlayersPanel
+    players={gameState.players}
+    currentIndex={gameState.currentPlayerIndex}
+  />
 </div>
+
 
 
       <div>
