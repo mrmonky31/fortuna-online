@@ -140,7 +140,7 @@ export default function WheelVersionA({ slices = [], spinning = false, onStop, s
       // Il puntatore è nell'asse invisibile fisso, la ruota gira
       // Gli spicchi nella ruota partono da -90° (indice 0 a ore 12 quando angle=0)
       // Per far finire lo spicchio N sotto il puntatore:
-      const finalAngle = 360 - targetAngle + variation - 12 ;
+      const finalAngle = 360 - targetAngle + variation - 11 ;
       
       // ✅ FASE 1: Rotazione principale con overshoot (va oltre il target)
       const overshoot = 3.6; // Gradi di overshoot (0.2 spicchi = 3.6°)
