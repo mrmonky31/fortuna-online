@@ -104,21 +104,18 @@ html, body {
   z-index: 15;
 }
 
-/* ---------- 9️⃣-12️⃣ GIOCATORI ---------- */
 .game-wrapper:not(.fullscreen-mode) .game-players {
   position: absolute;
   top: 44vh;
-  left: 50%;
-  transform: translateX(-50%);
-  
+  left: 39%;
+  transform: translateX(-150px);
   display: flex;
-  flex-wrap: wrap;         /* 2 sopra + 2 sotto */
+  flex-direction: row;
+  align-items: center;
   justify-content: center;
-  gap: 10px;
-
-  width: 90vw;             /* spazio reale per i box */
-  max-width: 90vw;         /* niente limite ridicolo */
+  gap: 5px;
   z-index: 20;
+  max-width: 25vw;
 }
 
 /* ---------- CLASSIFICA ---------- */
@@ -263,22 +260,21 @@ html, body {
   z-index: 15;
 }
 
-/* ---------- 9️⃣-12️⃣ GIOCATORI ------- --- */
+/* ---------- 9️⃣-12️⃣ GIOCATORI ---------- */
 .game-wrapper.fullscreen-mode .game-players {
   position: absolute;
   top: 46vh;
-  left: 50%;
-  transform: translateX(-50%);
-
+  left: 40%;
+  transform: translateX(-150px);
   display: flex;
-  flex-wrap: wrap;        /* 2 sopra + 2 sotto */
-  justify-content: center;
-  gap: 10px;
-
-  width: 90vw;            /* spazio reale per i box */
-  max-width: 90vw;
+  flex-direction: row;
+  align-items: center;
+  
+  gap: 5px;
   z-index: 20;
+  max-width: 25vw;
 }
+
 
 
 /* ---------- CLASSIFICA ---------- */
