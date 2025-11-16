@@ -519,7 +519,7 @@ html, body {
 /* Pannelli input */
 .controls-panels {
   position: absolute;
-  top: -1vh;
+  top: -3vh;
   left: 50%;
   transform: translateX(-50%);
   width: 90vw;
