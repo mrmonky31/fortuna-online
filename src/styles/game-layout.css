@@ -55,8 +55,8 @@ html, body {
 /* ---------- 3️⃣ TARGET BOX ---------- */
 .game-wrapper:not(.fullscreen-mode) .target-box {
   position: absolute;
-  top: 45vh;
-  left: 70%;
+  top: 35vh;
+  left: 89%;
   transform: translateX(-180px);
   z-index: 1;
   /* Stili visivi */
@@ -93,7 +93,7 @@ html, body {
 /* ---------- 5️⃣-8️⃣ PULSANTI SECONDARI ---------- */
 .game-wrapper:not(.fullscreen-mode) .controls-row-secondary {
   position: absolute;
-  top: 9vh;
+  top: 7vh;
   left: 50%;
   transform: translateX(-50%) scale(0.65);
   transform-origin: center top;
@@ -225,8 +225,8 @@ html, body {
 /* ---------- 3️⃣ TARGET BOX ---------- */
 .game-wrapper.fullscreen-mode .target-box {
   position: absolute;
-  top: 30vh;
-  left: 60%;
+  top: 25vh;
+  left: 80%;
   transform: translateX(-180px);
   z-index: 1;
   /* Stili visivi */
@@ -250,7 +250,7 @@ html, body {
 /* ---------- 5️⃣-8️⃣ PULSANTI SECONDARI ---------- */
 .game-wrapper.fullscreen-mode .controls-row-secondary {
   position: absolute;
-  top: 9vh;
+  top: 7vh;
   left: 50%;
   transform: translateX(-50%) scale(0.65);
   transform-origin: center top;
@@ -279,8 +279,8 @@ html, body {
 /* ---------- CLASSIFICA ---------- */
 .game-wrapper.fullscreen-mode .scoreboard {
   position: absolute;
-  top: 50vh;
-  left: 87%;
+  top: 53vh;
+  left: 89%;
   transform: translateX(-80px);
   background: rgba(17, 19, 26, 0.9);
   border: 2px solid #fff;
