@@ -399,6 +399,7 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
   ))}
 </div>
 
+
       <div>
         <div className="game-round-info">
           ROUND {gameState.currentRound} / {gameState.totalRounds}
