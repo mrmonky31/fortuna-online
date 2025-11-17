@@ -453,16 +453,6 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
             </div>
           )}
         </div>
-
-        <div className="scoreboard">
-          <h4>Classifica</h4>
-          {gameState.players.map((p, i) => (
-            <div key={i} className="score-row">
-              <span className="score-name">{p.name}</span>
-              <span className="score-val">{p.totalScore}</span>
-            </div>
-          ))}
-        </div>
       </div>
 
       {isMyTurn && turnTimer <= 10 && turnTimer > 0 && !betweenRounds && (
