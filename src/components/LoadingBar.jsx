@@ -18,15 +18,15 @@ export default function LoadingBar({ onComplete }) {
         
         const responseTime = Date.now() - startTime;
         
-        if (response.ok && responseTime < 5000) {
+        if (response.ok && responseTime < 2000) {
           // Server attivo e veloce - 1 secondo
-          setLoadingTime(5000);
+          setLoadingTime(2000);
           setMessage("⚡ Sto oliando la ruota...");
         } 
         
       } catch (error) {
         // Server non raggiungibile, probabilmente dormiente - 20 secondi
-        setLoadingTime(5000);
+        setLoadingTime(7000);
         setMessage("🛠️ Sto oliando la ruota...");
       }
     };
