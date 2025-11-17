@@ -11,9 +11,9 @@ export const SPIN_PATTERNS = [
   // 💰 PATTERN 2 — Ricco (più valori alti)
   [
     200, 400, 600, "PASSA",
-    800, 1000, 1000, 700, "RADDOPPIA",
+    800, 1000, 100, 700, "RADDOPPIA",
     500, "BANCAROTTA", 300, 400,
-    "PASSA/BANCAROTTA", 800, 700, 600, 500, 300, "BANCAROTTA/RADDOPPIA",
+    "PASSA/BANCAROTTA", 800, 700, 600, 500, 1000, "BANCAROTTA/RADDOPPIA",
   ],
 
   // ⚡ PATTERN 3 — Rischioso (più malus ma premi grandi)
@@ -29,6 +29,6 @@ export const SPIN_PATTERNS = [
     100, 200, 300, "PASSA",
     400, 500, 600, "PASSA/BANCAROTTA",
     300, 400, "RADDOPPIA", 500, 600, 700,
-    "BANCAROTTA", 200, 300, 400, 500, "BANCAROTTA/RADDOPPIA",
+    "BANCAROTTA", 1000, 300, 400, 500, "BANCAROTTA/RADDOPPIA",
   ],
 ];
