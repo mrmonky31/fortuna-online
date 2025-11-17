@@ -381,7 +381,8 @@ html, body {
 }
 
 /* Player cards */
-.player-card {
+.player-card,
+.player-box {
   border: 2px solid #555;
   border-radius: 6px;
   padding: 6px 10px;
@@ -394,7 +395,8 @@ html, body {
   font-size: 0.8em;
 }
 
-.player-card.player-active {
+.player-card.player-active,
+.player-box.player-active {
   border-color: #00ff55;
   box-shadow: 0 0 12px #00ff55;
 }
@@ -652,4 +654,3 @@ html, body {
   opacity: 0.8;
   line-height: 1.1;
 }
-
