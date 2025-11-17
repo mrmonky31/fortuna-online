@@ -37,13 +37,7 @@ export function generateWheel() {
    ========================= */
 export function createInitialGameState(players, totalRounds, options = {}) {
   return {
-    players: players.map((p) => ({
-  name: p.name,
-  id: p.id,          // MANCAVA!!
-  totalScore: 0,
-  roundScore: 0
-})),
-
+    players: players.map((p) => ({ name: p.name, totalScore: 0, roundScore: 0 })),
     totalRounds,
     currentRound: 1,
     currentPlayerIndex: 0,

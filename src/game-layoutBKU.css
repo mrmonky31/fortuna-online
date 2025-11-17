@@ -43,10 +43,10 @@ html, body {
 /* ---------- 2️⃣ MESSAGGI + INPUT ---------- */
 .game-wrapper:not(.fullscreen-mode) .game-alerts {
   position: absolute;
-  top: 27vh;
+  top: 25vh;
   left: 50%;
   transform: translateX(-50%);
-  z-index: 1;
+  z-index: 16;
   width: 90vw;
   max-width: 400px;
   text-align: center;
@@ -55,15 +55,15 @@ html, body {
 /* ---------- 3️⃣ TARGET BOX ---------- */
 .game-wrapper:not(.fullscreen-mode) .target-box {
   position: absolute;
-  top: 28vh;
-  left: 153%;
+  top: -1vh;
+  left: 50%;
   transform: translateX(-180px);
   z-index: 1;
   /* Stili visivi */
   display: flex;
   flex-direction: column;
   align-items: center;
-  background: #2d374800;
+  background: #2d3748;
   padding: 6px 10px;
   border-radius: 5px;
 }
@@ -93,7 +93,7 @@ html, body {
 /* ---------- 5️⃣-8️⃣ PULSANTI SECONDARI ---------- */
 .game-wrapper:not(.fullscreen-mode) .controls-row-secondary {
   position: absolute;
-  top: 6vh;
+  top: 7vh;
   left: 50%;
   transform: translateX(-50%) scale(0.65);
   transform-origin: center top;
@@ -107,22 +107,20 @@ html, body {
 /* ---------- 9️⃣-12️⃣ GIOCATORI ---------- */
 .game-wrapper:not(.fullscreen-mode) .game-players {
   position: absolute;
-  top: 44vh;
-  left: 39%;
+  top: 43vh;
+  left: 40%;
   transform: translateX(-150px);
   display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: center;
-  gap: 5px;
+  flex-direction: column;
+  gap: 6px;
   z-index: 20;
-  max-width: 25vw;
+  max-width: 35vw;
 }
 
 /* ---------- CLASSIFICA ---------- */
 .game-wrapper:not(.fullscreen-mode) .scoreboard {
   position: absolute;
-  top: 53vh;
+  top: 48vh;
   left: 110%;
   transform: translateX(-150px);
   background: rgba(17, 19, 26, 0.9);
@@ -213,27 +211,27 @@ html, body {
 /* ---------- 2️⃣ MESSAGGI + INPUT ---------- */
 .game-wrapper.fullscreen-mode .game-alerts {
   position: absolute;
-  top: 29vh;
+  top: 28vh;
   left: 50%;
   transform: translateX(-50%);
-  z-index: 1;
+  z-index: 16;
   width: 90vw;
-  max-width: 380px;
+  max-width: 400px;
   text-align: center;
 }
 
 /* ---------- 3️⃣ TARGET BOX ---------- */
 .game-wrapper.fullscreen-mode .target-box {
   position: absolute;
-  top: 25vh;
-  left: 153%;
+  top: 0vh;
+  left: 50%;
   transform: translateX(-180px);
   z-index: 1;
   /* Stili visivi */
   display: flex;
   flex-direction: column;
   align-items: center;
-  background: #2d374800;
+  background: #2d3748;
   padding: 6px 10px;
   border-radius: 5px;
 }
@@ -241,7 +239,7 @@ html, body {
 /* ---------- 4️⃣ GIRA LA RUOTA ---------- */
 .game-wrapper.fullscreen-mode .controls-area {
   position: absolute;
-  top: 34vh;
+  top: 33vh;
   left: 50%;
   transform: translateX(-50%);
   z-index: 15;
@@ -250,7 +248,7 @@ html, body {
 /* ---------- 5️⃣-8️⃣ PULSANTI SECONDARI ---------- */
 .game-wrapper.fullscreen-mode .controls-row-secondary {
   position: absolute;
-  top: 6vh;
+  top: 7vh;
   left: 50%;
   transform: translateX(-50%) scale(0.65);
   transform-origin: center top;
@@ -264,23 +262,21 @@ html, body {
 /* ---------- 9️⃣-12️⃣ GIOCATORI ---------- */
 .game-wrapper.fullscreen-mode .game-players {
   position: absolute;
-  top: 46vh;
-  left: 40%;
+  top: 44vh;
+  left: 39%;
   transform: translateX(-150px);
   display: flex;
-  flex-direction: row;
-  align-items: center;
-  
-  gap: 5px;
+  flex-direction: column;
+  gap: 6px;
   z-index: 20;
-  max-width: 25vw;
+  max-width: 35vw;
 }
 
 /* ---------- CLASSIFICA ---------- */
 .game-wrapper.fullscreen-mode .scoreboard {
   position: absolute;
-  top: 53vh;
-  left: 92%;
+  top: 46vh;
+  left: 87%;
   transform: translateX(-80px);
   background: rgba(17, 19, 26, 0.9);
   border: 2px solid #fff;
@@ -470,7 +466,7 @@ html, body {
   align-items: center;
   justify-content: center;
   background: rgba(0,0,0,0.85);
-  z-index: 99;
+  z-index: 999;
 }
 
 .center-box {
@@ -519,13 +515,12 @@ html, body {
 /* Pannelli input */
 .controls-panels {
   position: absolute;
-  top: -5vh;
+  top: -1vh;
   left: 50%;
   transform: translateX(-50%);
-  z-index: 999;
   width: 90vw;
   max-width: 400px;
-  
+  z-index: 9999;
 }
 
 .panel {
@@ -537,12 +532,10 @@ html, body {
   border-radius: 8px;
   border: 2px solid #4a5568;
   animation: slideDown 0.3s ease;
- 
 }
 
 .panel-label {
   display: none;
-  
 }
 
 .panel-input {
@@ -555,25 +548,21 @@ html, body {
   color: white;
   outline: none;
   transition: all 0.3s ease;
-  z-index: 9999;
 }
 
 .panel-input-game {
   padding: 8px 12px;
   font-size: 14px;
-  z-index: 9999;
 }
 
 .panel-input:focus {
   border-color: #667eea;
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
-  z-index: 9999;
 }
 
 .panel-input::placeholder {
   color: #718096;
   font-size: 12px;
-  z-index: 9999;
 }
 
 .btn-ok {
@@ -586,12 +575,10 @@ html, body {
   border-radius: 6px;
   cursor: pointer;
   transition: all 0.3s ease;
-  z-index: 9999;
 }
 
 .btn-ok:hover:not(:disabled) {
   background: #38a169;
-  z-index: 9999;
 }
 
 .btn-ok:disabled {
@@ -610,46 +597,5 @@ html, body {
     transform: translateY(0);
   }
 }
-/* --- PLAYERS PANEL ORIZZONTALE --- */
 
-
-/* Box singolo giocatore */
-.player-box {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 6px 10px;
-  border-radius: 8px;
-  background: rgba(17, 19, 26, 0.9);
-  width: calc(25% - 20px); /* 4 box per riga */
-  max-width: 120px;        
-  min-width: 120px;        
-  text-align: center;
-}
-
-
-/* Nome giocatore - font 26 */
-.player-name {
-  font-weight: 700;
-  line-height: 1.1;
-  width: 100%;
-  display: block;
-  font-size: clamp(14px, 4vw, 26px);
-}
-
-
-/* Punti round - font 20 */
-.player-round {
-  font-size: 16px;
-  margin-top: 4px;
-  line-height: 1.1;
-}
-
-/* Punti totali - font 14 */
-.player-total {
-  font-size: 10px;
-  margin-top: 2px;
-  opacity: 0.8;
-  line-height: 1.1;
-}
 

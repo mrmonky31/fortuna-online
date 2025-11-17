@@ -378,13 +378,21 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
       </button>
 
       <div className="game-players">
-  <PlayersPanel
-    players={gameState.players}
-    currentIndex={gameState.currentPlayerIndex}
-  />
-</div>
-
-
+        {gameState.players.map((p, i) => (
+          <div
+            key={i}
+            className={`player-card ${
+              i === gameState.currentPlayerIndex ? "player-active" : ""
+            }`}
+          >
+            <div className="player-name">
+              {p.name}
+              {p.id === mySocketId && " (Tu)"}
+            </div>
+            <div className="player-round-score">{p.roundScore} pt</div>
+          </div>
+        ))}
+      </div>
 
       <div>
         <div className="game-round-info">
