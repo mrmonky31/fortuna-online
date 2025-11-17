@@ -107,14 +107,14 @@ html, body {
 /* ---------- 9️⃣-12️⃣ GIOCATORI ---------- */
 .game-wrapper:not(.fullscreen-mode) .game-players {
   position: absolute;
-  top: 44vh;
-  left: 50%;
+  top: 42vh;
+  left: 40%;
   transform: translateX(-50%);
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 8px;
+  gap: 4px;
   z-index: 20;
-  max-width: 70vw;
+  max-width: 80vw;
 }
 
 /* ---------- 13️⃣ RUOTA ---------- */
@@ -244,14 +244,14 @@ html, body {
 /* ---------- 9️⃣-12️⃣ GIOCATORI ---------- */
 .game-wrapper.fullscreen-mode .game-players {
   position: absolute;
-  top: 46vh;
-  left: 50%;
+  top: 44vh;
+  left: 40%;
   transform: translateX(-50%);
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 8px;
+  gap: 4px;
   z-index: 20;
-  max-width: 70vw;
+  max-width: 80vw;
 }
 
 /* ---------- 13️⃣ RUOTA ---------- */
@@ -343,7 +343,7 @@ html, body {
 /* Player cards */
 .player-card,
 .player-box {
-  border: 2px solid #555;
+  border: 1px solid #555;
   border-radius: 6px;
   padding: 6px 10px;
   text-align: center;
