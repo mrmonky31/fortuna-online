@@ -30,11 +30,17 @@ export default function LobbyFormMinimal({ onCreate, onJoin, onSpectate, error }
 
   const handleCreate = () => {
     if (!roomName.trim()) return;
+    // ← Avvia il check del server
+    fetch(`${import.meta.env.VITE_SERVER_URL || 'https://fortunaonline.onrender.com'}/health`)
+      .catch(() => {}); // Silent check, non serve gestire la risposta
     setStep("create-role");
   };
 
   const handleJoin = () => {
     if (!roomCode.trim()) return;
+    // ← Avvia il check del server
+    fetch(`${import.meta.env.VITE_SERVER_URL || 'https://fortunaonline.onrender.com'}/health`)
+      .catch(() => {}); // Silent check, non serve gestire la risposta
     setStep("join-role");
   };
 
