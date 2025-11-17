@@ -2,8 +2,7 @@
 /*   GAME LAYOUT UNIFICATO - MOBILE           */
 /*   Tutte le coordinate centrate             */
 /* ========================================== */
-/* TEST */
-body { background: red !important; }
+
 html, body {
   width: 100vw;
   height: 99vh;
@@ -105,6 +104,59 @@ html, body {
   z-index: 15;
 }
 /* ---------- 9️⃣-12️⃣ GIOCATORI ---------- */
+/* --- PLAYERS PANEL ORIZZONTALE --- */
+.players-panel {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  padding: 10px 0;
+}
+
+.player-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  background: rgba(17, 19, 26, 0.92);
+  padding: 8px 12px;
+  border-radius: 14px;
+
+  /* 2 box per riga */
+  flex: 0 0 calc(50% - 10px);
+  max-width: calc(50% - 10px);
+
+  border: 2px solid #444;
+  backdrop-filter: blur(6px);
+}
+
+/* Giocatore attivo */
+.player-box.active {
+  border-color: #00ff55;
+  box-shadow: 0 0 10px #00ff55;
+}
+
+/* Nome grande */
+.player-name {
+  font-size: clamp(18px, 4vw, 26px);
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* Round più piccolo */
+.player-round {
+  font-size: clamp(14px, 3vw, 18px);
+  margin-top: 4px;
+}
+
+/* Totale ancora più piccolo */
+.player-total {
+  font-size: clamp(12px, 2.6vw, 16px);
+  margin-top: 2px;
+  opacity: 0.85;
+}
 
 
 
@@ -237,7 +289,18 @@ html, body {
 }
 
 /* ---------- 5️⃣-8️⃣ PULSANTI SECONDARI ---------- */
-
+game-wrapper.fullscreen-mode .controls-row-secondary {
+  position: absolute;
+  top: 6vh;
+  left: 50%;
+  transform: translateX(-50%) scale(0.65);
+  transform-origin: center top;
+  display: flex;
+  gap: 5px;
+  justify-content: center;
+  flex-wrap: nowrap;
+  z-index: 15;
+}
 
 /* ---------- 9️⃣-12️⃣ GIOCATORI ---------- */
 .game-wrapper.fullscreen-mode .game-players {
