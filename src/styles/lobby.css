@@ -316,3 +316,9 @@
   .lobby-container h1 { font-size: 2rem; }
   .lobby-container button { min-width: 200px; }
 }
+
+/* Animazione spin per loading */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}

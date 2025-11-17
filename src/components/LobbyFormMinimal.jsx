@@ -1,12 +1,12 @@
 // src/components/LobbyFormMinimal.jsx
 import React, { useState, useEffect, useRef } from "react";
-import LoadingBar from "./LoadingBar";
 
 export default function LobbyFormMinimal({ onCreate, onJoin, onSpectate, error }) {
   const [step, setStep] = useState("home");
   const [roomName, setRoomName] = useState("");
   const [roomCode, setRoomCode] = useState("");
   const [playerName, setPlayerName] = useState("");
+  const [loading, setLoading] = useState(false); // ← NUOVO stato loading
   
   // Refs per auto-focus
   const roomNameInputRef = useRef(null);
@@ -44,9 +44,28 @@ export default function LobbyFormMinimal({ onCreate, onJoin, onSpectate, error }
     setStep("join-role");
   };
 
-  const handleEnterAsPlayer = (isJoin) => {
+  const handleEnterAsPlayer = async (isJoin) => {
     if (!playerName.trim()) return;
-    setStep(isJoin ? "join-loading" : "create-loading");
+    
+    setLoading(true); // Mostra loading
+    
+    try {
+      // Aspetta che il server risponda
+      await fetch(`${import.meta.env.VITE_SERVER_URL || 'https://fortunaonline.onrender.com'}/health`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      
+      // Server pronto, procedi
+      if (isJoin) {
+        onJoin(playerName, roomCode);
+      } else {
+        onCreate(playerName, 3, roomName);
+      }
+    } catch (error) {
+      // Se il server non risponde, riprova
+      setTimeout(() => handleEnterAsPlayer(isJoin), 2000);
+    }
   };
 
   const handleEnterAsSpectator = (isJoin) => {
@@ -176,12 +195,38 @@ export default function LobbyFormMinimal({ onCreate, onJoin, onSpectate, error }
 
       {error && <p className="error">{error}</p>}
 
-      {step === "create-loading" && (
-        <LoadingBar onComplete={() => onCreate(playerName, 3, roomName)} />
-      )}
-
-      {step === "join-loading" && (
-        <LoadingBar onComplete={() => onJoin(playerName, roomCode)} />
+      {/* Overlay loading che appare sopra tutto */}
+      {loading && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(11, 11, 15, 0.95)',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 10000
+        }}>
+          <div style={{
+            width: '100px',
+            height: '100px',
+            border: '6px solid rgba(0, 255, 85, 0.2)',
+            borderTop: '6px solid #00ff55',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite'
+          }}></div>
+          <div style={{
+            marginTop: '30px',
+            fontSize: '1.2rem',
+            color: '#fff',
+            fontWeight: 600
+          }}>
+            🛠️ Sto oliando la ruota...
+          </div>
+        </div>
       )}
     </div>
   );
