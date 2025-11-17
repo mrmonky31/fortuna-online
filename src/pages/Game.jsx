@@ -381,7 +381,7 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
         {gameState.players.map((p, i) => (
           <div
             key={i}
-            className={`player-card ${
+            className={`player-box ${
               i === gameState.currentPlayerIndex ? "player-active" : ""
             }`}
           >
@@ -389,7 +389,8 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
               {p.name}
               {p.id === mySocketId && " (Tu)"}
             </div>
-            <div className="player-round-score">{p.roundScore} pt</div>
+            <div className="player-round">{p.roundScore} pt</div>
+            <div className="player-total">Tot: {p.totalScore}</div>
           </div>
         ))}
       </div>
