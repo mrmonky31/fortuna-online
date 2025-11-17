@@ -6,7 +6,8 @@ export default function LobbyFormMinimal({ onCreate, onJoin, onSpectate, error }
   const [roomName, setRoomName] = useState("");
   const [roomCode, setRoomCode] = useState("");
   const [playerName, setPlayerName] = useState("");
-  const [loading, setLoading] = useState(false); // ← NUOVO stato loading
+  const [loading, setLoading] = useState(false); // ← NUOVO: per mostrare scritta
+  const [totalRounds, setTotalRounds] = useState(3); // ← NUOVO: numero di round
   
   // Refs per auto-focus
   const roomNameInputRef = useRef(null);
@@ -30,41 +31,24 @@ export default function LobbyFormMinimal({ onCreate, onJoin, onSpectate, error }
 
   const handleCreate = () => {
     if (!roomName.trim()) return;
-    // ← Avvia il check del server
-    fetch(`${import.meta.env.VITE_SERVER_URL || 'https://fortunaonline.onrender.com'}/health`)
-      .catch(() => {}); // Silent check, non serve gestire la risposta
     setStep("create-role");
   };
 
   const handleJoin = () => {
     if (!roomCode.trim()) return;
-    // ← Avvia il check del server
-    fetch(`${import.meta.env.VITE_SERVER_URL || 'https://fortunaonline.onrender.com'}/health`)
-      .catch(() => {}); // Silent check, non serve gestire la risposta
     setStep("join-role");
   };
 
-  const handleEnterAsPlayer = async (isJoin) => {
+  const handleEnterAsPlayer = (isJoin) => {
     if (!playerName.trim()) return;
     
-    setLoading(true); // Mostra loading
+    setLoading(true); // ← Mostra scritta
     
-    try {
-      // Aspetta che il server risponda
-      await fetch(`${import.meta.env.VITE_SERVER_URL || 'https://fortunaonline.onrender.com'}/health`, {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' }
-      });
-      
-      // Server pronto, procedi
-      if (isJoin) {
-        onJoin(playerName, roomCode);
-      } else {
-        onCreate(playerName, 3, roomName);
-      }
-    } catch (error) {
-      // Se il server non risponde, riprova
-      setTimeout(() => handleEnterAsPlayer(isJoin), 2000);
+    // Chiama subito onCreate/onJoin
+    if (isJoin) {
+      onJoin(playerName, roomCode);
+    } else {
+      onCreate(playerName, totalRounds, roomName); // ← Passa totalRounds
     }
   };
 
@@ -112,6 +96,50 @@ export default function LobbyFormMinimal({ onCreate, onJoin, onSpectate, error }
             autoComplete="off"
             autoCapitalize="characters"
           />
+          
+          <label className="form-label" style={{ marginTop: '20px' }}>Numero di round</label>
+          <div style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center',
+            gap: '20px',
+            margin: '10px 0'
+          }}>
+            <button 
+              onClick={() => setTotalRounds(prev => Math.max(1, prev - 1))}
+              style={{
+                width: '60px',
+                height: '60px',
+                fontSize: '2rem',
+                padding: '0',
+                minWidth: 'auto'
+              }}
+            >
+              −
+            </button>
+            <div style={{
+              fontSize: '3rem',
+              fontWeight: '900',
+              color: '#00ff55',
+              minWidth: '80px',
+              textAlign: 'center'
+            }}>
+              {totalRounds}
+            </div>
+            <button 
+              onClick={() => setTotalRounds(prev => Math.min(10, prev + 1))}
+              style={{
+                width: '60px',
+                height: '60px',
+                fontSize: '2rem',
+                padding: '0',
+                minWidth: 'auto'
+              }}
+            >
+              +
+            </button>
+          </div>
+          
           <button onClick={handleCreate} disabled={!roomName.trim()}>
             CONTINUA ➜
           </button>
@@ -134,7 +162,7 @@ export default function LobbyFormMinimal({ onCreate, onJoin, onSpectate, error }
             onKeyPress={(e) => handleKeyPress(e, () => handleEnterAsPlayer(false))}
             autoComplete="off"
           />
-          <button onClick={() => handleEnterAsPlayer(false)} disabled={!playerName.trim()}>
+          <button onClick={() => handleEnterAsPlayer(false)} disabled={!playerName.trim() || loading}>
             🎮 ENTRA COME GIOCATORE
           </button>
           <button onClick={() => handleEnterAsSpectator(false)}>
@@ -143,6 +171,23 @@ export default function LobbyFormMinimal({ onCreate, onJoin, onSpectate, error }
           <button onClick={() => setStep("create-name")} className="btn-secondary">
             ⬅️ INDIETRO
           </button>
+          
+          {/* Scritta che appare quando loading è true */}
+          {loading && (
+            <div style={{
+              marginTop: '20px',
+              padding: '15px',
+              background: 'rgba(0, 255, 85, 0.1)',
+              border: '2px solid #00ff55',
+              borderRadius: '10px',
+              color: '#00ff55',
+              fontSize: '1.1rem',
+              fontWeight: 'bold',
+              textAlign: 'center'
+            }}>
+              🛠️ Sto oliando la ruota... Un attimo di pazienza!
+            </div>
+          )}
         </div>
       )}
 
@@ -181,7 +226,7 @@ export default function LobbyFormMinimal({ onCreate, onJoin, onSpectate, error }
             onKeyPress={(e) => handleKeyPress(e, () => handleEnterAsPlayer(true))}
             autoComplete="off"
           />
-          <button onClick={() => handleEnterAsPlayer(true)} disabled={!playerName.trim()}>
+          <button onClick={() => handleEnterAsPlayer(true)} disabled={!playerName.trim() || loading}>
             🎮 ENTRA COME GIOCATORE
           </button>
           <button onClick={() => handleEnterAsSpectator(true)}>
@@ -190,44 +235,27 @@ export default function LobbyFormMinimal({ onCreate, onJoin, onSpectate, error }
           <button onClick={() => setStep("join-name")} className="btn-secondary">
             ⬅️ INDIETRO
           </button>
+          
+          {/* Scritta che appare quando loading è true */}
+          {loading && (
+            <div style={{
+              marginTop: '20px',
+              padding: '15px',
+              background: 'rgba(0, 255, 85, 0.1)',
+              border: '2px solid #00ff55',
+              borderRadius: '10px',
+              color: '#00ff55',
+              fontSize: '1.1rem',
+              fontWeight: 'bold',
+              textAlign: 'center'
+            }}>
+              🛠️ Sto oliando la ruota... Un attimo di pazienza!
+            </div>
+          )}
         </div>
       )}
 
       {error && <p className="error">{error}</p>}
-
-      {/* Overlay loading che appare sopra tutto */}
-      {loading && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(11, 11, 15, 0.95)',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'center',
-          alignItems: 'center',
-          zIndex: 10000
-        }}>
-          <div style={{
-            width: '100px',
-            height: '100px',
-            border: '6px solid rgba(0, 255, 85, 0.2)',
-            borderTop: '6px solid #00ff55',
-            borderRadius: '50%',
-            animation: 'spin 1s linear infinite'
-          }}></div>
-          <div style={{
-            marginTop: '30px',
-            fontSize: '1.2rem',
-            color: '#fff',
-            fontWeight: 600
-          }}>
-            🛠️ Sto oliando la ruota...
-          </div>
-        </div>
-      )}
     </div>
   );
 }
