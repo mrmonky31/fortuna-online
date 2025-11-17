@@ -25,7 +25,7 @@ export default function LoadingBar({ onComplete }) {
           setMessage("⚡ Sto oliando la ruota...");
         } else {
           // Server lento o in risveglio - 20 secondi
-          setLoadingTime(20000);
+          setLoadingTime(4000);
           setMessage("🛠️ Sto oliando la ruota...");
         }
       } catch (error) {
