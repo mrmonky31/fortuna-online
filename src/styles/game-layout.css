@@ -111,12 +111,12 @@ html, body {
   transform: translateX(-50%);
   
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: wrap;         /* 2 sopra + 2 sotto */
   justify-content: center;
   gap: 3px;
 
-  width: 90vw;
-  max-width: 90vw;
+  width: 90vw;             /* spazio reale per i box */
+  max-width: 90vw;         /* niente limite ridicolo */
   z-index: 20;
 }
 
@@ -271,11 +271,11 @@ html, body {
   transform: translateX(-50%);
 
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: wrap;        /* 2 sopra + 2 sotto */
   justify-content: center;
   gap: 3px;
 
-  width: 90vw;
+  width: 90vw;            /* spazio reale per i box */
   max-width: 90vw;
   z-index: 20;
 }
@@ -616,116 +616,58 @@ html, body {
     transform: translateY(0);
   }
 }
+/* --- PLAYERS PANEL ORIZZONTALE --- */
 
-/* ========================================== */
-/*   PLAYERS PANEL - SISTEMATO                */
-/* ========================================== */
 
-/* Container principale players panel */
+/* Box singolo giocatore */
 .players-panel {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: wrap;      /* permette 2 righe */
   justify-content: center;
-  align-items: flex-start;
-  gap: 8px;
+  gap: 6px;
   width: 100%;
-  max-width: 100%;
 }
 
-/* Box singolo giocatore - FORZATO IN COLONNA */
 .player-box {
-  display: flex !important;
-  flex-direction: column !important;
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: flex-start;
-  padding: 8px 12px;
+  padding: 6px 10px;
   border-radius: 8px;
-  background: rgba(17, 19, 26, 0.95);
-  border: 2px solid rgba(255, 255, 255, 0.2);
+  background: rgba(17, 19, 26, 0.9);
   text-align: center;
-  transition: all 0.3s ease;
-  
-  /* Layout 2x2 */
-  flex: 0 0 calc(50% - 8px);
-  max-width: calc(50% - 8px);
-  min-height: 80px;
+
+  /* 2x2: sempre massimo 2 per riga */
+  flex: 0 0 calc(50% - 12px);
+  max-width: calc(50% - 12px);
 }
 
-/* Giocatore attivo - bordo verde */
-.player-box.active {
-  border-color: #00ff55;
-  box-shadow: 0 0 15px rgba(0, 255, 85, 0.5);
-  background: rgba(17, 19, 26, 1);
-}
 
-/* Nome giocatore - riga 1 */
+
+
+
+/* Nome giocatore - font 26 */
 .player-name {
   font-weight: 700;
-  font-size: clamp(16px, 4.5vw, 26px);
-  line-height: 1.2;
+  line-height: 1.1;
   width: 100%;
   display: block;
-  color: #ffffff;
-  margin-bottom: 4px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  font-size: clamp(14px, 4vw, 26px);
 }
 
-/* Punti round - riga 2 */
+
+/* Punti round - font 20 */
 .player-round {
-  font-size: clamp(13px, 3.5vw, 18px);
-  line-height: 1.2;
-  width: 100%;
-  display: block;
-  margin-top: 2px;
-  color: #ffd700;
+  font-size: 16px;
+  margin-top: 4px;
+  line-height: 1.1;
 }
 
-.player-round strong {
-  font-weight: 900;
-  color: #ffd700;
-}
-
-/* Punti totali - riga 3 */
+/* Punti totali - font 14 */
 .player-total {
-  font-size: clamp(11px, 3vw, 14px);
-  line-height: 1.2;
-  width: 100%;
-  display: block;
+  font-size: 10px;
   margin-top: 2px;
-  color: rgba(255, 255, 255, 0.7);
+  opacity: 0.8;
+  line-height: 1.1;
 }
 
-.player-total strong {
-  font-weight: 700;
-  color: #ffffff;
-}
-
-/* Responsive per schermi più piccoli */
-@media (max-width: 360px) {
-  .player-box {
-    padding: 6px 8px;
-    min-height: 70px;
-  }
-  
-  .player-name {
-    font-size: 14px;
-  }
-  
-  .player-round {
-    font-size: 12px;
-  }
-  
-  .player-total {
-    font-size: 10px;
-  }
-}
-
-/* Per schermi più grandi */
-@media (min-width: 768px) {
-  .player-box {
-    flex: 0 0 calc(25% - 8px);
-    max-width: calc(25% - 8px);
-  }
-}
