@@ -18,7 +18,7 @@ export default function LoadingBar({ onComplete }) {
         
         const responseTime = Date.now() - startTime;
         
-        if (response.ok && responseTime < 2000) {
+        if (response.ok && responseTime < 10000) {
           // Server attivo e veloce - 1 secondo
           setLoadingTime(2000);
           setMessage("⚡ Sto oliando la ruota...");
@@ -26,7 +26,7 @@ export default function LoadingBar({ onComplete }) {
         
       } catch (error) {
         // Server non raggiungibile, probabilmente dormiente - 20 secondi
-        setLoadingTime(7000);
+        setLoadingTime(4000);
         setMessage("🛠️ Sto oliando la ruota...");
       }
     };
