@@ -3,9 +3,11 @@ import React, { useState, useEffect, useRef } from "react";
 import socket from "../socket";
 import LobbyFormMinimal from "../components/LobbyFormMinimal";
 import OnlinePlayers from "../components/OnlinePlayers";
+import LoadingBar from "../components/LoadingBar";
 import "../styles/lobby.css";
 
 export default function LobbyOnline({ onGameStart }) {
+  const [loading, setLoading] = useState(true);
   const [room, setRoom] = useState(null);
   const [playerName, setPlayerName] = useState("");
   const [role, setRole] = useState(null);
@@ -172,13 +174,15 @@ export default function LobbyOnline({ onGameStart }) {
 
   return (
     <div className="lobby-container" ref={containerRef}>
-      {!isFullscreen && !room && (
+      {loading && <LoadingBar onComplete={() => setLoading(false)} />}
+      
+      {!loading && !isFullscreen && !room && (
         <button className="fullscreen-btn" onClick={enterFullscreen}>
           🖥️ FULLSCREEN
         </button>
       )}
 
-      {!room && (
+      {!loading && !room && (
         <LobbyFormMinimal
           onCreate={handleCreate}
           onJoin={handleJoin}
@@ -187,7 +191,7 @@ export default function LobbyOnline({ onGameStart }) {
         />
       )}
 
-      {room && (
+      {!loading && room && (
         <div className="lobby-room">
           <OnlinePlayers
             room={room}

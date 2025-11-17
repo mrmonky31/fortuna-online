@@ -19,10 +19,10 @@ export default function LobbyFormMinimal({ onCreate, onJoin, onSpectate, error }
         roomNameInputRef.current.focus();
       } else if (step === "join-name" && roomCodeInputRef.current) {
         roomCodeInputRef.current.focus();
-      } else if ((step === "create-player" || step === "join-player") && playerNameInputRef.current) {
+      } else if ((step === "create-role" || step === "join-role") && playerNameInputRef.current) {
         playerNameInputRef.current.focus();
       }
-    }, 100); // Piccolo delay per assicurare il render
+    }, 100);
 
     return () => clearTimeout(focusTimeout);
   }, [step]);
@@ -102,20 +102,6 @@ export default function LobbyFormMinimal({ onCreate, onJoin, onSpectate, error }
       {step === "create-role" && (
         <div className="inputs-row">
           <h2>Entra come:</h2>
-          <button onClick={() => setStep("create-player")}>
-            🎮 GIOCATORE
-          </button>
-          <button onClick={() => handleEnterAsSpectator(false)}>
-            👀 SPETTATORE
-          </button>
-          <button onClick={() => setStep("create-name")} className="btn-secondary">
-            ⬅️ INDIETRO
-          </button>
-        </div>
-      )}
-
-      {step === "create-player" && (
-        <div className="inputs-row">
           <label className="form-label">Il tuo nome</label>
           <input
             ref={playerNameInputRef}
@@ -127,9 +113,12 @@ export default function LobbyFormMinimal({ onCreate, onJoin, onSpectate, error }
             autoComplete="off"
           />
           <button onClick={() => handleEnterAsPlayer(false)} disabled={!playerName.trim()}>
-            ENTRA IN GIOCO
+            🎮 ENTRA COME GIOCATORE
           </button>
-          <button onClick={() => setStep("create-role")} className="btn-secondary">
+          <button onClick={() => handleEnterAsSpectator(false)}>
+            👀 ENTRA COME SPETTATORE
+          </button>
+          <button onClick={() => setStep("create-name")} className="btn-secondary">
             ⬅️ INDIETRO
           </button>
         </div>
@@ -160,20 +149,6 @@ export default function LobbyFormMinimal({ onCreate, onJoin, onSpectate, error }
       {step === "join-role" && (
         <div className="inputs-row">
           <h2>Entra come:</h2>
-          <button onClick={() => setStep("join-player")}>
-            🎮 GIOCATORE
-          </button>
-          <button onClick={() => handleEnterAsSpectator(true)}>
-            👀 SPETTATORE
-          </button>
-          <button onClick={() => setStep("join-name")} className="btn-secondary">
-            ⬅️ INDIETRO
-          </button>
-        </div>
-      )}
-
-      {step === "join-player" && (
-        <div className="inputs-row">
           <label className="form-label">Il tuo nome</label>
           <input
             ref={playerNameInputRef}
@@ -185,9 +160,12 @@ export default function LobbyFormMinimal({ onCreate, onJoin, onSpectate, error }
             autoComplete="off"
           />
           <button onClick={() => handleEnterAsPlayer(true)} disabled={!playerName.trim()}>
-            ENTRA IN GIOCO
+            🎮 ENTRA COME GIOCATORE
           </button>
-          <button onClick={() => setStep("join-role")} className="btn-secondary">
+          <button onClick={() => handleEnterAsSpectator(true)}>
+            👀 ENTRA COME SPETTATORE
+          </button>
+          <button onClick={() => setStep("join-name")} className="btn-secondary">
             ⬅️ INDIETRO
           </button>
         </div>
