@@ -1,6 +1,5 @@
-// src/components/LoadingBar.jsx
+// src/components/LoadingBar.jsx - CON STILI INLINE
 import React, { useState, useEffect } from "react";
-// import "../styles/loading-bar.css"; // TODO: Creare questo file!
 
 export default function LoadingBar({ onComplete }) {
   const [progress, setProgress] = useState(0);
@@ -58,18 +57,108 @@ export default function LoadingBar({ onComplete }) {
     return () => clearInterval(timer);
   }, [loadingTime, onComplete]);
 
+  // Stili inline
+  const styles = {
+    overlay: {
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      width: '100vw',
+      height: '100vh',
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      background: 'linear-gradient(135deg, #0b0b0f 0%, #1a1d2e 100%)',
+      zIndex: 9999
+    },
+    container: {
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      width: '90vw',
+      maxWidth: '500px',
+      padding: '40px 20px'
+    },
+    title: {
+      fontSize: '2.5rem',
+      fontWeight: 900,
+      color: '#00ff55',
+      textAlign: 'center',
+      marginBottom: '20px',
+      textShadow: '0 0 20px rgba(0, 255, 85, 0.5)',
+      letterSpacing: '2px',
+      animation: 'pulse-glow 2s infinite'
+    },
+    message: {
+      fontSize: '1.3rem',
+      fontWeight: 600,
+      color: '#fff',
+      textAlign: 'center',
+      marginBottom: '30px',
+      opacity: 0.9
+    },
+    barContainer: {
+      width: '100%',
+      height: '30px',
+      background: 'rgba(17, 19, 26, 0.8)',
+      border: '3px solid #00ff55',
+      borderRadius: '15px',
+      overflow: 'hidden',
+      position: 'relative',
+      boxShadow: '0 0 20px rgba(0, 255, 85, 0.3)'
+    },
+    barFill: {
+      height: '100%',
+      background: 'linear-gradient(90deg, #00ff55 0%, #00cc44 50%, #00ff55 100%)',
+      backgroundSize: '200% 100%',
+      transition: 'width 0.3s ease',
+      boxShadow: '0 0 15px rgba(0, 255, 85, 0.6)',
+      borderRadius: '12px',
+      animation: 'loading-gradient 2s linear infinite'
+    },
+    percentage: {
+      fontSize: '2rem',
+      fontWeight: 900,
+      color: '#00ff55',
+      marginTop: '20px',
+      textShadow: '0 0 10px rgba(0, 255, 85, 0.5)'
+    }
+  };
+
+  // Aggiungi keyframes per le animazioni
+  const styleSheet = document.styleSheets[0];
+  
+  // Controlla se le animazioni esistono già
+  if (!document.getElementById('loading-animations')) {
+    const style = document.createElement('style');
+    style.id = 'loading-animations';
+    style.textContent = `
+      @keyframes pulse-glow {
+        0%, 100% { text-shadow: 0 0 20px rgba(0, 255, 85, 0.5); }
+        50% { text-shadow: 0 0 30px rgba(0, 255, 85, 0.8); }
+      }
+      @keyframes loading-gradient {
+        0% { background-position: 0% 50%; }
+        100% { background-position: 200% 50%; }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
   return (
-    <div className="loading-overlay">
-      <div className="loading-container">
-        <h1 className="loading-title">🎡 RUOTA DELLA FORTUNA</h1>
-        <div className="loading-message">{message}</div>
-        <div className="loading-bar-container">
+    <div style={styles.overlay}>
+      <div style={styles.container}>
+        <h1 style={styles.title}>🎡 RUOTA DELLA FORTUNA</h1>
+        <div style={styles.message}>{message}</div>
+        <div style={styles.barContainer}>
           <div 
-            className="loading-bar-fill" 
-            style={{ width: `${progress}%` }}
+            style={{...styles.barFill, width: `${progress}%`}}
           />
         </div>
-        <div className="loading-percentage">{Math.round(progress)}%</div>
+        <div style={styles.percentage}>{Math.round(progress)}%</div>
       </div>
     </div>
   );
