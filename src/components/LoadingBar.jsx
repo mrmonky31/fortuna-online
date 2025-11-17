@@ -1,6 +1,6 @@
 // src/components/LoadingBar.jsx
 import React, { useState, useEffect } from "react";
-import "../styles/loading-bar.css";
+// import "../styles/loading-bar.css"; // TODO: Creare questo file!
 
 export default function LoadingBar({ onComplete }) {
   const [progress, setProgress] = useState(0);
