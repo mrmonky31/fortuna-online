@@ -26,7 +26,7 @@ export default function LoadingBar({ onComplete }) {
         
       } catch (error) {
         // Server non raggiungibile, probabilmente dormiente - 20 secondi
-        setLoadingTime(20000);
+        setLoadingTime(5000);
         setMessage("🛠️ Sto oliando la ruota...");
       }
     };
