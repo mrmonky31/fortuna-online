@@ -114,7 +114,7 @@ html, body {
   grid-template-columns: repeat(2, 1fr);
   gap: 4px;
   z-index: 20;
-  max-width: 89vw;
+  max-width: 90vw;
 }
 
 /* ---------- 13️⃣ RUOTA ---------- */
@@ -251,7 +251,7 @@ html, body {
   grid-template-columns: repeat(2, 1fr);
   gap: 4px;
   z-index: 20;
-  max-width: 89vw;
+  max-width: 90vw;
 }
 
 /* ---------- 13️⃣ RUOTA ---------- */
@@ -561,7 +561,7 @@ html, body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 6px 18px;
+  padding: 6px 38px;
   border-radius: 8px;
   background: rgba(17, 19, 26, 0.9);
   width: 100%;
