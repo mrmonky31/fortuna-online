@@ -19,7 +19,7 @@ export default function LoadingBar({ onComplete }) {
         
         const responseTime = Date.now() - startTime;
         
-        if (response.ok && responseTime < 2000) {
+        if (response.ok && responseTime < 6000) {
           // Server attivo e veloce - 1 secondo
           setLoadingTime(1000);
           setMessage("⚡ Sto oliando la ruota...");
