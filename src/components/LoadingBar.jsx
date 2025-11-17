@@ -20,7 +20,7 @@ export default function LoadingBar({ onComplete }) {
         
         if (response.ok && responseTime < 2000) {
           // Server attivo e veloce - 1 secondo
-          setLoadingTime(1000);
+          setLoadingTime(5000);
           setMessage("⚡ Sto oliando la ruota...");
         } else {
           // Server lento o in risveglio - 20 secondi
