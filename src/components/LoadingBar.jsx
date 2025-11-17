@@ -5,6 +5,7 @@ export default function LoadingBar({ onComplete }) {
   const [progress, setProgress] = useState(0);
   const [loadingTime, setLoadingTime] = useState(20000); // Default 20 secondi
   const [message, setMessage] = useState("🛠️ Sto oliando la ruota...");
+  const [serverChecked, setServerChecked] = useState(false); // ← NUOVO stato
 
   useEffect(() => {
     // Verifica se il server è attivo
@@ -18,16 +19,22 @@ export default function LoadingBar({ onComplete }) {
         
         const responseTime = Date.now() - startTime;
         
-        if (response.ok && responseTime < 10000) {
+        if (response.ok && responseTime < 2000) {
           // Server attivo e veloce - 1 secondo
-          setLoadingTime(2000);
+          setLoadingTime(1000);
           setMessage("⚡ Sto oliando la ruota...");
-        } 
-        
+        } else {
+          // Server lento o in risveglio - 20 secondi
+          setLoadingTime(20000);
+          setMessage("🛠️ Sto oliando la ruota...");
+        }
       } catch (error) {
         // Server non raggiungibile, probabilmente dormiente - 20 secondi
-        setLoadingTime(4000);
+        setLoadingTime(20000);
         setMessage("🛠️ Sto oliando la ruota...");
+      } finally {
+        // ← IMPORTANTE: Segna che il check è completato
+        setServerChecked(true);
       }
     };
 
@@ -35,6 +42,9 @@ export default function LoadingBar({ onComplete }) {
   }, []);
 
   useEffect(() => {
+    // ← IMPORTANTE: Parti SOLO se il server è stato controllato
+    if (!serverChecked) return;
+
     const interval = 50; // Aggiorna ogni 50ms
     const increment = (interval / loadingTime) * 100;
 
@@ -52,7 +62,7 @@ export default function LoadingBar({ onComplete }) {
     }, interval);
 
     return () => clearInterval(timer);
-  }, [loadingTime, onComplete]);
+  }, [loadingTime, onComplete, serverChecked]); // ← Aggiungi serverChecked nelle dipendenze
 
   // Stili inline
   const styles = {
