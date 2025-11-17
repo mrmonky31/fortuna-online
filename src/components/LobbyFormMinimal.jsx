@@ -1,5 +1,6 @@
 // src/components/LobbyFormMinimal.jsx
 import React, { useState, useEffect, useRef } from "react";
+import LoadingBar from "./LoadingBar";
 
 export default function LobbyFormMinimal({ onCreate, onJoin, onSpectate, error }) {
   const [step, setStep] = useState("home");
@@ -39,11 +40,7 @@ export default function LobbyFormMinimal({ onCreate, onJoin, onSpectate, error }
 
   const handleEnterAsPlayer = (isJoin) => {
     if (!playerName.trim()) return;
-    if (isJoin) {
-      onJoin(playerName, roomCode);
-    } else {
-      onCreate(playerName, 3, roomName);
-    }
+    setStep(isJoin ? "join-loading" : "create-loading");
   };
 
   const handleEnterAsSpectator = (isJoin) => {
@@ -172,6 +169,14 @@ export default function LobbyFormMinimal({ onCreate, onJoin, onSpectate, error }
       )}
 
       {error && <p className="error">{error}</p>}
+
+      {step === "create-loading" && (
+        <LoadingBar onComplete={() => onCreate(playerName, 3, roomName)} />
+      )}
+
+      {step === "join-loading" && (
+        <LoadingBar onComplete={() => onJoin(playerName, roomCode)} />
+      )}
     </div>
   );
 }

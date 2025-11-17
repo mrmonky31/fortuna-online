@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 export default function LoadingBar({ onComplete }) {
   const [progress, setProgress] = useState(0);
   const [loadingTime, setLoadingTime] = useState(20000); // Default 20 secondi
-  const [message, setMessage] = useState("🔄 Risveglio del server...");
+  const [message, setMessage] = useState("🛠️ Sto oliando la ruota...");
 
   useEffect(() => {
     // Verifica se il server è attivo
@@ -19,18 +19,18 @@ export default function LoadingBar({ onComplete }) {
         const responseTime = Date.now() - startTime;
         
         if (response.ok && responseTime < 2000) {
-          // Server attivo e veloce
+          // Server attivo e veloce - 1 secondo
           setLoadingTime(1000);
-          setMessage("✅ Server pronto!");
+          setMessage("⚡ Sto oliando la ruota...");
         } else {
-          // Server lento o in risveglio
+          // Server lento o in risveglio - 20 secondi
           setLoadingTime(20000);
-          setMessage("⏳ Attendi il risveglio del server...");
+          setMessage("🛠️ Sto oliando la ruota...");
         }
       } catch (error) {
-        // Server non raggiungibile, probabilmente dormiente
+        // Server non raggiungibile, probabilmente dormiente - 20 secondi
         setLoadingTime(20000);
-        setMessage("💤 Il server si sta svegliando...");
+        setMessage("🛠️ Sto oliando la ruota...");
       }
     };
 
