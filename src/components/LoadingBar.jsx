@@ -22,11 +22,8 @@ export default function LoadingBar({ onComplete }) {
           // Server attivo e veloce - 1 secondo
           setLoadingTime(5000);
           setMessage("⚡ Sto oliando la ruota...");
-        } else {
-          // Server lento o in risveglio - 20 secondi
-          setLoadingTime(5000);
-          setMessage("🛠️ Sto oliando la ruota...");
-        }
+        } 
+        
       } catch (error) {
         // Server non raggiungibile, probabilmente dormiente - 20 secondi
         setLoadingTime(20000);
