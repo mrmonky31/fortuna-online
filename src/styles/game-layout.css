@@ -576,6 +576,7 @@ html, body {
   width: 100%;
   display: block;
   font-size: clamp(14px, 4vw, 28px);
+  white-space: nowrap 
 }
 
 
