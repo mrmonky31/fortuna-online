@@ -205,7 +205,7 @@ html, body {
 /* ---------- 3️⃣ TARGET BOX ---------- */
 .game-wrapper.fullscreen-mode .target-box {
   position: absolute;
-  top: 25vh;
+  top: 26vh;
   left: 153%;
   transform: translateX(-180px);
   z-index: 1;
@@ -221,7 +221,7 @@ html, body {
 /* ---------- 4️⃣ GIRA LA RUOTA ---------- */
 .game-wrapper.fullscreen-mode .controls-area {
   position: absolute;
-  top: 34vh;
+  top: 33.5vh;
   left: 50%;
   transform: translateX(-50%);
   z-index: 15;
@@ -230,7 +230,7 @@ html, body {
 /* ---------- 5️⃣-8️⃣ PULSANTI SECONDARI ---------- */
 .game-wrapper.fullscreen-mode .controls-row-secondary {
   position: absolute;
-  top: 6vh;
+  top: 5.5vh;
   left: 50%;
   transform: translateX(-50%) scale(0.65);
   transform-origin: center top;
