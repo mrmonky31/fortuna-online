@@ -60,6 +60,10 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
   const [betweenRounds, setBetweenRounds] = useState(false);
   const [roundCountdown, setRoundCountdown] = useState(0);
   const [winnerName, setWinnerName] = useState("");
+  
+  // Stati per tracciare consonanti/vocali finite
+  const [consonantsFinished, setConsonantsFinished] = useState(false);
+  const [vowelsFinished, setVowelsFinished] = useState(false);
 
   // ⭐ NUOVO: Stati per sincronizzazione animazione ruota
   const [wheelSpinning, setWheelSpinning] = useState(false);
@@ -235,6 +239,36 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
       setMaskedRows(rows);
     }
   }, [gameState?.rows, gameState?.revealedLetters]);
+
+  // Calcola se consonanti e vocali sono finite
+  useEffect(() => {
+    if (!gameState) return;
+    
+    const phrase = gameState.phrase || "";
+    const revealedLetters = gameState.revealedLetters || [];
+    
+    // Normalizza e estrai tutte le lettere dalla frase
+    const allLetters = phrase.toUpperCase().replace(/[^A-ZÀÈÉÌÒÙ]/g, '').split('');
+    
+    // Vocali italiane
+    const vowels = ['A', 'E', 'I', 'O', 'U', 'À', 'È', 'É', 'Ì', 'Ò', 'Ù'];
+    
+    // Lettere rivelate normalizzate
+    const revealed = revealedLetters.map(l => l.toUpperCase());
+    
+    // Trova vocali e consonanti uniche nella frase
+    const uniqueVowels = [...new Set(allLetters.filter(l => vowels.includes(l)))];
+    const uniqueConsonants = [...new Set(allLetters.filter(l => !vowels.includes(l)))];
+    
+    // Controlla se tutte le vocali sono state rivelate
+    const allVowelsRevealed = uniqueVowels.every(v => revealed.includes(v));
+    setVowelsFinished(allVowelsRevealed);
+    
+    // Controlla se tutte le consonanti sono state rivelate
+    const allConsonantsRevealed = uniqueConsonants.every(c => revealed.includes(c));
+    setConsonantsFinished(allConsonantsRevealed);
+    
+  }, [gameState?.phrase, gameState?.revealedLetters]);
 
   useEffect(() => {
     if (!gameState) return;
@@ -434,6 +468,19 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
             disabled={!isMyTurn || betweenRounds}
           />
         </div>
+
+        {/* Scritte consonanti/vocali finite */}
+        {consonantsFinished && (
+          <div className="consonants-finished">
+            CONSONANTI FINITE
+          </div>
+        )}
+        
+        {vowelsFinished && (
+          <div className="vowels-finished">
+            VOCALI FINITE
+          </div>
+        )}
 
         <div className="game-board-area">
           <PhraseManager

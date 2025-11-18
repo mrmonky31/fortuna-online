@@ -90,6 +90,34 @@ html, body {
   z-index: 15;
 }
 
+/* ---------- CONSONANTI FINITE (destra del pulsante) ---------- */
+.game-wrapper:not(.fullscreen-mode) .consonants-finished {
+  position: absolute;
+  top: 33vh;
+  left: 70%;
+  transform: translateX(-50%);
+  z-index: 1;
+  color: #ff3333;
+  font-size: 12px;
+  font-weight: bold;
+  text-shadow: 0 0 10px rgba(255, 51, 51, 0.8);
+  animation: pulse-red 1.5s infinite;
+}
+
+/* ---------- VOCALI FINITE (sinistra del pulsante) ---------- */
+.game-wrapper:not(.fullscreen-mode) .vowels-finished {
+  position: absolute;
+  top: 33vh;
+  left: 30%;
+  transform: translateX(-50%);
+  z-index: 1;
+  color: #ff3333;
+  font-size: 12px;
+  font-weight: bold;
+  text-shadow: 0 0 10px rgba(255, 51, 51, 0.8);
+  animation: pulse-red 1.5s infinite;
+}
+
 /* ---------- 5️⃣-8️⃣ PULSANTI SECONDARI ---------- */
 .game-wrapper:not(.fullscreen-mode) .controls-row-secondary {
   position: absolute;
@@ -225,6 +253,34 @@ html, body {
   left: 50%;
   transform: translateX(-50%);
   z-index: 15;
+}
+
+/* ---------- CONSONANTI FINITE (destra del pulsante) ---------- */
+.game-wrapper.fullscreen-mode .consonants-finished {
+  position: absolute;
+  top: 35.5vh;
+  left: 70%;
+  transform: translateX(-50%);
+  z-index: 1;
+  color: #ff3333;
+  font-size: 12px;
+  font-weight: bold;
+  text-shadow: 0 0 10px rgba(255, 51, 51, 0.8);
+  animation: pulse-red 1.5s infinite;
+}
+
+/* ---------- VOCALI FINITE (sinistra del pulsante) ---------- */
+.game-wrapper.fullscreen-mode .vowels-finished {
+  position: absolute;
+  top: 35.5vh;
+  left: 30%;
+  transform: translateX(-50%);
+  z-index: 1;
+  color: #ff3333;
+  font-size: 12px;
+  font-weight: bold;
+  text-shadow: 0 0 10px rgba(255, 51, 51, 0.8);
+  animation: pulse-red 1.5s infinite;
 }
 
 /* ---------- 5️⃣-8️⃣ PULSANTI SECONDARI ---------- */
@@ -593,4 +649,28 @@ html, body {
   margin-top: 2px;
   opacity: 0.8;
   line-height: 1.1;
+}
+
+/* Animazione pulse rosso per consonanti/vocali finite */
+@keyframes pulse-red {
+  0%, 100% {
+    opacity: 1;
+    text-shadow: 0 0 10px rgba(255, 51, 51, 0.8);
+  }
+  50% {
+    opacity: 0.6;
+    text-shadow: 0 0 20px rgba(255, 51, 51, 1);
+  }
+}
+
+/* Animazione pulse rosso per consonanti/vocali finite */
+@keyframes pulse-red {
+  0%, 100% {
+    opacity: 1;
+    text-shadow: 0 0 10px rgba(255, 51, 51, 0.8);
+  }
+  50% {
+    opacity: 0.6;
+    text-shadow: 0 0 20px rgba(255, 51, 51, 1);
+  }
 }
