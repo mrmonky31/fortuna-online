@@ -57,13 +57,9 @@
   padding: 20px;
 }
 
-.lobby-form-minimal h1,
-.lobby-form-minimal h2,
-.lobby-form-minimal input,
-.lobby-form-minimal button,
-.lobby-form-minimal label {
+
   /* Gli stili grandi si applicano solo dentro lobby-form-minimal */
-}
+
 
 /* Titoli più grandi SOLO nel form */
 .lobby-form-minimal h1 {
