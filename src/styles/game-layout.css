@@ -93,8 +93,8 @@ html, body {
 /* ---------- CONSONANTI FINITE (destra del pulsante) ---------- */
 .game-wrapper:not(.fullscreen-mode) .consonants-finished {
   position: absolute;
-  top: 31vh;
-  left: 80%;
+  top: 32vh;
+  left: 83%;
   transform: translateX(-50%);
   z-index: 1;
   color: #ff3333;
@@ -107,8 +107,8 @@ html, body {
 /* ---------- VOCALI FINITE (sinistra del pulsante) ---------- */
 .game-wrapper:not(.fullscreen-mode) .vowels-finished {
   position: absolute;
-  top: 31vh;
-  left: 10%;
+  top: 32vh;
+  left: 12%;
   transform: translateX(-50%);
   z-index: 1;
   color: #ff3333;
@@ -258,8 +258,8 @@ html, body {
 /* ---------- CONSONANTI FINITE (destra del pulsante) ---------- */
 .game-wrapper.fullscreen-mode .consonants-finished {
   position: absolute;
-  top: 33.5vh;
-  left: 850%;
+  top: 34.5vh;
+  left: 83%;
   transform: translateX(-50%);
   z-index: 1;
   color: #ff3333;
@@ -272,8 +272,8 @@ html, body {
 /* ---------- VOCALI FINITE (sinistra del pulsante) ---------- */
 .game-wrapper.fullscreen-mode .vowels-finished {
   position: absolute;
-  top: 33.5vh;
-  left: 10%;
+  top: 34.5vh;
+  left: 13%;
   transform: translateX(-50%);
   z-index: 1;
   color: #ff3333;
