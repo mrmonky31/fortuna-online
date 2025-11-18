@@ -162,20 +162,11 @@ export default function LobbyFormMinimal({ onCreate, onJoin, onSpectate, error }
             onKeyPress={(e) => handleKeyPress(e, () => handleEnterAsPlayer(false))}
             autoComplete="off"
           />
-          <button onClick={() => handleEnterAsPlayer(false)} disabled={!playerName.trim() || loading}>
-            🎮 ENTRA COME GIOCATORE
-          </button>
-          <button onClick={() => handleEnterAsSpectator(false)}>
-            👀 ENTRA COME SPETTATORE
-          </button>
-          <button onClick={() => setStep("create-name")} className="btn-secondary">
-            ⬅️ INDIETRO
-          </button>
           
-          {/* Scritta che appare quando loading è true */}
+          {/* Scritta che appare quando loading è true - SOPRA IL PULSANTE */}
           {loading && (
             <div style={{
-              marginTop: '20px',
+              margin: '15px 0',
               padding: '15px',
               background: 'rgba(0, 255, 85, 0.1)',
               border: '2px solid #00ff55',
@@ -188,6 +179,16 @@ export default function LobbyFormMinimal({ onCreate, onJoin, onSpectate, error }
               🛠️ Sto oliando la ruota... Un attimo di pazienza!
             </div>
           )}
+          
+          <button onClick={() => handleEnterAsPlayer(false)} disabled={!playerName.trim() || loading}>
+            🎮 ENTRA COME GIOCATORE
+          </button>
+          <button onClick={() => handleEnterAsSpectator(false)}>
+            👀 ENTRA COME SPETTATORE
+          </button>
+          <button onClick={() => setStep("create-name")} className="btn-secondary">
+            ⬅️ INDIETRO
+          </button>
         </div>
       )}
 
@@ -226,20 +227,11 @@ export default function LobbyFormMinimal({ onCreate, onJoin, onSpectate, error }
             onKeyPress={(e) => handleKeyPress(e, () => handleEnterAsPlayer(true))}
             autoComplete="off"
           />
-          <button onClick={() => handleEnterAsPlayer(true)} disabled={!playerName.trim() || loading}>
-            🎮 ENTRA COME GIOCATORE
-          </button>
-          <button onClick={() => handleEnterAsSpectator(true)}>
-            👀 ENTRA COME SPETTATORE
-          </button>
-          <button onClick={() => setStep("join-name")} className="btn-secondary">
-            ⬅️ INDIETRO
-          </button>
           
-          {/* Scritta che appare quando loading è true */}
+          {/* Scritta che appare quando loading è true - SOPRA IL PULSANTE */}
           {loading && (
             <div style={{
-              marginTop: '20px',
+              margin: '15px 0',
               padding: '15px',
               background: 'rgba(0, 255, 85, 0.1)',
               border: '2px solid #00ff55',
@@ -252,6 +244,16 @@ export default function LobbyFormMinimal({ onCreate, onJoin, onSpectate, error }
               🛠️ Sto oliando la ruota... Un attimo di pazienza!
             </div>
           )}
+          
+          <button onClick={() => handleEnterAsPlayer(true)} disabled={!playerName.trim() || loading}>
+            🎮 ENTRA COME GIOCATORE
+          </button>
+          <button onClick={() => handleEnterAsSpectator(true)}>
+            👀 ENTRA COME SPETTATORE
+          </button>
+          <button onClick={() => setStep("join-name")} className="btn-secondary">
+            ⬅️ INDIETRO
+          </button>
         </div>
       )}
 

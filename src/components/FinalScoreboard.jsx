@@ -1,7 +1,7 @@
 // src/components/FinalScoreboard.jsx
 import React from "react";
 
-export default function FinalScoreboard({ players = [] }) {
+export default function FinalScoreboard({ players = [], onRestartGame, onBackToLobby }) {
   const sorted = [...players].sort((a, b) => b.totalScore - a.totalScore);
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, padding: 20 }}>
@@ -20,8 +20,8 @@ export default function FinalScoreboard({ players = [] }) {
         ))}
       </div>
       <div style={{ marginTop: 6 }}>
-        <button className="btn-primary" onClick={() => window.location.reload()}>Ricomincia partita</button>
-        <button className="btn-secondary" style={{ marginLeft: 8 }} onClick={() => window.history.back()}>Menu principale</button>
+        <button className="btn-primary" onClick={onRestartGame}>Ricomincia partita</button>
+        <button className="btn-secondary" style={{ marginLeft: 8 }} onClick={onBackToLobby}>Menu principale</button>
       </div>
     </div>
   );

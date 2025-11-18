@@ -325,6 +325,13 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
     });
   };
 
+  const handleRestartGame = () => {
+    if (!roomCode) return;
+    socket.emit("startGame", { roomCode }, (res) => {
+      if (!res?.ok) alert(res?.error || "Errore riavvio partita");
+    });
+  };
+
   if (!gameState) {
     return (
       <div className="game-wrapper" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh' }}>
@@ -337,7 +344,11 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
   if (gameState.gameOver) {
     return (
       <div className="game-wrapper">
-        <FinalScoreboard players={gameState.players} onBackToLobby={handleExitRoom} />
+        <FinalScoreboard 
+          players={gameState.players} 
+          onRestartGame={handleRestartGame}
+          onBackToLobby={handleExitRoom} 
+        />
       </div>
     );
   }
