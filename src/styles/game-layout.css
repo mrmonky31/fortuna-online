@@ -94,7 +94,7 @@ html, body {
 .game-wrapper:not(.fullscreen-mode) .consonants-finished {
   position: absolute;
   top: 32vh;
-  left: 83%;
+  left: 82%;
   transform: translateX(-50%);
   z-index: 1;
   color: #ff3333;
@@ -108,7 +108,7 @@ html, body {
 .game-wrapper:not(.fullscreen-mode) .vowels-finished {
   position: absolute;
   top: 32vh;
-  left: 12%;
+  left: 14%;
   transform: translateX(-50%);
   z-index: 1;
   color: #ff3333;
@@ -259,7 +259,7 @@ html, body {
 .game-wrapper.fullscreen-mode .consonants-finished {
   position: absolute;
   top: 34.5vh;
-  left: 83%;
+  left: 82%;
   transform: translateX(-50%);
   z-index: 1;
   color: #ff3333;
@@ -273,7 +273,7 @@ html, body {
 .game-wrapper.fullscreen-mode .vowels-finished {
   position: absolute;
   top: 34.5vh;
-  left: 13%;
+  left: 15%;
   transform: translateX(-50%);
   z-index: 1;
   color: #ff3333;
