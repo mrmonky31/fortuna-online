@@ -165,6 +165,11 @@ export default function Controls({
               disabled={disabled}
               className="panel-input panel-input-game"
               placeholder="Inserisci consonante"
+              autoComplete="off"
+              autoCorrect="off"
+              autoCapitalize="characters"
+              spellCheck="false"
+              inputMode="text"
             />
             <button className="btn-ok" onClick={submitConsonant} disabled={disabled}>
               OK
@@ -188,6 +193,11 @@ export default function Controls({
               disabled={disabled}
               className="panel-input panel-input-game"
               placeholder="A, E, I, O, U"
+              autoComplete="off"
+              autoCorrect="off"
+              autoCapitalize="characters"
+              spellCheck="false"
+              inputMode="text"
             />
             <button className="btn-ok" onClick={submitVowel} disabled={disabled}>
               OK
@@ -208,6 +218,11 @@ export default function Controls({
               disabled={disabled}
               className="panel-input panel-input-game"
               placeholder="Scrivi la frase"
+              autoComplete="off"
+              autoCorrect="off"
+              autoCapitalize="characters"
+              spellCheck="false"
+              inputMode="text"
             />
             <button className="btn-ok" onClick={submitSolution} disabled={disabled}>
               OK
