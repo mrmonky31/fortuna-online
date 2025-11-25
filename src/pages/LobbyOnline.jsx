@@ -89,6 +89,40 @@ export default function LobbyOnline({ onGameStart }) {
     // ✅ NUOVO: Richiesta accettata
     function handleJoinRequestAccepted({ room: updatedRoom, roomCode: code, playerName: name }) {
       console.log("✅ Richiesta accettata!");
+      
+      // ✅ Recupera sessionToken da localStorage (lo avevamo già salvato durante il pending)
+      const savedSession = localStorage.getItem("gameSession");
+      let sessionToken = null;
+      if (savedSession) {
+        try {
+          sessionToken = JSON.parse(savedSession).sessionToken;
+        } catch (e) {}
+      }
+      
+      // ✅ Aggiorna sessione completa
+      localStorage.setItem("gameSession", JSON.stringify({
+        roomCode: code,
+        playerName: name,
+        role: "player",
+        sessionToken: sessionToken,
+        timestamp: Date.now()
+      }));
+      
+      // ✅ Se la partita è già iniziata, vai direttamente a Game
+      if (updatedRoom.gameState && !updatedRoom.gameState.gameOver) {
+        console.log("🎮 Partita in corso, entro direttamente in Game");
+        
+        if (onGameStart) {
+          onGameStart({
+            room: updatedRoom,
+            roomCode: code,
+            gameState: updatedRoom.gameState
+          });
+        }
+        return;
+      }
+      
+      // ✅ Altrimenti vai in lobby normale
       setRoom(updatedRoom);
       setRoomCode(code);
       setPlayerName(name);
@@ -188,6 +222,15 @@ export default function LobbyOnline({ onGameStart }) {
     socket.emit("joinRoom", { roomCode: upper, playerName: name, sessionToken }, (res) => {
       if (!res || !res.ok) {
         if (res?.pending) {
+          // ✅ Salva sessionToken anche in pending!
+          localStorage.setItem("gameSession", JSON.stringify({
+            roomCode: upper,
+            playerName: name,
+            role: "player",
+            sessionToken: sessionToken,
+            timestamp: Date.now()
+          }));
+          
           setError("⏳ In attesa di approvazione dall'host...");
           setPlayerName(name);
         } else {
@@ -227,6 +270,15 @@ export default function LobbyOnline({ onGameStart }) {
       (res) => {
         if (!res || !res.ok) {
           if (res?.pending) {
+            // ✅ Salva sessionToken anche in pending!
+            localStorage.setItem("gameSession", JSON.stringify({
+              roomCode: upper,
+              playerName: name,
+              role: "spectator",
+              sessionToken: sessionToken,
+              timestamp: Date.now()
+            }));
+            
             setError("⏳ In attesa di approvazione dall'host...");
             setPlayerName(name);
           } else {
