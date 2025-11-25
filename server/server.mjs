@@ -256,7 +256,15 @@ function handleTemporaryDisconnect(socketId, code, room) {
     
     const idx = room.players.findIndex((p) => p.id === socketId);
     if (idx !== -1) {
+      const wasHost = room.players[idx].isHost;
       room.players.splice(idx, 1);
+      
+      // ✅ DELEGA HOST: Se l'host esce, il primo giocatore diventa host
+      if (wasHost && room.players.length > 0) {
+        room.players[0].isHost = true;
+        room.host = room.players[0].name;
+        console.log(`👑 ${room.players[0].name} è ora l'host di ${code}`);
+      }
       
       if (room.gameState && room.gameState.currentPlayerId === socketId) {
         room.gameState.currentPlayerIndex = (room.gameState.currentPlayerIndex + 1) % room.players.length;
@@ -270,6 +278,11 @@ function handleTemporaryDisconnect(socketId, code, room) {
       
       if (room.players.length === 0) {
         console.log(`🗑️ Stanza ${code} eliminata (nessun giocatore)`);
+        delete rooms[code];
+      }
+    }
+  }, 30000);
+}
         delete rooms[code];
       }
     }
@@ -422,8 +435,20 @@ io.on("connection", (socket) => {
       const existingSpectator = room.spectators?.find(s => s.sessionToken === sessionToken);
 
       if (existingPlayer) {
+        const oldSocketId = existingPlayer.id;
+        
         // Aggiorna socket.id con quello nuovo
         existingPlayer.id = socket.id;
+        
+        // ✅ IMPORTANTE: Aggiorna anche gameState.players se esiste
+        if (room.gameState && room.gameState.players) {
+          const gsPlayer = room.gameState.players.find(p => p.id === oldSocketId);
+          if (gsPlayer) {
+            gsPlayer.id = socket.id;
+            console.log(`🔄 Aggiornato socket.id in gameState per ${existingPlayer.name}`);
+          }
+        }
+        
         socket.join(code);
         console.log(`🔄 ${existingPlayer.name} riconnesso come GIOCATORE a ${code}`);
         
