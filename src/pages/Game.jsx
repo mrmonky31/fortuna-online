@@ -20,6 +20,17 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
   const [gameState, setGameState] = useState(() => {
     if (!state) return null;
     
+    // ✅ Se il server ha già un gameState (partita in corso), usalo!
+    if (state.gameState) {
+      console.log("🎮 Usando gameState dal server (partita in corso)");
+      return {
+        ...state.gameState,
+        roomCode: state.roomCode
+      };
+    }
+    
+    // ✅ Altrimenti crea un nuovo gameState (partita appena iniziata)
+    console.log("🆕 Creando nuovo gameState");
     return {
       players: (state.room?.players || []).map(p => ({
         name: p.name,
