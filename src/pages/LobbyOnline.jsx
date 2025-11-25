@@ -146,9 +146,13 @@ export default function LobbyOnline({ onGameStart }) {
 
   const handleCreate = (name, rounds, customRoomName) => {
     setError("");
+    
+    // ✅ Genera sessionToken unico per questo giocatore
+    const sessionToken = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
     socket.emit(
       "createRoom",
-      { playerName: name, totalRounds: rounds, roomName: customRoomName },
+      { playerName: name, totalRounds: rounds, roomName: customRoomName, sessionToken },
       (res) => {
         if (!res || !res.ok) {
           setError(res?.error || "Errore creazione stanza");
@@ -156,11 +160,12 @@ export default function LobbyOnline({ onGameStart }) {
         }
         const code = res.roomName || res.roomCode || "";
         
-        // ✅ Salva sessione in localStorage
+        // ✅ Salva sessione con sessionToken
         localStorage.setItem("gameSession", JSON.stringify({
           roomCode: code,
           playerName: res.playerName,
           role: "host",
+          sessionToken: sessionToken,
           timestamp: Date.now()
         }));
         
@@ -176,10 +181,13 @@ export default function LobbyOnline({ onGameStart }) {
     setError("");
     const upper = String(code || "").toUpperCase();
     setRoomCode(upper);
-    socket.emit("joinRoom", { roomCode: upper, playerName: name }, (res) => {
+    
+    // ✅ Genera sessionToken unico
+    const sessionToken = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    socket.emit("joinRoom", { roomCode: upper, playerName: name, sessionToken }, (res) => {
       if (!res || !res.ok) {
         if (res?.pending) {
-          // ✅ In attesa di approvazione
           setError("⏳ In attesa di approvazione dall'host...");
           setPlayerName(name);
         } else {
@@ -189,11 +197,12 @@ export default function LobbyOnline({ onGameStart }) {
       }
       
       if (!res.pending) {
-        // ✅ Salva sessione in localStorage
+        // ✅ Salva con sessionToken
         localStorage.setItem("gameSession", JSON.stringify({
           roomCode: upper,
           playerName: res.playerName,
           role: "player",
+          sessionToken: sessionToken,
           timestamp: Date.now()
         }));
         
@@ -208,13 +217,16 @@ export default function LobbyOnline({ onGameStart }) {
     setError("");
     const upper = String(code || "").toUpperCase();
     setRoomCode(upper);
+    
+    // ✅ Genera sessionToken unico
+    const sessionToken = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
     socket.emit(
       "joinAsSpectator",
-      { roomCode: upper, name },
+      { roomCode: upper, name, sessionToken },
       (res) => {
         if (!res || !res.ok) {
           if (res?.pending) {
-            // ✅ In attesa di approvazione
             setError("⏳ In attesa di approvazione dall'host...");
             setPlayerName(name);
           } else {
@@ -224,11 +236,12 @@ export default function LobbyOnline({ onGameStart }) {
         }
         
         if (!res.pending) {
-          // ✅ Salva sessione in localStorage
+          // ✅ Salva con sessionToken
           localStorage.setItem("gameSession", JSON.stringify({
             roomCode: upper,
             playerName: name,
             role: "spectator",
+            sessionToken: sessionToken,
             timestamp: Date.now()
           }));
           
@@ -255,6 +268,7 @@ export default function LobbyOnline({ onGameStart }) {
     socket.emit("acceptJoinRequest", {
       playerId: joinRequest.playerId,
       playerName: joinRequest.playerName,
+      sessionToken: joinRequest.sessionToken, // ✅ Passa sessionToken
       roomCode: joinRequest.roomCode,
       type: joinRequest.type
     });

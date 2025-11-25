@@ -22,7 +22,7 @@ function App() {
     }
 
     try {
-      const { roomCode, timestamp } = JSON.parse(savedSession);
+      const { roomCode, sessionToken, timestamp } = JSON.parse(savedSession);
       
       // Scarta sessioni vecchie (>30 minuti)
       if (Date.now() - timestamp > 30 * 60 * 1000) {
@@ -31,10 +31,17 @@ function App() {
         return;
       }
 
-      console.log("🔄 Tentativo riconnessione a:", roomCode);
+      if (!sessionToken) {
+        console.log("❌ Nessun sessionToken trovato");
+        localStorage.removeItem("gameSession");
+        setReconnecting(false);
+        return;
+      }
+
+      console.log("🔄 Tentativo riconnessione con sessionToken a:", roomCode);
       
-      // Prova a fare rejoin
-      socket.emit("rejoinRoom", { roomCode }, (res) => {
+      // Prova a fare rejoin con sessionToken
+      socket.emit("rejoinRoom", { roomCode, sessionToken }, (res) => {
         if (res?.ok && res.room) {
           console.log("✅ Riconnesso a stanza:", roomCode);
           
@@ -53,7 +60,7 @@ function App() {
             setScreen("setup");
           }
         } else {
-          console.log("❌ Riconnessione fallita");
+          console.log("❌ Riconnessione fallita:", res?.error);
           localStorage.removeItem("gameSession");
         }
         setReconnecting(false);

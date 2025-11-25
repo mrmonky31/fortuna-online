@@ -407,6 +407,7 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
     socket.emit("acceptJoinRequest", {
       playerId: joinRequest.playerId,
       playerName: joinRequest.playerName,
+      sessionToken: joinRequest.sessionToken, // ✅ Passa sessionToken
       roomCode: joinRequest.roomCode,
       type: joinRequest.type
     });
