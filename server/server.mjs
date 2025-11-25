@@ -390,6 +390,43 @@ io.on("connection", (socket) => {
     }
   });
 
+  // ✅ NUOVO: Riconnessione automatica
+  socket.on("rejoinRoom", ({ roomCode }, callback) => {
+    try {
+      const code = String(roomCode || "").trim().toUpperCase();
+      const room = rooms[code];
+
+      if (!room) {
+        if (callback) callback({ ok: false, error: "Stanza non trovata" });
+        return;
+      }
+
+      // Controlla se questo socket era già nella stanza
+      const existingPlayer = room.players.find(p => p.id === socket.id);
+      const existingSpectator = room.spectators?.find(s => s.id === socket.id);
+
+      if (existingPlayer || existingSpectator) {
+        socket.join(code);
+        console.log(`🔄 ${existingPlayer?.name || existingSpectator?.name} riconnesso a ${code}`);
+        
+        if (callback) callback({
+          ok: true,
+          room,
+          roomCode: code,
+          playerName: existingPlayer?.name || existingSpectator?.name,
+          role: existingPlayer ? "player" : "spectator"
+        });
+        return;
+      }
+
+      // Se non era nella stanza, non può riconnettersi
+      if (callback) callback({ ok: false, error: "Non eri in questa stanza" });
+    } catch (err) {
+      console.error("Errore rejoinRoom:", err);
+      if (callback) callback({ ok: false, error: "Errore riconnessione" });
+    }
+  });
+
   // ENTRA COME SPETTATORE
   socket.on("joinAsSpectator", ({ roomCode, name }, callback) => {
     try {

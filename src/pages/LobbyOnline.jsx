@@ -154,8 +154,18 @@ export default function LobbyOnline({ onGameStart }) {
           setError(res?.error || "Errore creazione stanza");
           return;
         }
+        const code = res.roomName || res.roomCode || "";
+        
+        // ✅ Salva sessione in localStorage
+        localStorage.setItem("gameSession", JSON.stringify({
+          roomCode: code,
+          playerName: res.playerName,
+          role: "host",
+          timestamp: Date.now()
+        }));
+        
         setRoom(res.room);
-        setRoomCode(res.roomName || res.roomCode || "");
+        setRoomCode(code);
         setPlayerName(res.playerName);
         setRole("host");
       }
@@ -179,6 +189,14 @@ export default function LobbyOnline({ onGameStart }) {
       }
       
       if (!res.pending) {
+        // ✅ Salva sessione in localStorage
+        localStorage.setItem("gameSession", JSON.stringify({
+          roomCode: upper,
+          playerName: res.playerName,
+          role: "player",
+          timestamp: Date.now()
+        }));
+        
         setRoom(res.room);
         setPlayerName(res.playerName);
         setRole("player");
@@ -206,6 +224,14 @@ export default function LobbyOnline({ onGameStart }) {
         }
         
         if (!res.pending) {
+          // ✅ Salva sessione in localStorage
+          localStorage.setItem("gameSession", JSON.stringify({
+            roomCode: upper,
+            playerName: name,
+            role: "spectator",
+            timestamp: Date.now()
+          }));
+          
           setRoom(res.room);
           setPlayerName(name);
           setRole("spectator");
