@@ -13,6 +13,9 @@ export default function LobbyOnline({ onGameStart }) {
   const [error, setError] = useState("");
   const [isFullscreen, setIsFullscreen] = useState(false);
   const containerRef = useRef(null);
+  
+  // ✅ NUOVO: Gestione richieste join
+  const [joinRequest, setJoinRequest] = useState(null);
 
   useEffect(() => {
     const checkFullscreen = () => {
@@ -77,12 +80,44 @@ export default function LobbyOnline({ onGameStart }) {
       console.log("📡 gameState (lobby):", state);
     }
 
+    // ✅ NUOVO: Listener per richieste join (solo per host)
+    function handleJoinRequest(request) {
+      console.log("🔔 Richiesta join ricevuta:", request);
+      setJoinRequest(request);
+    }
+
+    // ✅ NUOVO: Richiesta accettata
+    function handleJoinRequestAccepted({ room: updatedRoom, roomCode: code, playerName: name }) {
+      console.log("✅ Richiesta accettata!");
+      setRoom(updatedRoom);
+      setRoomCode(code);
+      setPlayerName(name);
+      setRole("player");
+      setError("");
+    }
+
+    // ✅ NUOVO: Richiesta rifiutata
+    function handleJoinRequestRejected({ message }) {
+      console.log("❌ Richiesta rifiutata");
+      setError(message || "Richiesta rifiutata dall'host");
+      setRoom(null);
+      setRoomCode("");
+      setPlayerName("");
+      setRole(null);
+    }
+
     socket.on("roomUpdate", handleRoomUpdate);
     socket.on("gameState", handleGameState);
+    socket.on("joinRequest", handleJoinRequest);
+    socket.on("joinRequestAccepted", handleJoinRequestAccepted);
+    socket.on("joinRequestRejected", handleJoinRequestRejected);
 
     return () => {
       socket.off("roomUpdate", handleRoomUpdate);
       socket.off("gameState", handleGameState);
+      socket.off("joinRequest", handleJoinRequest);
+      socket.off("joinRequestAccepted", handleJoinRequestAccepted);
+      socket.off("joinRequestRejected", handleJoinRequestRejected);
     };
   }, [roomCode]);
 
@@ -133,12 +168,21 @@ export default function LobbyOnline({ onGameStart }) {
     setRoomCode(upper);
     socket.emit("joinRoom", { roomCode: upper, playerName: name }, (res) => {
       if (!res || !res.ok) {
-        setError(res?.error || "Errore ingresso stanza");
+        if (res?.pending) {
+          // ✅ In attesa di approvazione
+          setError("⏳ In attesa di approvazione dall'host...");
+          setPlayerName(name);
+        } else {
+          setError(res?.error || "Errore ingresso stanza");
+        }
         return;
       }
-      setRoom(res.room);
-      setPlayerName(res.playerName);
-      setRole("player");
+      
+      if (!res.pending) {
+        setRoom(res.room);
+        setPlayerName(res.playerName);
+        setRole("player");
+      }
     });
   };
 
@@ -151,12 +195,21 @@ export default function LobbyOnline({ onGameStart }) {
       { roomCode: upper, name },
       (res) => {
         if (!res || !res.ok) {
-          setError(res?.error || "Errore ingresso spettatore");
+          if (res?.pending) {
+            // ✅ In attesa di approvazione
+            setError("⏳ In attesa di approvazione dall'host...");
+            setPlayerName(name);
+          } else {
+            setError(res?.error || "Errore ingresso spettatore");
+          }
           return;
         }
-        setRoom(res.room);
-        setPlayerName(name);
-        setRole("spectator");
+        
+        if (!res.pending) {
+          setRoom(res.room);
+          setPlayerName(name);
+          setRole("spectator");
+        }
       }
     );
   };
@@ -168,6 +221,28 @@ export default function LobbyOnline({ onGameStart }) {
         setError(res?.error || "Errore avvio partita");
       }
     });
+  };
+
+  // ✅ NUOVO: Accetta richiesta join
+  const handleAcceptJoin = () => {
+    if (!joinRequest) return;
+    socket.emit("acceptJoinRequest", {
+      playerId: joinRequest.playerId,
+      playerName: joinRequest.playerName,
+      roomCode: joinRequest.roomCode,
+      type: joinRequest.type
+    });
+    setJoinRequest(null);
+  };
+
+  // ✅ NUOVO: Rifiuta richiesta join
+  const handleRejectJoin = () => {
+    if (!joinRequest) return;
+    socket.emit("rejectJoinRequest", {
+      playerId: joinRequest.playerId,
+      playerName: joinRequest.playerName
+    });
+    setJoinRequest(null);
   };
 
   return (
@@ -201,6 +276,90 @@ export default function LobbyOnline({ onGameStart }) {
             </button>
           )}
           {error && <p className="error">{error}</p>}
+        </div>
+      )}
+
+      {/* ✅ POPUP RICHIESTA JOIN (solo per host) */}
+      {joinRequest && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.85)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999
+        }}>
+          <div style={{
+            background: '#11131a',
+            border: '3px solid #00ff55',
+            borderRadius: '12px',
+            padding: '30px',
+            maxWidth: '400px',
+            width: '90vw',
+            textAlign: 'center'
+          }}>
+            <h2 style={{ 
+              color: '#00ff55', 
+              marginBottom: '20px',
+              fontSize: '1.5rem'
+            }}>
+              🔔 Nuova Richiesta
+            </h2>
+            <p style={{ 
+              fontSize: '1.2rem', 
+              marginBottom: '10px',
+              color: '#fff'
+            }}>
+              <strong>{joinRequest.playerName}</strong>
+            </p>
+            <p style={{ 
+              fontSize: '1rem', 
+              marginBottom: '30px',
+              color: '#aaa'
+            }}>
+              vuole unirsi come {joinRequest.type === 'player' ? '🎮 GIOCATORE' : '👀 SPETTATORE'}
+            </p>
+            <div style={{ 
+              display: 'flex', 
+              gap: '15px',
+              justifyContent: 'center'
+            }}>
+              <button 
+                onClick={handleAcceptJoin}
+                style={{
+                  padding: '15px 30px',
+                  fontSize: '1.2rem',
+                  fontWeight: 'bold',
+                  background: '#00ff55',
+                  color: '#000',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: 'pointer'
+                }}
+              >
+                ✅ ACCETTA
+              </button>
+              <button 
+                onClick={handleRejectJoin}
+                style={{
+                  padding: '15px 30px',
+                  fontSize: '1.2rem',
+                  fontWeight: 'bold',
+                  background: '#ff3333',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: 'pointer'
+                }}
+              >
+                ❌ RIFIUTA
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

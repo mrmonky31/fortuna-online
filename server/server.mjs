@@ -148,18 +148,24 @@ function nextRound(roomCode, room) {
   gs.lastSpinTarget = 0;
   gs.spinning = false;
 
+  // ✅ MODIFICA 3: NON resetta currentPlayerIndex
+  // Il giocatore successivo al vincitore continuerà dal suo turno
+
   gs.gameMessage = { type: "info", text: `🎬 Round ${gs.currentRound}/${gs.totalRounds}` };
 
   io.to(roomCode).emit("gameStateUpdate", { gameState: gs });
 }
 
 function initGameState(players, totalRounds, phrase, category) {
+  // ✅ MODIFICA 1: Randomizza il giocatore iniziale
+  const randomStartIndex = Math.floor(Math.random() * players.length);
+  
   return {
     players: players.map(p => ({ name: p.name, id: p.id, totalScore: 0, roundScore: 0 })),
     totalRounds,
     currentRound: 1,
-    currentPlayerIndex: 0,
-    currentPlayerId: players[0].id,
+    currentPlayerIndex: randomStartIndex,
+    currentPlayerId: players[randomStartIndex].id,
 
     phrase,
     rows: buildBoard(phrase, 14, 4),
@@ -343,6 +349,28 @@ io.on("connection", (socket) => {
         return;
       }
 
+      // ✅ MODIFICA 4: Se la partita è già iniziata, chiedi approvazione all'host
+      if (room.gameState && !room.gameState.gameOver) {
+        const hostPlayer = room.players.find(p => p.isHost);
+        if (hostPlayer) {
+          // Invia richiesta all'host
+          io.to(hostPlayer.id).emit("joinRequest", {
+            playerName: name,
+            playerId: socket.id,
+            roomCode: code,
+            type: "player"
+          });
+          
+          if (callback) callback({ 
+            ok: true, 
+            pending: true,
+            message: "In attesa di approvazione dall'host..." 
+          });
+          return;
+        }
+      }
+
+      // ✅ Se partita non iniziata, entra direttamente
       room.players.push({ name, id: socket.id, isHost: false });
       socket.join(code);
 
@@ -376,6 +404,29 @@ io.on("connection", (socket) => {
       const spectatorName = String(name || "").trim() || "Spettatore";
 
       if (!room.spectators) room.spectators = [];
+
+      // ✅ MODIFICA 4: Se la partita è già iniziata, chiedi approvazione all'host
+      if (room.gameState && !room.gameState.gameOver) {
+        const hostPlayer = room.players.find(p => p.isHost);
+        if (hostPlayer) {
+          // Invia richiesta all'host
+          io.to(hostPlayer.id).emit("joinRequest", {
+            playerName: spectatorName,
+            playerId: socket.id,
+            roomCode: code,
+            type: "spectator"
+          });
+          
+          if (callback) callback({ 
+            ok: true, 
+            pending: true,
+            message: "In attesa di approvazione dall'host..." 
+          });
+          return;
+        }
+      }
+
+      // ✅ Se partita non iniziata, entra direttamente
       room.spectators.push({ name: spectatorName, id: socket.id });
 
       socket.join(code);
@@ -911,6 +962,10 @@ if (gs.usedLetters.includes(upper)) {
         gs.awaitingConsonant = false;
         gs.pendingDouble = false;
 
+        // ✅ MODIFICA 3: Il prossimo round parte dal giocatore DOPO il vincitore
+        gs.currentPlayerIndex = (i + 1) % gs.players.length;
+        gs.currentPlayerId = gs.players[gs.currentPlayerIndex].id;
+
         io.to(code).emit("roundWon", {
           winnerName,
           countdown: 7
@@ -974,6 +1029,70 @@ if (gs.usedLetters.includes(upper)) {
     }
   });
 
+  // ✅ NUOVO: Host accetta richiesta join
+  socket.on("acceptJoinRequest", ({ playerId, playerName, roomCode, type }) => {
+    try {
+      const code = String(roomCode || "").trim().toUpperCase();
+      const room = rooms[code];
+
+      if (!room) return;
+
+      const hostPlayer = room.players.find(p => p.isHost);
+      if (!hostPlayer || hostPlayer.id !== socket.id) return;
+
+      const targetSocket = io.sockets.sockets.get(playerId);
+      if (!targetSocket) return;
+
+      if (type === "player") {
+        room.players.push({ name: playerName, id: playerId, isHost: false });
+        
+        // Se c'è una partita in corso, aggiungi il giocatore al gameState
+        if (room.gameState) {
+          room.gameState.players.push({ 
+            name: playerName, 
+            id: playerId, 
+            totalScore: 0, 
+            roundScore: 0 
+          });
+        }
+      } else if (type === "spectator") {
+        if (!room.spectators) room.spectators = [];
+        room.spectators.push({ name: playerName, id: playerId });
+      }
+
+      targetSocket.join(code);
+      console.log(`✅ ${playerName} approvato in ${code} come ${type}`);
+
+      // Notifica il giocatore che è stato accettato
+      io.to(playerId).emit("joinRequestAccepted", {
+        roomCode: code,
+        room,
+        playerName
+      });
+
+      // Aggiorna tutti nella stanza
+      io.to(code).emit("roomUpdate", { room, roomCode: code });
+      
+      if (room.gameState) {
+        io.to(code).emit("gameStateUpdate", { gameState: room.gameState });
+      }
+    } catch (err) {
+      console.error("Errore acceptJoinRequest:", err);
+    }
+  });
+
+  // ✅ NUOVO: Host rifiuta richiesta join
+  socket.on("rejectJoinRequest", ({ playerId, playerName }) => {
+    try {
+      io.to(playerId).emit("joinRequestRejected", {
+        message: "L'host ha rifiutato la tua richiesta"
+      });
+      console.log(`❌ ${playerName} rifiutato dall'host`);
+    } catch (err) {
+      console.error("Errore rejectJoinRequest:", err);
+    }
+  });
+
   // DISCONNESSIONE
   socket.on("disconnect", () => {
     const info = findRoomBySocketId(socket.id);
@@ -1003,6 +1122,11 @@ if (gs.usedLetters.includes(upper)) {
 
     console.log("❌ Disconnessione:", socket.id);
   });
+});
+
+// ✅ Endpoint health check per verificare se il server è attivo
+app.get("/health", (req, res) => {
+  res.status(200).json({ status: "ok", timestamp: Date.now() });
 });
 
 server.listen(PORT, () => {
