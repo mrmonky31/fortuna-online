@@ -16,6 +16,23 @@ export default function LobbyOnline({ onGameStart }) {
   
   // ✅ NUOVO: Gestione richieste join
   const [joinRequest, setJoinRequest] = useState(null);
+  
+  // ✅ NUOVO: Salva sessionToken solo quando sei in lobby
+  const [sessionToken, setSessionToken] = useState(null);
+  
+  useEffect(() => {
+    // Salva in localStorage solo se hai room E sessionToken
+    if (room && roomCode && playerName && sessionToken) {
+      localStorage.setItem("gameSession", JSON.stringify({
+        roomCode,
+        playerName,
+        role: role || "player",
+        sessionToken,
+        timestamp: Date.now()
+      }));
+      console.log("💾 Sessione salvata in localStorage");
+    }
+  }, [room, roomCode, playerName, sessionToken, role]);
 
   useEffect(() => {
     const checkFullscreen = () => {
@@ -192,11 +209,11 @@ export default function LobbyOnline({ onGameStart }) {
     setError("");
     
     // ✅ Genera sessionToken unico per questo giocatore
-    const sessionToken = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const token = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     
     socket.emit(
       "createRoom",
-      { playerName: name, totalRounds: rounds, roomName: customRoomName, sessionToken },
+      { playerName: name, totalRounds: rounds, roomName: customRoomName, sessionToken: token },
       (res) => {
         if (!res || !res.ok) {
           setError(res?.error || "Errore creazione stanza");
@@ -204,19 +221,11 @@ export default function LobbyOnline({ onGameStart }) {
         }
         const code = res.roomName || res.roomCode || "";
         
-        // ✅ Salva sessione con sessionToken
-        localStorage.setItem("gameSession", JSON.stringify({
-          roomCode: code,
-          playerName: res.playerName,
-          role: "host",
-          sessionToken: sessionToken,
-          timestamp: Date.now()
-        }));
-        
         setRoom(res.room);
         setRoomCode(code);
         setPlayerName(res.playerName);
         setRole("host");
+        setSessionToken(token); // ✅ Salva token nello stato (che triggerà useEffect)
       }
     );
   };
@@ -227,22 +236,14 @@ export default function LobbyOnline({ onGameStart }) {
     setRoomCode(upper);
     
     // ✅ Genera sessionToken unico
-    const sessionToken = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const token = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     
-    socket.emit("joinRoom", { roomCode: upper, playerName: name, sessionToken }, (res) => {
+    socket.emit("joinRoom", { roomCode: upper, playerName: name, sessionToken: token }, (res) => {
       if (!res || !res.ok) {
         if (res?.pending) {
-          // ✅ Salva sessionToken anche in pending!
-          localStorage.setItem("gameSession", JSON.stringify({
-            roomCode: upper,
-            playerName: name,
-            role: "player",
-            sessionToken: sessionToken,
-            timestamp: Date.now()
-          }));
-          
-          setError("⏳ In attesa di approvazione dall'host...");
+          setError("⏳ In attesa di approvazione...");
           setPlayerName(name);
+          setSessionToken(token); // ✅ Salva anche in pending
         } else {
           setError(res?.error || "Errore ingresso stanza");
         }
@@ -250,18 +251,10 @@ export default function LobbyOnline({ onGameStart }) {
       }
       
       if (!res.pending) {
-        // ✅ Salva con sessionToken
-        localStorage.setItem("gameSession", JSON.stringify({
-          roomCode: upper,
-          playerName: res.playerName,
-          role: "player",
-          sessionToken: sessionToken,
-          timestamp: Date.now()
-        }));
-        
         setRoom(res.room);
         setPlayerName(res.playerName);
         setRole("player");
+        setSessionToken(token); // ✅ Salva token nello stato
       }
     });
   };
@@ -272,25 +265,17 @@ export default function LobbyOnline({ onGameStart }) {
     setRoomCode(upper);
     
     // ✅ Genera sessionToken unico
-    const sessionToken = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const token = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     
     socket.emit(
       "joinAsSpectator",
-      { roomCode: upper, name, sessionToken },
+      { roomCode: upper, name, sessionToken: token },
       (res) => {
         if (!res || !res.ok) {
           if (res?.pending) {
-            // ✅ Salva sessionToken anche in pending!
-            localStorage.setItem("gameSession", JSON.stringify({
-              roomCode: upper,
-              playerName: name,
-              role: "spectator",
-              sessionToken: sessionToken,
-              timestamp: Date.now()
-            }));
-            
-            setError("⏳ In attesa di approvazione dall'host...");
+            setError("⏳ In attesa di approvazione...");
             setPlayerName(name);
+            setSessionToken(token); // ✅ Salva anche in pending
           } else {
             setError(res?.error || "Errore ingresso spettatore");
           }
@@ -298,18 +283,10 @@ export default function LobbyOnline({ onGameStart }) {
         }
         
         if (!res.pending) {
-          // ✅ Salva con sessionToken
-          localStorage.setItem("gameSession", JSON.stringify({
-            roomCode: upper,
-            playerName: name,
-            role: "spectator",
-            sessionToken: sessionToken,
-            timestamp: Date.now()
-          }));
-          
           setRoom(res.room);
           setPlayerName(name);
           setRole("spectator");
+          setSessionToken(token); // ✅ Salva token nello stato
         }
       }
     );
