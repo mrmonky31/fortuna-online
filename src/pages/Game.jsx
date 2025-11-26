@@ -21,6 +21,17 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
   const [gameState, setGameState] = useState(() => {
     if (!state) return null;
     
+    // ✅ Se il server ha già un gameState (partita in corso), usalo!
+    if (state.gameState) {
+      console.log("🎮 Usando gameState dal server (partita in corso)");
+      return {
+        ...state.gameState,
+        roomCode: state.roomCode
+      };
+    }
+    
+    // ✅ Altrimenti crea nuovo gameState (partita appena iniziata)
+    console.log("🆕 Creando nuovo gameState");
     return {
       players: (state.room?.players || []).map(p => ({
         name: p.name,
@@ -344,7 +355,8 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
       playerId: joinRequest.playerId,
       playerName: joinRequest.playerName,
       roomCode: joinRequest.roomCode,
-      type: joinRequest.type
+      type: joinRequest.type,
+      isReconnection: joinRequest.isReconnection || false // ✅ Passa flag
     });
     setJoinRequest(null);
   };
@@ -603,7 +615,10 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
               {joinRequest.playerName}
             </p>
             <p style={{ fontSize: '1rem', marginBottom: '30px', color: '#aaa' }}>
-              vuole unirsi come {joinRequest.type === 'player' ? '🎮 GIOCATORE' : '👀 SPETTATORE'}
+              {joinRequest.isReconnection 
+                ? '🔄 sta riprendendo il suo giocatore'
+                : `vuole unirsi come ${joinRequest.type === 'player' ? '🎮 GIOCATORE' : '👀 SPETTATORE'}`
+              }
             </p>
             <div style={{ display: 'flex', gap: '15px', justifyContent: 'center' }}>
               <button onClick={handleAcceptJoin} style={{

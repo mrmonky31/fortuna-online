@@ -92,6 +92,22 @@ export default function LobbyOnline({ onGameStart }) {
 
     function handleJoinRequestAccepted({ room: updatedRoom, roomCode: code, playerName: name }) {
       console.log("✅ Richiesta accettata");
+      
+      // ✅ Se partita in corso, vai DIRETTAMENTE a Game
+      if (updatedRoom.gameState && !updatedRoom.gameState.gameOver) {
+        console.log("🎮 Partita in corso, vado direttamente in Game");
+        
+        if (onGameStart) {
+          onGameStart({
+            room: updatedRoom,
+            roomCode: code,
+            gameState: updatedRoom.gameState
+          });
+        }
+        return;
+      }
+      
+      // ✅ Altrimenti vai in lobby normale
       setRoom(updatedRoom);
       setRoomCode(code);
       setPlayerName(name);
@@ -223,7 +239,8 @@ export default function LobbyOnline({ onGameStart }) {
       playerId: joinRequest.playerId,
       playerName: joinRequest.playerName,
       roomCode: joinRequest.roomCode,
-      type: joinRequest.type
+      type: joinRequest.type,
+      isReconnection: joinRequest.isReconnection || false // ✅ Passa flag
     });
     setJoinRequest(null);
   };
@@ -298,7 +315,10 @@ export default function LobbyOnline({ onGameStart }) {
               {joinRequest.playerName}
             </p>
             <p style={{ fontSize: '1rem', marginBottom: '30px', color: '#aaa' }}>
-              vuole unirsi come {joinRequest.type === 'player' ? '🎮 GIOCATORE' : '👀 SPETTATORE'}
+              {joinRequest.isReconnection 
+                ? '🔄 sta riprendendo il suo giocatore'
+                : `vuole unirsi come ${joinRequest.type === 'player' ? '🎮 GIOCATORE' : '👀 SPETTATORE'}`
+              }
             </p>
             <div style={{ display: 'flex', gap: '15px', justifyContent: 'center' }}>
               <button onClick={handleAcceptJoin} style={{
