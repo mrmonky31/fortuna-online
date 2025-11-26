@@ -212,6 +212,29 @@ export default function LobbyOnline({ onGameStart }) {
     setError("");
     console.log("🔧 handleCreate chiamato con:", { name, rounds, customRoomName });
     
+    // ✅ Controlla se socket è connesso
+    if (!socket.connected) {
+      setError("⏳ Connessione al server in corso...");
+      console.log("⏳ Socket non connesso, aspetto connessione...");
+      
+      // Aspetta connessione
+      const waitForConnection = () => {
+        if (socket.connected) {
+          console.log("✅ Socket connesso, procedo con createRoom");
+          setError("");
+          doCreateRoom(name, rounds, customRoomName);
+        } else {
+          setTimeout(waitForConnection, 500);
+        }
+      };
+      waitForConnection();
+      return;
+    }
+    
+    doCreateRoom(name, rounds, customRoomName);
+  };
+  
+  const doCreateRoom = (name, rounds, customRoomName) => {
     // ✅ Genera sessionToken unico per questo giocatore
     const token = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     

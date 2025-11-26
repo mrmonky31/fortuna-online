@@ -40,19 +40,33 @@ function App() {
 
       console.log("🔄 Tentativo riconnessione con sessionToken a:", roomCode);
       
-      // ✅ Aspetta che socket sia connesso
+      // ✅ Aspetta che socket sia connesso con retry
+      let attempts = 0;
+      const maxAttempts = 40; // 40 tentativi x 500ms = 20 secondi
+      
       const attemptRejoin = () => {
+        attempts++;
+        
         if (!socket.connected) {
-          console.log("⏳ Socket non ancora connesso, aspetto...");
+          if (attempts >= maxAttempts) {
+            console.log("⏱️ Timeout connessione socket, procedo normalmente");
+            localStorage.removeItem("gameSession");
+            setReconnecting(false);
+            return;
+          }
+          console.log(`⏳ Socket non ancora connesso, tentativo ${attempts}/${maxAttempts}...`);
           setTimeout(attemptRejoin, 500);
           return;
         }
         
-        // ✅ Timeout di 10 secondi per rejoinRoom
+        console.log("✅ Socket connesso, invio rejoinRoom...");
+        
+        // ✅ Timeout di 15 secondi per rejoinRoom
         const timeoutId = setTimeout(() => {
-          console.log("⏱️ Timeout riconnessione, procedo normalmente");
+          console.log("⏱️ Timeout rejoinRoom, procedo normalmente");
+          localStorage.removeItem("gameSession");
           setReconnecting(false);
-        }, 10000);
+        }, 15000);
         
         // Prova a fare rejoin con sessionToken
         socket.emit("rejoinRoom", { roomCode, sessionToken }, (res) => {
