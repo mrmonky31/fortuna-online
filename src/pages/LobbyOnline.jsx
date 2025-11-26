@@ -13,29 +13,7 @@ export default function LobbyOnline({ onGameStart }) {
   const [error, setError] = useState("");
   const [isFullscreen, setIsFullscreen] = useState(false);
   const containerRef = useRef(null);
-  
-  // ✅ NUOVO: Gestione richieste join
-  const [joinRequest, setJoinRequest] = useState(null);
-  
-  // ✅ NUOVO: Salva sessionToken solo quando sei in lobby
-  const [sessionToken, setSessionToken] = useState(null);
-  
-  useEffect(() => {
-    // Salva in localStorage solo se hai room E sessionToken
-    if (room && roomCode && playerName && sessionToken) {
-      const sessionData = {
-        roomCode,
-        playerName,
-        role: role || "player",
-        sessionToken,
-        timestamp: Date.now()
-      };
-      localStorage.setItem("gameSession", JSON.stringify(sessionData));
-      console.log("💾 Sessione salvata in localStorage:", sessionData);
-    } else {
-      console.log("⏸️ Non salvo ancora:", { room: !!room, roomCode: !!roomCode, playerName: !!playerName, sessionToken: !!sessionToken });
-    }
-  }, [room, roomCode, playerName, sessionToken, role]);
+  const [joinRequest, setJoinRequest] = useState(null); // ✅ NUOVO
 
   useEffect(() => {
     const checkFullscreen = () => {
@@ -100,57 +78,20 @@ export default function LobbyOnline({ onGameStart }) {
       console.log("📡 gameState (lobby):", state);
     }
 
-    // ✅ NUOVO: Listener per richieste join (solo per host)
+    // ✅ NUOVO: Listener richieste join
     function handleJoinRequest(request) {
-      console.log("🔔 Richiesta join ricevuta:", request);
+      console.log("🔔 Richiesta join:", request);
       setJoinRequest(request);
     }
 
-    // ✅ Quando qualcun altro accetta, chiudi il popup
     function handleJoinRequestResolved({ playerId }) {
       if (joinRequest && joinRequest.playerId === playerId) {
-        console.log("✅ Richiesta già gestita da un altro giocatore");
         setJoinRequest(null);
       }
     }
 
-    // ✅ NUOVO: Richiesta accettata
     function handleJoinRequestAccepted({ room: updatedRoom, roomCode: code, playerName: name }) {
-      console.log("✅ Richiesta accettata!");
-      
-      // ✅ Recupera sessionToken da localStorage (lo avevamo già salvato durante il pending)
-      const savedSession = localStorage.getItem("gameSession");
-      let sessionToken = null;
-      if (savedSession) {
-        try {
-          sessionToken = JSON.parse(savedSession).sessionToken;
-        } catch (e) {}
-      }
-      
-      // ✅ Aggiorna sessione completa
-      localStorage.setItem("gameSession", JSON.stringify({
-        roomCode: code,
-        playerName: name,
-        role: "player",
-        sessionToken: sessionToken,
-        timestamp: Date.now()
-      }));
-      
-      // ✅ Se la partita è già iniziata, vai direttamente a Game
-      if (updatedRoom.gameState && !updatedRoom.gameState.gameOver) {
-        console.log("🎮 Partita in corso, entro direttamente in Game");
-        
-        if (onGameStart) {
-          onGameStart({
-            room: updatedRoom,
-            roomCode: code,
-            gameState: updatedRoom.gameState
-          });
-        }
-        return;
-      }
-      
-      // ✅ Altrimenti vai in lobby normale
+      console.log("✅ Richiesta accettata");
       setRoom(updatedRoom);
       setRoomCode(code);
       setPlayerName(name);
@@ -158,10 +99,9 @@ export default function LobbyOnline({ onGameStart }) {
       setError("");
     }
 
-    // ✅ NUOVO: Richiesta rifiutata
     function handleJoinRequestRejected({ message }) {
       console.log("❌ Richiesta rifiutata");
-      setError(message || "Richiesta rifiutata dall'host");
+      setError(message || "Richiesta rifiutata");
       setRoom(null);
       setRoomCode("");
       setPlayerName("");
@@ -210,52 +150,18 @@ export default function LobbyOnline({ onGameStart }) {
 
   const handleCreate = (name, rounds, customRoomName) => {
     setError("");
-    console.log("🔧 handleCreate chiamato con:", { name, rounds, customRoomName });
-    
-    // ✅ Controlla se socket è connesso
-    if (!socket.connected) {
-      setError("⏳ Connessione al server in corso...");
-      console.log("⏳ Socket non connesso, aspetto connessione...");
-      
-      // Aspetta connessione
-      const waitForConnection = () => {
-        if (socket.connected) {
-          console.log("✅ Socket connesso, procedo con createRoom");
-          setError("");
-          doCreateRoom(name, rounds, customRoomName);
-        } else {
-          setTimeout(waitForConnection, 500);
-        }
-      };
-      waitForConnection();
-      return;
-    }
-    
-    doCreateRoom(name, rounds, customRoomName);
-  };
-  
-  const doCreateRoom = (name, rounds, customRoomName) => {
-    // ✅ Genera sessionToken unico per questo giocatore
-    const token = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    
     socket.emit(
       "createRoom",
-      { playerName: name, totalRounds: rounds, roomName: customRoomName, sessionToken: token },
+      { playerName: name, totalRounds: rounds, roomName: customRoomName },
       (res) => {
-        console.log("📥 Risposta createRoom:", res);
-        
         if (!res || !res.ok) {
           setError(res?.error || "Errore creazione stanza");
           return;
         }
-        const code = res.roomName || res.roomCode || "";
-        
-        console.log("✅ Stanza creata, setto stati...");
         setRoom(res.room);
-        setRoomCode(code);
+        setRoomCode(res.roomName || res.roomCode || "");
         setPlayerName(res.playerName);
         setRole("host");
-        setSessionToken(token); // ✅ Salva token nello stato (che triggerà useEffect)
       }
     );
   };
@@ -264,27 +170,20 @@ export default function LobbyOnline({ onGameStart }) {
     setError("");
     const upper = String(code || "").toUpperCase();
     setRoomCode(upper);
-    
-    // ✅ Genera sessionToken unico
-    const token = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    
-    socket.emit("joinRoom", { roomCode: upper, playerName: name, sessionToken: token }, (res) => {
+    socket.emit("joinRoom", { roomCode: upper, playerName: name }, (res) => {
       if (!res || !res.ok) {
         if (res?.pending) {
           setError("⏳ In attesa di approvazione...");
           setPlayerName(name);
-          setSessionToken(token); // ✅ Salva anche in pending
         } else {
           setError(res?.error || "Errore ingresso stanza");
         }
         return;
       }
-      
       if (!res.pending) {
         setRoom(res.room);
         setPlayerName(res.playerName);
         setRole("player");
-        setSessionToken(token); // ✅ Salva token nello stato
       }
     });
   };
@@ -293,31 +192,17 @@ export default function LobbyOnline({ onGameStart }) {
     setError("");
     const upper = String(code || "").toUpperCase();
     setRoomCode(upper);
-    
-    // ✅ Genera sessionToken unico
-    const token = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    
     socket.emit(
       "joinAsSpectator",
-      { roomCode: upper, name, sessionToken: token },
+      { roomCode: upper, name },
       (res) => {
         if (!res || !res.ok) {
-          if (res?.pending) {
-            setError("⏳ In attesa di approvazione...");
-            setPlayerName(name);
-            setSessionToken(token); // ✅ Salva anche in pending
-          } else {
-            setError(res?.error || "Errore ingresso spettatore");
-          }
+          setError(res?.error || "Errore ingresso spettatore");
           return;
         }
-        
-        if (!res.pending) {
-          setRoom(res.room);
-          setPlayerName(name);
-          setRole("spectator");
-          setSessionToken(token); // ✅ Salva token nello stato
-        }
+        setRoom(res.room);
+        setPlayerName(name);
+        setRole("spectator");
       }
     );
   };
@@ -331,26 +216,23 @@ export default function LobbyOnline({ onGameStart }) {
     });
   };
 
-  // ✅ NUOVO: Accetta richiesta join
+  // ✅ NUOVO: Gestione richieste join
   const handleAcceptJoin = () => {
     if (!joinRequest) return;
     socket.emit("acceptJoinRequest", {
       playerId: joinRequest.playerId,
       playerName: joinRequest.playerName,
-      sessionToken: joinRequest.sessionToken,
       roomCode: joinRequest.roomCode,
-      type: joinRequest.type,
-      isReconnection: joinRequest.isReconnection || false // ✅ Passa flag riconnessione
+      type: joinRequest.type
     });
     setJoinRequest(null);
   };
 
-  // ✅ NUOVO: Rifiuta richiesta join
   const handleRejectJoin = () => {
     if (!joinRequest) return;
     socket.emit("rejectJoinRequest", {
       playerId: joinRequest.playerId,
-      playerName: joinRequest.playerName
+      roomCode: joinRequest.roomCode
     });
     setJoinRequest(null);
   };
@@ -389,86 +271,58 @@ export default function LobbyOnline({ onGameStart }) {
         </div>
       )}
 
-      {/* ✅ POPUP RICHIESTA JOIN (solo per host) */}
+      {/* ✅ POPUP RICHIESTA JOIN */}
       {joinRequest && (
         <div style={{
           position: 'fixed',
           top: 0,
           left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0, 0, 0, 0.85)',
+          width: '100vw',
+          height: '100vh',
+          background: 'rgba(0,0,0,0.8)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           zIndex: 9999
         }}>
           <div style={{
-            background: '#11131a',
-            border: '3px solid #00ff55',
-            borderRadius: '12px',
+            background: '#1a1a1a',
             padding: '30px',
-            maxWidth: '400px',
-            width: '90vw',
-            textAlign: 'center'
+            borderRadius: '12px',
+            border: '2px solid #00ff55',
+            textAlign: 'center',
+            maxWidth: '400px'
           }}>
-            <h2 style={{ 
-              color: '#00ff55', 
-              marginBottom: '20px',
-              fontSize: '1.5rem'
-            }}>
-              🔔 Nuova Richiesta
-            </h2>
-            <p style={{ 
-              fontSize: '1.2rem', 
-              marginBottom: '10px',
-              color: '#fff'
-            }}>
-              <strong>{joinRequest.playerName}</strong>
+            <h2 style={{ color: '#00ff55', marginBottom: '20px' }}>🔔 Nuova Richiesta</h2>
+            <p style={{ fontSize: '1.3rem', fontWeight: 'bold', marginBottom: '10px', color: 'white' }}>
+              {joinRequest.playerName}
             </p>
-            <p style={{ 
-              fontSize: '1rem', 
-              marginBottom: '30px',
-              color: '#aaa'
-            }}>
-              {joinRequest.isReconnection 
-                ? '🔄 sta riprendendo il suo giocatore'
-                : `vuole unirsi come ${joinRequest.type === 'player' ? '🎮 GIOCATORE' : '👀 SPETTATORE'}`
-              }
+            <p style={{ fontSize: '1rem', marginBottom: '30px', color: '#aaa' }}>
+              vuole unirsi come {joinRequest.type === 'player' ? '🎮 GIOCATORE' : '👀 SPETTATORE'}
             </p>
-            <div style={{ 
-              display: 'flex', 
-              gap: '15px',
-              justifyContent: 'center'
-            }}>
-              <button 
-                onClick={handleAcceptJoin}
-                style={{
-                  padding: '15px 30px',
-                  fontSize: '1.2rem',
-                  fontWeight: 'bold',
-                  background: '#00ff55',
-                  color: '#000',
-                  border: 'none',
-                  borderRadius: '8px',
-                  cursor: 'pointer'
-                }}
-              >
+            <div style={{ display: 'flex', gap: '15px', justifyContent: 'center' }}>
+              <button onClick={handleAcceptJoin} style={{
+                padding: '12px 30px',
+                fontSize: '1.1rem',
+                fontWeight: 'bold',
+                background: '#00ff55',
+                color: 'black',
+                border: 'none',
+                borderRadius: '8px',
+                cursor: 'pointer'
+              }}>
                 ✅ ACCETTA
               </button>
-              <button 
-                onClick={handleRejectJoin}
-                style={{
-                  padding: '15px 30px',
-                  fontSize: '1.2rem',
-                  fontWeight: 'bold',
-                  background: '#ff3333',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: '8px',
-                  cursor: 'pointer'
-                }}
-              >
+              <button onClick={handleRejectJoin} style={{
+                padding: '12px 30px',
+                fontSize: '1.1rem',
+                fontWeight: 'bold',
+                background: '#ff3333',
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                cursor: 'pointer'
+              }}>
                 ❌ RIFIUTA
               </button>
             </div>

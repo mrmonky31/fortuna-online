@@ -16,21 +16,11 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [mySocketId, setMySocketId] = useState(socket.id);
   const [roomCode, setRoomCode] = useState(state?.roomCode || null);
+  const [joinRequest, setJoinRequest] = useState(null); // ✅ NUOVO
 
   const [gameState, setGameState] = useState(() => {
     if (!state) return null;
     
-    // ✅ Se il server ha già un gameState (partita in corso), usalo!
-    if (state.gameState) {
-      console.log("🎮 Usando gameState dal server (partita in corso)");
-      return {
-        ...state.gameState,
-        roomCode: state.roomCode
-      };
-    }
-    
-    // ✅ Altrimenti crea un nuovo gameState (partita appena iniziata)
-    console.log("🆕 Creando nuovo gameState");
     return {
       players: (state.room?.players || []).map(p => ({
         name: p.name,
@@ -75,9 +65,6 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
   // Stati per tracciare consonanti/vocali finite
   const [consonantsFinished, setConsonantsFinished] = useState(false);
   const [vowelsFinished, setVowelsFinished] = useState(false);
-
-  // ✅ NUOVO: Popup richieste join durante la partita
-  const [joinRequest, setJoinRequest] = useState(null);
 
   // ⭐ NUOVO: Stati per sincronizzazione animazione ruota
   const [wheelSpinning, setWheelSpinning] = useState(false);
@@ -167,6 +154,29 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
     };
   }, [isFullscreen]);
 
+  // ✅ NUOVO: Listener per richieste join durante partita
+  useEffect(() => {
+    function handleJoinRequest(request) {
+      console.log("🔔 Richiesta join:", request);
+      setJoinRequest(request);
+    }
+
+    function handleJoinRequestResolved({ playerId }) {
+      if (joinRequest && joinRequest.playerId === playerId) {
+        console.log("✅ Richiesta già gestita");
+        setJoinRequest(null);
+      }
+    }
+
+    socket.on("joinRequest", handleJoinRequest);
+    socket.on("joinRequestResolved", handleJoinRequestResolved);
+    
+    return () => {
+      socket.off("joinRequest", handleJoinRequest);
+      socket.off("joinRequestResolved", handleJoinRequestResolved);
+    };
+  }, [joinRequest]);
+
   useEffect(() => {
     function handleGameStart({ gameState: serverState }) {
       console.log("🚀 GameStart dal server:", serverState);
@@ -212,30 +222,6 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
     socket.on("gameStateUpdate", handleGameStateUpdate);
     return () => socket.off("gameStateUpdate", handleGameStateUpdate);
   }, []);
-
-  // ✅ NUOVO: Listener per richieste join durante la partita
-  useEffect(() => {
-    function handleJoinRequest(request) {
-      console.log("🔔 Richiesta join durante partita:", request);
-      setJoinRequest(request);
-    }
-
-    // ✅ Quando qualcun altro accetta, chiudi il popup
-    function handleJoinRequestResolved({ playerId }) {
-      if (joinRequest && joinRequest.playerId === playerId) {
-        console.log("✅ Richiesta già gestita da un altro giocatore");
-        setJoinRequest(null);
-      }
-    }
-
-    socket.on("joinRequest", handleJoinRequest);
-    socket.on("joinRequestResolved", handleJoinRequestResolved);
-    
-    return () => {
-      socket.off("joinRequest", handleJoinRequest);
-      socket.off("joinRequestResolved", handleJoinRequestResolved);
-    };
-  }, [joinRequest]);
 
   useEffect(() => {
     function handleRoundWon({ winnerName, countdown }) {
@@ -351,6 +337,27 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
     }
   };
 
+  // ✅ NUOVO: Gestione richieste join
+  const handleAcceptJoin = () => {
+    if (!joinRequest) return;
+    socket.emit("acceptJoinRequest", {
+      playerId: joinRequest.playerId,
+      playerName: joinRequest.playerName,
+      roomCode: joinRequest.roomCode,
+      type: joinRequest.type
+    });
+    setJoinRequest(null);
+  };
+
+  const handleRejectJoin = () => {
+    if (!joinRequest) return;
+    socket.emit("rejectJoinRequest", {
+      playerId: joinRequest.playerId,
+      roomCode: joinRequest.roomCode
+    });
+    setJoinRequest(null);
+  };
+
   const handleSpin = () => {
     if (!roomCode) return;
     socket.emit("spinWheel", { roomCode }, (res) => {
@@ -424,29 +431,6 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
       </div>
     );
   }
-
-  // ✅ NUOVO: Funzioni per gestire richieste join
-  const handleAcceptJoin = () => {
-    if (!joinRequest) return;
-    socket.emit("acceptJoinRequest", {
-      playerId: joinRequest.playerId,
-      playerName: joinRequest.playerName,
-      sessionToken: joinRequest.sessionToken,
-      roomCode: joinRequest.roomCode,
-      type: joinRequest.type,
-      isReconnection: joinRequest.isReconnection || false // ✅ Passa flag riconnessione
-    });
-    setJoinRequest(null);
-  };
-
-  const handleRejectJoin = () => {
-    if (!joinRequest) return;
-    socket.emit("rejectJoinRequest", {
-      playerId: joinRequest.playerId,
-      playerName: joinRequest.playerName
-    });
-    setJoinRequest(null);
-  };
 
   const isMyTurn = gameState.currentPlayerId === mySocketId;
   const flashType = betweenRounds ? "success" : 
@@ -590,86 +574,60 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
         </div>
       )}
 
-      {/* ✅ POPUP RICHIESTA JOIN DURANTE PARTITA (solo per host) */}
+      {/* ✅ POPUP RICHIESTA JOIN */}
       {joinRequest && (
         <div style={{
           position: 'fixed',
           top: 0,
           left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0, 0, 0, 0.9)',
+          width: '100vw',
+          height: '100vh',
+          background: 'rgba(0,0,0,0.8)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          zIndex: 99999
+          zIndex: 9999
         }}>
           <div style={{
-            background: '#11131a',
-            border: '3px solid #00ff55',
-            borderRadius: '12px',
+            background: '#1a1a1a',
             padding: '30px',
-            maxWidth: '400px',
-            width: '90vw',
-            textAlign: 'center'
+            borderRadius: '12px',
+            border: '2px solid #00ff55',
+            textAlign: 'center',
+            maxWidth: '400px'
           }}>
-            <h2 style={{ 
-              color: '#00ff55', 
-              marginBottom: '20px',
-              fontSize: '1.5rem'
-            }}>
+            <h2 style={{ color: '#00ff55', marginBottom: '20px', fontSize: '1.5rem' }}>
               🔔 Nuova Richiesta
             </h2>
-            <p style={{ 
-              fontSize: '1.2rem', 
-              marginBottom: '10px',
-              color: '#fff'
-            }}>
-              <strong>{joinRequest.playerName}</strong>
+            <p style={{ fontSize: '1.3rem', fontWeight: 'bold', marginBottom: '10px', color: 'white' }}>
+              {joinRequest.playerName}
             </p>
-            <p style={{ 
-              fontSize: '1rem', 
-              marginBottom: '30px',
-              color: '#aaa'
-            }}>
-              {joinRequest.isReconnection 
-                ? '🔄 sta riprendendo il suo giocatore'
-                : `vuole unirsi come ${joinRequest.type === 'player' ? '🎮 GIOCATORE' : '👀 SPETTATORE'}`
-              }
+            <p style={{ fontSize: '1rem', marginBottom: '30px', color: '#aaa' }}>
+              vuole unirsi come {joinRequest.type === 'player' ? '🎮 GIOCATORE' : '👀 SPETTATORE'}
             </p>
-            <div style={{ 
-              display: 'flex', 
-              gap: '15px',
-              justifyContent: 'center'
-            }}>
-              <button 
-                onClick={handleAcceptJoin}
-                style={{
-                  padding: '15px 30px',
-                  fontSize: '1.2rem',
-                  fontWeight: 'bold',
-                  background: '#00ff55',
-                  color: '#000',
-                  border: 'none',
-                  borderRadius: '8px',
-                  cursor: 'pointer'
-                }}
-              >
+            <div style={{ display: 'flex', gap: '15px', justifyContent: 'center' }}>
+              <button onClick={handleAcceptJoin} style={{
+                padding: '12px 30px',
+                fontSize: '1.1rem',
+                fontWeight: 'bold',
+                background: '#00ff55',
+                color: 'black',
+                border: 'none',
+                borderRadius: '8px',
+                cursor: 'pointer'
+              }}>
                 ✅ ACCETTA
               </button>
-              <button 
-                onClick={handleRejectJoin}
-                style={{
-                  padding: '15px 30px',
-                  fontSize: '1.2rem',
-                  fontWeight: 'bold',
-                  background: '#ff3333',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: '8px',
-                  cursor: 'pointer'
-                }}
-              >
+              <button onClick={handleRejectJoin} style={{
+                padding: '12px 30px',
+                fontSize: '1.1rem',
+                fontWeight: 'bold',
+                background: '#ff3333',
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                cursor: 'pointer'
+              }}>
                 ❌ RIFIUTA
               </button>
             </div>
