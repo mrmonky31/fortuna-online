@@ -367,33 +367,34 @@ io.on("connection", (socket) => {
         return;
       }
 
-      // ✅ MODIFICA 4: Se la partita è già iniziata, chiedi approvazione all'host
+      // ✅ MODIFICA: Se la partita è già iniziata, chiedi approvazione a TUTTI i giocatori
       if (room.gameState && !room.gameState.gameOver) {
-        const hostPlayer = room.players.find(p => p.isHost);
-        if (hostPlayer) {
-          // Invia richiesta all'host
-          io.to(hostPlayer.id).emit("joinRequest", {
+        // Invia richiesta a TUTTI i giocatori nella stanza
+        room.players.forEach(player => {
+          io.to(player.id).emit("joinRequest", {
             playerName: name,
             playerId: socket.id,
             sessionToken: sessionToken || socket.id,
             roomCode: code,
             type: "player"
           });
-          
-          if (callback) callback({ 
-            ok: true, 
-            pending: true,
-            message: "In attesa di approvazione dall'host..." 
-          });
-          return;
-        }
+        });
+        
+        console.log(`🔔 Richiesta join inviata a TUTTI i ${room.players.length} giocatori in ${code}`);
+        
+        if (callback) callback({ 
+          ok: true, 
+          pending: true,
+          message: "In attesa di approvazione..." 
+        });
+        return;
       }
 
       // ✅ Se partita non iniziata, entra direttamente
       room.players.push({ 
         name, 
         id: socket.id, 
-        sessionToken: sessionToken || socket.id, // ✅ Salva sessionToken
+        sessionToken: sessionToken || socket.id,
         isHost: false 
       });
       socket.join(code);
@@ -509,33 +510,34 @@ io.on("connection", (socket) => {
 
       if (!room.spectators) room.spectators = [];
 
-      // ✅ MODIFICA 4: Se la partita è già iniziata, chiedi approvazione all'host
+      // ✅ MODIFICA: Se la partita è già iniziata, chiedi approvazione a TUTTI i giocatori
       if (room.gameState && !room.gameState.gameOver) {
-        const hostPlayer = room.players.find(p => p.isHost);
-        if (hostPlayer) {
-          // Invia richiesta all'host
-          io.to(hostPlayer.id).emit("joinRequest", {
+        // Invia richiesta a TUTTI i giocatori nella stanza
+        room.players.forEach(player => {
+          io.to(player.id).emit("joinRequest", {
             playerName: spectatorName,
             playerId: socket.id,
             sessionToken: sessionToken || socket.id,
             roomCode: code,
             type: "spectator"
           });
-          
-          if (callback) callback({ 
-            ok: true, 
-            pending: true,
-            message: "In attesa di approvazione dall'host..." 
-          });
-          return;
-        }
+        });
+        
+        console.log(`🔔 Richiesta spettatore inviata a TUTTI i ${room.players.length} giocatori in ${code}`);
+        
+        if (callback) callback({ 
+          ok: true, 
+          pending: true,
+          message: "In attesa di approvazione..." 
+        });
+        return;
       }
 
       // ✅ Se partita non iniziata, entra direttamente
       room.spectators.push({ 
         name: spectatorName, 
         id: socket.id,
-        sessionToken: sessionToken || socket.id // ✅ Salva sessionToken
+        sessionToken: sessionToken || socket.id
       });
 
       socket.join(code);
@@ -1146,17 +1148,25 @@ if (gs.usedLetters.includes(upper)) {
 
       if (!room) return;
 
-      const hostPlayer = room.players.find(p => p.isHost);
-      if (!hostPlayer || hostPlayer.id !== socket.id) return;
+      // ✅ Verifica che chi accetta sia un giocatore della stanza
+      const acceptingPlayer = room.players.find(p => p.id === socket.id);
+      if (!acceptingPlayer) return;
 
       const targetSocket = io.sockets.sockets.get(playerId);
       if (!targetSocket) return;
 
+      // ✅ RACE CONDITION: Controlla se il giocatore è già stato aggiunto
       if (type === "player") {
+        const alreadyAdded = room.players.some(p => p.sessionToken === sessionToken);
+        if (alreadyAdded) {
+          console.log(`⚠️ ${playerName} già aggiunto, ignoro duplicato`);
+          return;
+        }
+        
         room.players.push({ 
           name: playerName, 
           id: playerId, 
-          sessionToken: sessionToken || playerId, // ✅ Salva sessionToken
+          sessionToken: sessionToken || playerId,
           isHost: false 
         });
         
@@ -1171,15 +1181,27 @@ if (gs.usedLetters.includes(upper)) {
         }
       } else if (type === "spectator") {
         if (!room.spectators) room.spectators = [];
+        
+        const alreadyAdded = room.spectators.some(s => s.sessionToken === sessionToken);
+        if (alreadyAdded) {
+          console.log(`⚠️ ${playerName} (spettatore) già aggiunto, ignoro duplicato`);
+          return;
+        }
+        
         room.spectators.push({ 
           name: playerName, 
           id: playerId,
-          sessionToken: sessionToken || playerId // ✅ Salva sessionToken
+          sessionToken: sessionToken || playerId
         });
       }
 
       targetSocket.join(code);
-      console.log(`✅ ${playerName} approvato in ${code} come ${type}`);
+      console.log(`✅ ${playerName} approvato da ${acceptingPlayer.name} in ${code} come ${type}`);
+
+      // ✅ Notifica TUTTI i giocatori che la richiesta è stata gestita
+      room.players.forEach(player => {
+        io.to(player.id).emit("joinRequestResolved", { playerId });
+      });
 
       // Notifica il giocatore che è stato accettato
       io.to(playerId).emit("joinRequestAccepted", {

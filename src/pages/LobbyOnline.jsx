@@ -86,6 +86,14 @@ export default function LobbyOnline({ onGameStart }) {
       setJoinRequest(request);
     }
 
+    // ✅ Quando qualcun altro accetta, chiudi il popup
+    function handleJoinRequestResolved({ playerId }) {
+      if (joinRequest && joinRequest.playerId === playerId) {
+        console.log("✅ Richiesta già gestita da un altro giocatore");
+        setJoinRequest(null);
+      }
+    }
+
     // ✅ NUOVO: Richiesta accettata
     function handleJoinRequestAccepted({ room: updatedRoom, roomCode: code, playerName: name }) {
       console.log("✅ Richiesta accettata!");
@@ -143,6 +151,7 @@ export default function LobbyOnline({ onGameStart }) {
     socket.on("roomUpdate", handleRoomUpdate);
     socket.on("gameState", handleGameState);
     socket.on("joinRequest", handleJoinRequest);
+    socket.on("joinRequestResolved", handleJoinRequestResolved);
     socket.on("joinRequestAccepted", handleJoinRequestAccepted);
     socket.on("joinRequestRejected", handleJoinRequestRejected);
 
@@ -150,10 +159,11 @@ export default function LobbyOnline({ onGameStart }) {
       socket.off("roomUpdate", handleRoomUpdate);
       socket.off("gameState", handleGameState);
       socket.off("joinRequest", handleJoinRequest);
+      socket.off("joinRequestResolved", handleJoinRequestResolved);
       socket.off("joinRequestAccepted", handleJoinRequestAccepted);
       socket.off("joinRequestRejected", handleJoinRequestRejected);
     };
-  }, [roomCode]);
+  }, [roomCode, joinRequest]);
 
   // ✅ QUESTA È L'UNICA MODIFICA NECESSARIA!
   useEffect(() => {

@@ -220,9 +220,22 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
       setJoinRequest(request);
     }
 
+    // ✅ Quando qualcun altro accetta, chiudi il popup
+    function handleJoinRequestResolved({ playerId }) {
+      if (joinRequest && joinRequest.playerId === playerId) {
+        console.log("✅ Richiesta già gestita da un altro giocatore");
+        setJoinRequest(null);
+      }
+    }
+
     socket.on("joinRequest", handleJoinRequest);
-    return () => socket.off("joinRequest", handleJoinRequest);
-  }, []);
+    socket.on("joinRequestResolved", handleJoinRequestResolved);
+    
+    return () => {
+      socket.off("joinRequest", handleJoinRequest);
+      socket.off("joinRequestResolved", handleJoinRequestResolved);
+    };
+  }, [joinRequest]);
 
   useEffect(() => {
     function handleRoundWon({ winnerName, countdown }) {
