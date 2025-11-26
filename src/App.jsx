@@ -40,31 +40,50 @@ function App() {
 
       console.log("🔄 Tentativo riconnessione con sessionToken a:", roomCode);
       
-      // Prova a fare rejoin con sessionToken
-      socket.emit("rejoinRoom", { roomCode, sessionToken }, (res) => {
-        if (res?.ok && res.room) {
-          console.log("✅ Riconnesso a stanza:", roomCode);
-          
-          // Ricostruisci lo stato
-          setPlayers(res.room.players.map(p => ({ name: p.name })));
-          setRounds(res.room.totalRounds || 3);
-          
-          if (res.room.gameState) {
-            setGameState({
-              room: res.room,
-              roomCode: roomCode,
-              gameState: res.room.gameState
-            });
-            setScreen("game");
-          } else {
-            setScreen("setup");
-          }
-        } else {
-          console.log("❌ Riconnessione fallita:", res?.error);
-          localStorage.removeItem("gameSession");
+      // ✅ Aspetta che socket sia connesso
+      const attemptRejoin = () => {
+        if (!socket.connected) {
+          console.log("⏳ Socket non ancora connesso, aspetto...");
+          setTimeout(attemptRejoin, 500);
+          return;
         }
-        setReconnecting(false);
-      });
+        
+        // ✅ Timeout di 10 secondi per rejoinRoom
+        const timeoutId = setTimeout(() => {
+          console.log("⏱️ Timeout riconnessione, procedo normalmente");
+          setReconnecting(false);
+        }, 10000);
+        
+        // Prova a fare rejoin con sessionToken
+        socket.emit("rejoinRoom", { roomCode, sessionToken }, (res) => {
+          clearTimeout(timeoutId);
+          
+          if (res?.ok && res.room) {
+            console.log("✅ Riconnesso a stanza:", roomCode);
+            
+            // Ricostruisci lo stato
+            setPlayers(res.room.players.map(p => ({ name: p.name })));
+            setRounds(res.room.totalRounds || 3);
+            
+            if (res.room.gameState) {
+              setGameState({
+                room: res.room,
+                roomCode: roomCode,
+                gameState: res.room.gameState
+              });
+              setScreen("game");
+            } else {
+              setScreen("setup");
+            }
+          } else {
+            console.log("❌ Riconnessione fallita:", res?.error);
+            localStorage.removeItem("gameSession");
+          }
+          setReconnecting(false);
+        });
+      };
+      
+      attemptRejoin();
     } catch (e) {
       console.error("Errore riconnessione:", e);
       localStorage.removeItem("gameSession");
