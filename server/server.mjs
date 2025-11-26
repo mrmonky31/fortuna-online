@@ -148,24 +148,18 @@ function nextRound(roomCode, room) {
   gs.lastSpinTarget = 0;
   gs.spinning = false;
 
-  // ✅ MODIFICA 3: NON resetta currentPlayerIndex
-  // Il giocatore successivo al vincitore continuerà dal suo turno
-
   gs.gameMessage = { type: "info", text: `🎬 Round ${gs.currentRound}/${gs.totalRounds}` };
 
   io.to(roomCode).emit("gameStateUpdate", { gameState: gs });
 }
 
 function initGameState(players, totalRounds, phrase, category) {
-  // ✅ MODIFICA 1: Randomizza il giocatore iniziale
-  const randomStartIndex = Math.floor(Math.random() * players.length);
-  
   return {
     players: players.map(p => ({ name: p.name, id: p.id, totalScore: 0, roundScore: 0 })),
     totalRounds,
     currentRound: 1,
-    currentPlayerIndex: randomStartIndex,
-    currentPlayerId: players[randomStartIndex].id,
+    currentPlayerIndex: 0,
+    currentPlayerId: players[0].id,
 
     phrase,
     rows: buildBoard(phrase, 14, 4),
@@ -256,15 +250,7 @@ function handleTemporaryDisconnect(socketId, code, room) {
     
     const idx = room.players.findIndex((p) => p.id === socketId);
     if (idx !== -1) {
-      const wasHost = room.players[idx].isHost;
       room.players.splice(idx, 1);
-      
-      // ✅ DELEGA HOST: Se l'host esce, il primo giocatore diventa host
-      if (wasHost && room.players.length > 0) {
-        room.players[0].isHost = true;
-        room.host = room.players[0].name;
-        console.log(`👑 ${room.players[0].name} è ora l'host di ${code}`);
-      }
       
       if (room.gameState && room.gameState.currentPlayerId === socketId) {
         room.gameState.currentPlayerIndex = (room.gameState.currentPlayerIndex + 1) % room.players.length;
@@ -283,11 +269,6 @@ function handleTemporaryDisconnect(socketId, code, room) {
     }
   }, 30000);
 }
-        delete rooms[code];
-      }
-    }
-  }, 30000);
-}
 
 // ==================== SOCKET.IO ====================
 
@@ -301,7 +282,7 @@ io.on("connection", (socket) => {
   }
 
   // CREA STANZA
-  socket.on("createRoom", async ({ playerName, totalRounds, roomName, sessionToken }, callback) => {
+  socket.on("createRoom", async ({ playerName, totalRounds, roomName }, callback) => {
     try {
       const rawName = roomName && String(roomName).trim();
       const code = rawName && rawName.length > 0
@@ -320,17 +301,12 @@ io.on("connection", (socket) => {
 
       rooms[code] = {
         host: name,
-        players: [{ 
-          name, 
-          id: socket.id, 
-          sessionToken: sessionToken || socket.id, // ✅ Salva sessionToken
-          isHost: true 
-        }],
+        players: [{ name, id: socket.id, isHost: true }],
         spectators: [],
         totalRounds: Number(totalRounds) || 3,
         gameState: null,
-        phraseSet: phraseSet,
-        currentPhraseIndex: 0,
+        phraseSet: phraseSet, // ✅ Salva il set frasi nella room
+        currentPhraseIndex: 0, // ✅ Per modalità sequenziale
       };
 
       socket.join(code);
@@ -350,7 +326,7 @@ io.on("connection", (socket) => {
   });
 
   // UNISCITI A STANZA
-  socket.on("joinRoom", ({ roomCode, playerName, sessionToken }, callback) => {
+  socket.on("joinRoom", ({ roomCode, playerName }, callback) => {
     try {
       const code = String(roomCode || "").trim().toUpperCase();
       const room = rooms[code];
@@ -367,80 +343,7 @@ io.on("connection", (socket) => {
         return;
       }
 
-      // ✅ NUOVO: Controlla se esiste già un giocatore con questo NOME
-      const existingPlayerByName = room.players.find(p => p.name === name);
-      
-      if (existingPlayerByName) {
-        // ✅ Se partita in corso, chiedi approvazione a TUTTI per riprendere il box
-        if (room.gameState && !room.gameState.gameOver) {
-          room.players.forEach(player => {
-            io.to(player.id).emit("joinRequest", {
-              playerName: name,
-              playerId: socket.id,
-              sessionToken: sessionToken || socket.id,
-              roomCode: code,
-              type: "player",
-              isReconnection: true // ✅ Flag per capire che sta riprendendo il suo box
-            });
-          });
-          
-          console.log(`🔔 ${name} sta riprendendo il suo box, richiesta inviata a TUTTI i ${room.players.length} giocatori`);
-          
-          if (callback) callback({ 
-            ok: true, 
-            pending: true,
-            message: "In attesa di approvazione per riprendere il tuo giocatore..." 
-          });
-          return;
-        }
-        
-        // ✅ Se partita NON iniziata, riprendi il box direttamente
-        existingPlayerByName.id = socket.id;
-        existingPlayerByName.sessionToken = sessionToken || socket.id;
-        socket.join(code);
-        
-        console.log(`✅ ${name} ha ripreso il suo box in ${code}`);
-        
-        io.to(code).emit("roomUpdate", { room, roomCode: code });
-        
-        if (callback) callback({
-          ok: true,
-          roomCode: code,
-          room,
-          playerName: name,
-        });
-        return;
-      }
-
-      // ✅ Se la partita è già iniziata E nome non esiste, chiedi approvazione a TUTTI
-      if (room.gameState && !room.gameState.gameOver) {
-        room.players.forEach(player => {
-          io.to(player.id).emit("joinRequest", {
-            playerName: name,
-            playerId: socket.id,
-            sessionToken: sessionToken || socket.id,
-            roomCode: code,
-            type: "player"
-          });
-        });
-        
-        console.log(`🔔 Richiesta join inviata a TUTTI i ${room.players.length} giocatori in ${code}`);
-        
-        if (callback) callback({ 
-          ok: true, 
-          pending: true,
-          message: "In attesa di approvazione..." 
-        });
-        return;
-      }
-
-      // ✅ Se partita non iniziata, entra direttamente
-      room.players.push({ 
-        name, 
-        id: socket.id, 
-        sessionToken: sessionToken || socket.id,
-        isHost: false 
-      });
+      room.players.push({ name, id: socket.id, isHost: false });
       socket.join(code);
 
       console.log(`✅ ${name} entra in ${code}`);
@@ -459,89 +362,8 @@ io.on("connection", (socket) => {
     }
   });
 
-  // ✅ NUOVO: Riconnessione automatica
-  socket.on("rejoinRoom", ({ roomCode, sessionToken }, callback) => {
-    try {
-      const code = String(roomCode || "").trim().toUpperCase();
-      const room = rooms[code];
-
-      if (!room) {
-        if (callback) callback({ ok: false, error: "Stanza non trovata" });
-        return;
-      }
-
-      if (!sessionToken) {
-        if (callback) callback({ ok: false, error: "SessionToken mancante" });
-        return;
-      }
-
-      // ✅ Cerca per sessionToken invece di socket.id
-      const existingPlayer = room.players.find(p => p.sessionToken === sessionToken);
-      const existingSpectator = room.spectators?.find(s => s.sessionToken === sessionToken);
-
-      if (existingPlayer) {
-        const oldSocketId = existingPlayer.id;
-        
-        // Aggiorna socket.id con quello nuovo
-        existingPlayer.id = socket.id;
-        
-        // ✅ IMPORTANTE: Aggiorna anche gameState.players se esiste
-        if (room.gameState && room.gameState.players) {
-          const gsPlayer = room.gameState.players.find(p => p.id === oldSocketId);
-          if (gsPlayer) {
-            gsPlayer.id = socket.id;
-            console.log(`🔄 Aggiornato socket.id in gameState per ${existingPlayer.name}`);
-          }
-        }
-        
-        socket.join(code);
-        console.log(`🔄 ${existingPlayer.name} riconnesso come GIOCATORE a ${code}`);
-        
-        if (callback) callback({
-          ok: true,
-          room,
-          roomCode: code,
-          playerName: existingPlayer.name,
-          role: existingPlayer.isHost ? "host" : "player"
-        });
-        
-        // Notifica tutti dell'aggiornamento
-        io.to(code).emit("roomUpdate", { room, roomCode: code });
-        if (room.gameState) {
-          io.to(code).emit("gameStateUpdate", { gameState: room.gameState });
-        }
-        return;
-      }
-
-      if (existingSpectator) {
-        // Aggiorna socket.id con quello nuovo
-        existingSpectator.id = socket.id;
-        socket.join(code);
-        console.log(`🔄 ${existingSpectator.name} riconnesso come SPETTATORE a ${code}`);
-        
-        if (callback) callback({
-          ok: true,
-          room,
-          roomCode: code,
-          playerName: existingSpectator.name,
-          role: "spectator"
-        });
-        
-        io.to(code).emit("roomUpdate", { room, roomCode: code });
-        return;
-      }
-
-      // ✅ Se non trova sessionToken, non può riconnettersi automaticamente
-      // Deve fare joinRoom normale (che chiederà approvazione se partita in corso)
-      if (callback) callback({ ok: false, error: "Sessione scaduta, devi rifare join" });
-    } catch (err) {
-      console.error("Errore rejoinRoom:", err);
-      if (callback) callback({ ok: false, error: "Errore riconnessione" });
-    }
-  });
-
   // ENTRA COME SPETTATORE
-  socket.on("joinAsSpectator", ({ roomCode, name, sessionToken }, callback) => {
+  socket.on("joinAsSpectator", ({ roomCode, name }, callback) => {
     try {
       const code = String(roomCode || "").trim().toUpperCase();
       const room = rooms[code];
@@ -554,36 +376,7 @@ io.on("connection", (socket) => {
       const spectatorName = String(name || "").trim() || "Spettatore";
 
       if (!room.spectators) room.spectators = [];
-
-      // ✅ MODIFICA: Se la partita è già iniziata, chiedi approvazione a TUTTI i giocatori
-      if (room.gameState && !room.gameState.gameOver) {
-        // Invia richiesta a TUTTI i giocatori nella stanza
-        room.players.forEach(player => {
-          io.to(player.id).emit("joinRequest", {
-            playerName: spectatorName,
-            playerId: socket.id,
-            sessionToken: sessionToken || socket.id,
-            roomCode: code,
-            type: "spectator"
-          });
-        });
-        
-        console.log(`🔔 Richiesta spettatore inviata a TUTTI i ${room.players.length} giocatori in ${code}`);
-        
-        if (callback) callback({ 
-          ok: true, 
-          pending: true,
-          message: "In attesa di approvazione..." 
-        });
-        return;
-      }
-
-      // ✅ Se partita non iniziata, entra direttamente
-      room.spectators.push({ 
-        name: spectatorName, 
-        id: socket.id,
-        sessionToken: sessionToken || socket.id
-      });
+      room.spectators.push({ name: spectatorName, id: socket.id });
 
       socket.join(code);
       console.log(`👁️ ${spectatorName} entra come spettatore in ${code}`);
@@ -1118,10 +911,6 @@ if (gs.usedLetters.includes(upper)) {
         gs.awaitingConsonant = false;
         gs.pendingDouble = false;
 
-        // ✅ MODIFICA 3: Il prossimo round parte dal giocatore DOPO il vincitore
-        gs.currentPlayerIndex = (i + 1) % gs.players.length;
-        gs.currentPlayerId = gs.players[gs.currentPlayerIndex].id;
-
         io.to(code).emit("roundWon", {
           winnerName,
           countdown: 7
@@ -1185,138 +974,6 @@ if (gs.usedLetters.includes(upper)) {
     }
   });
 
-  // ✅ NUOVO: Giocatore accetta richiesta join
-  socket.on("acceptJoinRequest", ({ playerId, playerName, sessionToken, roomCode, type, isReconnection }) => {
-    try {
-      const code = String(roomCode || "").trim().toUpperCase();
-      const room = rooms[code];
-
-      if (!room) return;
-
-      // ✅ Verifica che chi accetta sia un giocatore della stanza
-      const acceptingPlayer = room.players.find(p => p.id === socket.id);
-      if (!acceptingPlayer) return;
-
-      const targetSocket = io.sockets.sockets.get(playerId);
-      if (!targetSocket) return;
-
-      if (type === "player") {
-        // ✅ NUOVO: Se è riconnessione, aggiorna box esistente
-        if (isReconnection) {
-          const existingPlayer = room.players.find(p => p.name === playerName);
-          if (existingPlayer) {
-            const oldSocketId = existingPlayer.id;
-            existingPlayer.id = playerId;
-            existingPlayer.sessionToken = sessionToken || playerId;
-            
-            // Aggiorna anche in gameState
-            if (room.gameState && room.gameState.players) {
-              const gsPlayer = room.gameState.players.find(p => p.id === oldSocketId || p.name === playerName);
-              if (gsPlayer) {
-                gsPlayer.id = playerId;
-                console.log(`🔄 ${playerName} ha ripreso il suo box in gameState`);
-              }
-            }
-            
-            targetSocket.join(code);
-            console.log(`✅ ${playerName} ha ripreso il suo box approvato da ${acceptingPlayer.name}`);
-            
-            // Notifica TUTTI che la richiesta è stata gestita
-            room.players.forEach(player => {
-              io.to(player.id).emit("joinRequestResolved", { playerId });
-            });
-            
-            io.to(playerId).emit("joinRequestAccepted", {
-              roomCode: code,
-              room,
-              playerName
-            });
-            
-            io.to(code).emit("roomUpdate", { room, roomCode: code });
-            if (room.gameState) {
-              io.to(code).emit("gameStateUpdate", { gameState: room.gameState });
-            }
-            return;
-          }
-        }
-        
-        // ✅ Altrimenti crea nuovo giocatore
-        const alreadyAdded = room.players.some(p => p.sessionToken === sessionToken);
-        if (alreadyAdded) {
-          console.log(`⚠️ ${playerName} già aggiunto, ignoro duplicato`);
-          return;
-        }
-        
-        room.players.push({ 
-          name: playerName, 
-          id: playerId, 
-          sessionToken: sessionToken || playerId,
-          isHost: false 
-        });
-        
-        // Se c'è una partita in corso, aggiungi il giocatore al gameState
-        if (room.gameState) {
-          room.gameState.players.push({ 
-            name: playerName, 
-            id: playerId, 
-            totalScore: 0, 
-            roundScore: 0 
-          });
-        }
-      } else if (type === "spectator") {
-        if (!room.spectators) room.spectators = [];
-        
-        const alreadyAdded = room.spectators.some(s => s.sessionToken === sessionToken);
-        if (alreadyAdded) {
-          console.log(`⚠️ ${playerName} (spettatore) già aggiunto, ignoro duplicato`);
-          return;
-        }
-        
-        room.spectators.push({ 
-          name: playerName, 
-          id: playerId,
-          sessionToken: sessionToken || playerId
-        });
-      }
-
-      targetSocket.join(code);
-      console.log(`✅ ${playerName} approvato da ${acceptingPlayer.name} in ${code} come ${type}`);
-
-      // ✅ Notifica TUTTI i giocatori che la richiesta è stata gestita
-      room.players.forEach(player => {
-        io.to(player.id).emit("joinRequestResolved", { playerId });
-      });
-
-      // Notifica il giocatore che è stato accettato
-      io.to(playerId).emit("joinRequestAccepted", {
-        roomCode: code,
-        room,
-        playerName
-      });
-
-      // Aggiorna tutti nella stanza
-      io.to(code).emit("roomUpdate", { room, roomCode: code });
-      
-      if (room.gameState) {
-        io.to(code).emit("gameStateUpdate", { gameState: room.gameState });
-      }
-    } catch (err) {
-      console.error("Errore acceptJoinRequest:", err);
-    }
-  });
-
-  // ✅ NUOVO: Host rifiuta richiesta join
-  socket.on("rejectJoinRequest", ({ playerId, playerName }) => {
-    try {
-      io.to(playerId).emit("joinRequestRejected", {
-        message: "L'host ha rifiutato la tua richiesta"
-      });
-      console.log(`❌ ${playerName} rifiutato dall'host`);
-    } catch (err) {
-      console.error("Errore rejectJoinRequest:", err);
-    }
-  });
-
   // DISCONNESSIONE
   socket.on("disconnect", () => {
     const info = findRoomBySocketId(socket.id);
@@ -1346,11 +1003,6 @@ if (gs.usedLetters.includes(upper)) {
 
     console.log("❌ Disconnessione:", socket.id);
   });
-});
-
-// ✅ Endpoint health check per verificare se il server è attivo
-app.get("/health", (req, res) => {
-  res.status(200).json({ status: "ok", timestamp: Date.now() });
 });
 
 server.listen(PORT, () => {
