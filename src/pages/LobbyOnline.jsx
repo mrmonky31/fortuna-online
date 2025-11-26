@@ -23,14 +23,17 @@ export default function LobbyOnline({ onGameStart }) {
   useEffect(() => {
     // Salva in localStorage solo se hai room E sessionToken
     if (room && roomCode && playerName && sessionToken) {
-      localStorage.setItem("gameSession", JSON.stringify({
+      const sessionData = {
         roomCode,
         playerName,
         role: role || "player",
         sessionToken,
         timestamp: Date.now()
-      }));
-      console.log("💾 Sessione salvata in localStorage");
+      };
+      localStorage.setItem("gameSession", JSON.stringify(sessionData));
+      console.log("💾 Sessione salvata in localStorage:", sessionData);
+    } else {
+      console.log("⏸️ Non salvo ancora:", { room: !!room, roomCode: !!roomCode, playerName: !!playerName, sessionToken: !!sessionToken });
     }
   }, [room, roomCode, playerName, sessionToken, role]);
 
@@ -207,6 +210,7 @@ export default function LobbyOnline({ onGameStart }) {
 
   const handleCreate = (name, rounds, customRoomName) => {
     setError("");
+    console.log("🔧 handleCreate chiamato con:", { name, rounds, customRoomName });
     
     // ✅ Genera sessionToken unico per questo giocatore
     const token = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -215,12 +219,15 @@ export default function LobbyOnline({ onGameStart }) {
       "createRoom",
       { playerName: name, totalRounds: rounds, roomName: customRoomName, sessionToken: token },
       (res) => {
+        console.log("📥 Risposta createRoom:", res);
+        
         if (!res || !res.ok) {
           setError(res?.error || "Errore creazione stanza");
           return;
         }
         const code = res.roomName || res.roomCode || "";
         
+        console.log("✅ Stanza creata, setto stati...");
         setRoom(res.room);
         setRoomCode(code);
         setPlayerName(res.playerName);
