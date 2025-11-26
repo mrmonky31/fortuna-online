@@ -367,9 +367,53 @@ io.on("connection", (socket) => {
         return;
       }
 
-      // ✅ MODIFICA: Se la partita è già iniziata, chiedi approvazione a TUTTI i giocatori
+      // ✅ NUOVO: Controlla se esiste già un giocatore con questo NOME
+      const existingPlayerByName = room.players.find(p => p.name === name);
+      
+      if (existingPlayerByName) {
+        // ✅ Se partita in corso, chiedi approvazione a TUTTI per riprendere il box
+        if (room.gameState && !room.gameState.gameOver) {
+          room.players.forEach(player => {
+            io.to(player.id).emit("joinRequest", {
+              playerName: name,
+              playerId: socket.id,
+              sessionToken: sessionToken || socket.id,
+              roomCode: code,
+              type: "player",
+              isReconnection: true // ✅ Flag per capire che sta riprendendo il suo box
+            });
+          });
+          
+          console.log(`🔔 ${name} sta riprendendo il suo box, richiesta inviata a TUTTI i ${room.players.length} giocatori`);
+          
+          if (callback) callback({ 
+            ok: true, 
+            pending: true,
+            message: "In attesa di approvazione per riprendere il tuo giocatore..." 
+          });
+          return;
+        }
+        
+        // ✅ Se partita NON iniziata, riprendi il box direttamente
+        existingPlayerByName.id = socket.id;
+        existingPlayerByName.sessionToken = sessionToken || socket.id;
+        socket.join(code);
+        
+        console.log(`✅ ${name} ha ripreso il suo box in ${code}`);
+        
+        io.to(code).emit("roomUpdate", { room, roomCode: code });
+        
+        if (callback) callback({
+          ok: true,
+          roomCode: code,
+          room,
+          playerName: name,
+        });
+        return;
+      }
+
+      // ✅ Se la partita è già iniziata E nome non esiste, chiedi approvazione a TUTTI
       if (room.gameState && !room.gameState.gameOver) {
-        // Invia richiesta a TUTTI i giocatori nella stanza
         room.players.forEach(player => {
           io.to(player.id).emit("joinRequest", {
             playerName: name,
@@ -487,8 +531,9 @@ io.on("connection", (socket) => {
         return;
       }
 
-      // Se non era nella stanza, non può riconnettersi
-      if (callback) callback({ ok: false, error: "Non eri in questa stanza" });
+      // ✅ Se non trova sessionToken, non può riconnettersi automaticamente
+      // Deve fare joinRoom normale (che chiederà approvazione se partita in corso)
+      if (callback) callback({ ok: false, error: "Sessione scaduta, devi rifare join" });
     } catch (err) {
       console.error("Errore rejoinRoom:", err);
       if (callback) callback({ ok: false, error: "Errore riconnessione" });
@@ -1140,8 +1185,8 @@ if (gs.usedLetters.includes(upper)) {
     }
   });
 
-  // ✅ NUOVO: Host accetta richiesta join
-  socket.on("acceptJoinRequest", ({ playerId, playerName, sessionToken, roomCode, type }) => {
+  // ✅ NUOVO: Giocatore accetta richiesta join
+  socket.on("acceptJoinRequest", ({ playerId, playerName, sessionToken, roomCode, type, isReconnection }) => {
     try {
       const code = String(roomCode || "").trim().toUpperCase();
       const room = rooms[code];
@@ -1155,8 +1200,47 @@ if (gs.usedLetters.includes(upper)) {
       const targetSocket = io.sockets.sockets.get(playerId);
       if (!targetSocket) return;
 
-      // ✅ RACE CONDITION: Controlla se il giocatore è già stato aggiunto
       if (type === "player") {
+        // ✅ NUOVO: Se è riconnessione, aggiorna box esistente
+        if (isReconnection) {
+          const existingPlayer = room.players.find(p => p.name === playerName);
+          if (existingPlayer) {
+            const oldSocketId = existingPlayer.id;
+            existingPlayer.id = playerId;
+            existingPlayer.sessionToken = sessionToken || playerId;
+            
+            // Aggiorna anche in gameState
+            if (room.gameState && room.gameState.players) {
+              const gsPlayer = room.gameState.players.find(p => p.id === oldSocketId || p.name === playerName);
+              if (gsPlayer) {
+                gsPlayer.id = playerId;
+                console.log(`🔄 ${playerName} ha ripreso il suo box in gameState`);
+              }
+            }
+            
+            targetSocket.join(code);
+            console.log(`✅ ${playerName} ha ripreso il suo box approvato da ${acceptingPlayer.name}`);
+            
+            // Notifica TUTTI che la richiesta è stata gestita
+            room.players.forEach(player => {
+              io.to(player.id).emit("joinRequestResolved", { playerId });
+            });
+            
+            io.to(playerId).emit("joinRequestAccepted", {
+              roomCode: code,
+              room,
+              playerName
+            });
+            
+            io.to(code).emit("roomUpdate", { room, roomCode: code });
+            if (room.gameState) {
+              io.to(code).emit("gameStateUpdate", { gameState: room.gameState });
+            }
+            return;
+          }
+        }
+        
+        // ✅ Altrimenti crea nuovo giocatore
         const alreadyAdded = room.players.some(p => p.sessionToken === sessionToken);
         if (alreadyAdded) {
           console.log(`⚠️ ${playerName} già aggiunto, ignoro duplicato`);

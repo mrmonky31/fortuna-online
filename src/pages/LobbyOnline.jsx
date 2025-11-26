@@ -330,9 +330,10 @@ export default function LobbyOnline({ onGameStart }) {
     socket.emit("acceptJoinRequest", {
       playerId: joinRequest.playerId,
       playerName: joinRequest.playerName,
-      sessionToken: joinRequest.sessionToken, // ✅ Passa sessionToken
+      sessionToken: joinRequest.sessionToken,
       roomCode: joinRequest.roomCode,
-      type: joinRequest.type
+      type: joinRequest.type,
+      isReconnection: joinRequest.isReconnection || false // ✅ Passa flag riconnessione
     });
     setJoinRequest(null);
   };
@@ -423,7 +424,10 @@ export default function LobbyOnline({ onGameStart }) {
               marginBottom: '30px',
               color: '#aaa'
             }}>
-              vuole unirsi come {joinRequest.type === 'player' ? '🎮 GIOCATORE' : '👀 SPETTATORE'}
+              {joinRequest.isReconnection 
+                ? '🔄 sta riprendendo il suo giocatore'
+                : `vuole unirsi come ${joinRequest.type === 'player' ? '🎮 GIOCATORE' : '👀 SPETTATORE'}`
+              }
             </p>
             <div style={{ 
               display: 'flex', 

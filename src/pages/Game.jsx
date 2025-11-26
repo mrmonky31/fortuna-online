@@ -431,9 +431,10 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
     socket.emit("acceptJoinRequest", {
       playerId: joinRequest.playerId,
       playerName: joinRequest.playerName,
-      sessionToken: joinRequest.sessionToken, // ✅ Passa sessionToken
+      sessionToken: joinRequest.sessionToken,
       roomCode: joinRequest.roomCode,
-      type: joinRequest.type
+      type: joinRequest.type,
+      isReconnection: joinRequest.isReconnection || false // ✅ Passa flag riconnessione
     });
     setJoinRequest(null);
   };
@@ -631,7 +632,10 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
               marginBottom: '30px',
               color: '#aaa'
             }}>
-              vuole unirsi come {joinRequest.type === 'player' ? '🎮 GIOCATORE' : '👀 SPETTATORE'}
+              {joinRequest.isReconnection 
+                ? '🔄 sta riprendendo il suo giocatore'
+                : `vuole unirsi come ${joinRequest.type === 'player' ? '🎮 GIOCATORE' : '👀 SPETTATORE'}`
+              }
             </p>
             <div style={{ 
               display: 'flex', 
