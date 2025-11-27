@@ -6,8 +6,9 @@ export default function LobbyFormMinimal({ onCreate, onJoin, onSpectate, error }
   const [roomName, setRoomName] = useState("");
   const [roomCode, setRoomCode] = useState("");
   const [playerName, setPlayerName] = useState("");
-  const [loading, setLoading] = useState(false); // ← NUOVO: per mostrare scritta
-  const [totalRounds, setTotalRounds] = useState(3); // ← NUOVO: numero di round
+  const [loading, setLoading] = useState(false);
+  const [totalRounds, setTotalRounds] = useState(3);
+  const [gameMode, setGameMode] = useState("classic"); // classic | presenter
   
   // Refs per auto-focus
   const roomNameInputRef = useRef(null);
@@ -31,7 +32,7 @@ export default function LobbyFormMinimal({ onCreate, onJoin, onSpectate, error }
 
   const handleCreate = () => {
     if (!roomName.trim()) return;
-    setStep("create-role");
+    setStep("select-mode"); // Prima scegli modalità
   };
 
   const handleJoin = () => {
@@ -42,13 +43,12 @@ export default function LobbyFormMinimal({ onCreate, onJoin, onSpectate, error }
   const handleEnterAsPlayer = (isJoin) => {
     if (!playerName.trim()) return;
     
-    setLoading(true); // ← Mostra scritta
+    setLoading(true);
     
-    // Chiama subito onCreate/onJoin
     if (isJoin) {
       onJoin(playerName, roomCode);
     } else {
-      onCreate(playerName, totalRounds, roomName); // ← Passa totalRounds
+      onCreate(playerName, totalRounds, roomName, gameMode); // Passa gameMode
     }
   };
 
@@ -144,6 +144,71 @@ export default function LobbyFormMinimal({ onCreate, onJoin, onSpectate, error }
             CONTINUA ➜
           </button>
           <button onClick={() => setStep("home")} className="btn-secondary">
+            ⬅️ INDIETRO
+          </button>
+        </div>
+      )}
+
+      {step === "select-mode" && (
+        <div className="inputs-row">
+          <h2>Scegli modalità:</h2>
+          <button 
+            onClick={() => {
+              setGameMode("classic");
+              setStep("create-role");
+            }}
+            style={{
+              padding: '20px',
+              fontSize: '1.2rem',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '10px'
+            }}
+          >
+            <div style={{ fontSize: '2rem' }}>🎮</div>
+            <div style={{ fontWeight: 'bold' }}>CLASSICA</div>
+            <div style={{ fontSize: '0.9rem', opacity: 0.8 }}>Tutti giocano normalmente</div>
+          </button>
+          
+          <button 
+            onClick={() => {
+              setGameMode("presenter");
+              setPlayerName("Presentatore");
+              setLoading(true);
+              onCreate("Presentatore", totalRounds, roomName, "presenter");
+            }}
+            style={{
+              padding: '20px',
+              fontSize: '1.2rem',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '10px'
+            }}
+          >
+            <div style={{ fontSize: '2rem' }}>🎙️</div>
+            <div style={{ fontWeight: 'bold' }}>PRESENTATORE</div>
+            <div style={{ fontSize: '0.9rem', opacity: 0.8 }}>L'host gestisce il gioco</div>
+          </button>
+          
+          {loading && (
+            <div style={{
+              margin: '15px 0',
+              padding: '15px',
+              background: 'rgba(0, 255, 85, 0.1)',
+              border: '2px solid #00ff55',
+              borderRadius: '10px',
+              color: '#00ff55',
+              fontSize: '1.1rem',
+              fontWeight: 'bold',
+              textAlign: 'center'
+            }}>
+              🛠️ Sto oliando la ruota... Un attimo di pazienza!
+            </div>
+          )}
+          
+          <button onClick={() => setStep("create-name")} className="btn-secondary">
             ⬅️ INDIETRO
           </button>
         </div>

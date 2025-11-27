@@ -164,11 +164,11 @@ export default function LobbyOnline({ onGameStart }) {
     };
   }, [onGameStart]);
 
-  const handleCreate = (name, rounds, customRoomName) => {
+  const handleCreate = (name, rounds, customRoomName, gameMode = "classic") => {
     setError("");
     socket.emit(
       "createRoom",
-      { playerName: name, totalRounds: rounds, roomName: customRoomName },
+      { playerName: name, totalRounds: rounds, roomName: customRoomName, gameMode },
       (res) => {
         if (!res || !res.ok) {
           setError(res?.error || "Errore creazione stanza");
@@ -256,12 +256,6 @@ export default function LobbyOnline({ onGameStart }) {
 
   return (
     <div className="lobby-container" ref={containerRef}>
-      {!isFullscreen && !room && (
-        <button className="fullscreen-btn" onClick={enterFullscreen}>
-          🖥️ FULLSCREEN
-        </button>
-      )}
-
       {!room && (
         <LobbyFormMinimal
           onCreate={handleCreate}
