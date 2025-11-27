@@ -581,29 +581,29 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
             targetAngle={wheelTargetAngle}
             onStop={handleWheelStop}
           />
-          
-          {/* ✅ PULSANTE MESSAGGI - GIOCATORE (sinistra ruota) */}
-          {myRole === "player" && (
-            <button 
-              className={`message-button message-button-left ${hasUnreadMessages ? 'has-unread' : ''}`}
-              onClick={handleOpenMessageBox}
-              title="Messaggi dagli spettatori"
-            >
-              💬
-            </button>
-          )}
-          
-          {/* ✅ PULSANTE MESSAGGI - SPETTATORE (destra ruota) */}
-          {myRole === "spectator" && (
-            <button 
-              className="message-button message-button-right"
-              onClick={handleOpenMessageBox}
-              title="Invia messaggio a un giocatore"
-            >
-              ✉️
-            </button>
-          )}
         </div>
+
+        {/* ✅ PULSANTE MESSAGGI - GIOCATORE (sinistra ruota) */}
+        {myRole === "player" && (
+          <button 
+            className={`message-button message-button-left ${hasUnreadMessages ? 'has-unread' : ''}`}
+            onClick={handleOpenMessageBox}
+            title="Messaggi dagli spettatori"
+          >
+            💬
+          </button>
+        )}
+        
+        {/* ✅ PULSANTE MESSAGGI - SPETTATORE (destra ruota) */}
+        {myRole === "spectator" && (
+          <button 
+            className="message-button message-button-right"
+            onClick={handleOpenMessageBox}
+            title="Invia messaggio a un giocatore"
+          >
+            ✉️
+          </button>
+        )}
 
         <div className="controls-area">
           <Controls

@@ -422,6 +422,29 @@ io.on("connection", (socket) => {
       const spectatorName = String(name || "").trim() || "Spettatore";
 
       if (!room.spectators) room.spectators = [];
+
+      // ✅ Se partita iniziata, chiedi approvazione a TUTTI
+      if (room.gameState && !room.gameState.gameOver) {
+        console.log(`🔔 ${spectatorName} chiede di entrare come spettatore a partita iniziata in ${code}`);
+        
+        room.players.forEach(player => {
+          io.to(player.id).emit("joinRequest", {
+            playerName: spectatorName,
+            playerId: socket.id,
+            roomCode: code,
+            type: "spectator"
+          });
+        });
+        
+        if (callback) callback({ 
+          ok: true, 
+          pending: true,
+          message: "In attesa di approvazione..." 
+        });
+        return;
+      }
+
+      // ✅ Partita non iniziata, entra direttamente
       room.spectators.push({ name: spectatorName, id: socket.id });
 
       socket.join(code);

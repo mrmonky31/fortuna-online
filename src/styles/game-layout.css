@@ -731,18 +731,35 @@ html, body {
   border-color: #00ff55;
 }
 
-.message-button-left {
-  top: 50%;
-  left: -60px;
-  transform: translateY(-50%);
+/* Modalità NORMALE - Pulsante SINISTRA ruota (giocatori) */
+.game-wrapper:not(.fullscreen-mode) .message-button-left {
+  top: 65vh;
+  left: 5%;
+  transform: translateY(calc(42.5vw - 25px));
 }
 
-.message-button-right {
-  top: 50%;
-  right: -60px;
-  transform: translateY(-50%);
+/* Modalità NORMALE - Pulsante DESTRA ruota (spettatori) */
+.game-wrapper:not(.fullscreen-mode) .message-button-right {
+  top: 65vh;
+  right: 5%;
+  transform: translateY(calc(42.5vw - 25px));
 }
 
+/* Modalità FULLSCREEN - Pulsante SINISTRA */
+.game-wrapper.fullscreen-mode .message-button-left {
+  top: 65vh;
+  left: 3%;
+  transform: translateY(calc(45vw - 25px));
+}
+
+/* Modalità FULLSCREEN - Pulsante DESTRA */
+.game-wrapper.fullscreen-mode .message-button-right {
+  top: 65vh;
+  right: 3%;
+  transform: translateY(calc(45vw - 25px));
+}
+
+/* Effetto VERDE quando ci sono messaggi non letti */
 .message-button.has-unread {
   background: #00ff55;
   border-color: #00ff55;
