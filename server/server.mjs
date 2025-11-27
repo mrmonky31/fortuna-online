@@ -1150,6 +1150,23 @@ if (gs.usedLetters.includes(upper)) {
     }
   });
 
+  // ✅ MESSAGGI SPETTATORI → GIOCATORI
+  socket.on("sendMessageToPlayer", ({ toPlayerId, message, fromName }) => {
+    try {
+      const targetSocket = io.sockets.sockets.get(toPlayerId);
+      if (targetSocket) {
+        io.to(toPlayerId).emit("messageReceived", {
+          from: fromName,
+          message: message,
+          timestamp: Date.now()
+        });
+        console.log(`💬 Messaggio da ${fromName} a ${toPlayerId}: ${message}`);
+      }
+    } catch (err) {
+      console.error("Errore sendMessageToPlayer:", err);
+    }
+  });
+
   // DISCONNESSIONE
   socket.on("disconnect", () => {
     const info = findRoomBySocketId(socket.id);
