@@ -176,7 +176,7 @@ html, body {
 .game-wrapper:not(.fullscreen-mode) .game-room-name {
   position: absolute;
   top: 1vh;
-  right: 20%;
+  right: 60%;
   transform: translateX(-80px);
   font-weight: bold;
   font-size: 0.75em;
@@ -356,7 +356,7 @@ html, body {
 .game-wrapper.fullscreen-mode .game-room-name {
   position: absolute;
   top: 1vh;
-  right: 17%;
+  right: 50%;
   transform: translateX(-80px);
   font-weight: bold;
   font-size: 0.75em;
@@ -733,28 +733,28 @@ html, body {
 
 /* Modalità NORMALE - Pulsante SINISTRA ruota (giocatori) */
 .game-wrapper:not(.fullscreen-mode) .message-button-left {
-  top: 65vh;
+  top: 50vh;
   left: 5%;
   transform: translateY(calc(42.5vw - 25px));
 }
 
 /* Modalità NORMALE - Pulsante DESTRA ruota (spettatori) */
 .game-wrapper:not(.fullscreen-mode) .message-button-right {
-  top: 65vh;
+  top: 50vh;
   right: 5%;
   transform: translateY(calc(42.5vw - 25px));
 }
 
 /* Modalità FULLSCREEN - Pulsante SINISTRA */
 .game-wrapper.fullscreen-mode .message-button-left {
-  top: 65vh;
+  top: 50vh;
   left: 3%;
   transform: translateY(calc(45vw - 25px));
 }
 
 /* Modalità FULLSCREEN - Pulsante DESTRA */
 .game-wrapper.fullscreen-mode .message-button-right {
-  top: 65vh;
+  top: 50vh;
   right: 3%;
   transform: translateY(calc(45vw - 25px));
 }
