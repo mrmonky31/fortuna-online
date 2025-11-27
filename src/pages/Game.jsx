@@ -590,7 +590,7 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
             onClick={handleOpenMessageBox}
             title="Messaggi dagli spettatori"
           >
-            💬
+            ✉️
           </button>
         )}
         
@@ -601,7 +601,7 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
             onClick={handleOpenMessageBox}
             title="Invia messaggio a un giocatore"
           >
-            ✉️
+            💬
           </button>
         )}
 
