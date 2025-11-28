@@ -141,7 +141,7 @@ html, body {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 4px;
-  z-index: 20;
+  z-index: 200;
   max-width: 90vw;
 }
 
