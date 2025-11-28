@@ -28,17 +28,6 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
   const [showPhrase, setShowPhrase] = useState(false);
   const [awaitingSolutionCheck, setAwaitingSolutionCheck] = useState(false);
   const [activeLetterType, setActiveLetterType] = useState(null); // "consonant" | "vowel" | null
-  
-  // ✅ NUOVO: Sistema messaggi
-  const [showMessageBox, setShowMessageBox] = useState(false);
-  const [showPlayerList, setShowPlayerList] = useState(false);
-  const [selectedPlayer, setSelectedPlayer] = useState(null);
-  const [messageText, setMessageText] = useState("");
-  const [receivedMessages, setReceivedMessages] = useState([]);
-  const [hasUnreadMessages, setHasUnreadMessages] = useState(false);
-  
-  // Determina se sei spettatore
-  const myRole = state?.room?.spectators?.find(s => s.id === mySocketId) ? "spectator" : "player";
 
   const [gameState, setGameState] = useState(() => {
     if (!state) return null;
@@ -210,21 +199,6 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
     };
   }, [joinRequest]);
 
-  // ✅ NUOVO: Listener messaggi ricevuti
-  useEffect(() => {
-    function handleMessageReceived({ from, message, timestamp }) {
-      console.log("💬 Messaggio ricevuto da", from, ":", message);
-      setReceivedMessages(prev => [...prev, { from, message, timestamp }]);
-      setHasUnreadMessages(true);
-    }
-
-    socket.on("messageReceived", handleMessageReceived);
-    
-    return () => {
-      socket.off("messageReceived", handleMessageReceived);
-    };
-  }, []);
-
   useEffect(() => {
     function handleGameStart({ gameState: serverState }) {
       console.log("🚀 GameStart dal server:", serverState);
@@ -261,6 +235,11 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
         // ⭐ NUOVO: Ferma spinning quando finisce
         if (serverState && !serverState.spinning) {
           setWheelSpinning(false);
+        }
+        
+        // ✅ PRESENTATORE: Reset griglia dopo azione completata
+        if (isPresenter) {
+          setActiveLetterType(null);
         }
         
         setTurnTimer(60);
@@ -407,49 +386,9 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
     setJoinRequest(null);
   };
 
-  // ✅ NUOVO: Gestione messaggi
-  const handleOpenMessageBox = () => {
-    if (myRole === "spectator") {
-      setShowPlayerList(true);
-    } else {
-      // Giocatore - apri messaggi ricevuti
-      setShowMessageBox(true);
-      setHasUnreadMessages(false);
-    }
-  };
-
-  const handleSelectPlayer = (player) => {
-    setSelectedPlayer(player);
-    setShowPlayerList(false);
-    setShowMessageBox(true);
-  };
-
-  const handleSendMessage = () => {
-    if (!messageText.trim() || !selectedPlayer) return;
-    
-    const myName = state?.room?.spectators?.find(s => s.id === mySocketId)?.name || "Spettatore";
-    
-    socket.emit("sendMessageToPlayer", {
-      toPlayerId: selectedPlayer.id,
-      message: messageText,
-      fromName: myName
-    });
-    
-    setMessageText("");
-    setShowMessageBox(false);
-    setSelectedPlayer(null);
-  };
-
-  const handleCloseMessageBox = () => {
-    setShowMessageBox(false);
-    setShowPlayerList(false);
-    setSelectedPlayer(null);
-    setMessageText("");
-  };
-
   // ✅ NUOVO: Handler modalità presentatore
   const handleViewPhrase = () => {
-    setShowPhrase(true);
+    setShowPhrase(!showPhrase); // Toggle on/off
   };
 
   const handleCorrectSolution = () => {
@@ -525,6 +464,16 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
 
   const handleConsonant = (letter) => {
     if (!roomCode) return;
+    
+    // ✅ MODALITÀ PRESENTATORE: Giocatore NON passa lettera, server notifica presentatore
+    if (state?.room?.gameMode === "presenter" && !isPresenter) {
+      socket.emit("playConsonant", { roomCode, letter: null }, (res) => {
+        if (!res?.ok) alert(res?.error || "Errore consonante");
+      });
+      return;
+    }
+    
+    // ✅ Modalità normale o presentatore che clicca lettera
     socket.emit("playConsonant", { roomCode, letter }, (res) => {
       if (!res?.ok) alert(res?.error || "Errore consonante");
     });
@@ -532,6 +481,16 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
 
   const handleVowel = (letter) => {
     if (!roomCode) return;
+    
+    // ✅ MODALITÀ PRESENTATORE: Giocatore NON passa lettera, server notifica presentatore
+    if (state?.room?.gameMode === "presenter" && !isPresenter) {
+      socket.emit("playVowel", { roomCode, letter: null }, (res) => {
+        if (!res?.ok) alert(res?.error || "Errore vocale");
+      });
+      return;
+    }
+    
+    // ✅ Modalità normale o presentatore che clicca lettera
     socket.emit("playVowel", { roomCode, letter }, (res) => {
       if (!res?.ok) alert(res?.error || "Errore vocale");
     });
@@ -623,22 +582,26 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
 
       <div className="game-players">
         {gameState.players
-          .filter(p => !(isPresenter && p.id === mySocketId)) // ✅ Nascondi box presentatore
-          .map((p, i) => (
-            <div
-              key={i}
-              className={`player-box ${
-                i === gameState.currentPlayerIndex ? "player-active" : ""
-              }`}
-            >
-              <div className="player-name">
-                {p.name}
-                {p.id === mySocketId && " (Tu)"}
+          .filter(p => !p.isHost || state?.room?.gameMode !== "presenter") // ✅ Nascondi presentatore per TUTTI
+          .map((p, i) => {
+            // ✅ Ricalcola indice corretto per active
+            const actualIndex = gameState.players.findIndex(player => player.id === p.id);
+            return (
+              <div
+                key={i}
+                className={`player-box ${
+                  actualIndex === gameState.currentPlayerIndex ? "player-active" : ""
+                }`}
+              >
+                <div className="player-name">
+                  {p.name}
+                  {p.id === mySocketId && " (Tu)"}
+                </div>
+                <div className="player-round">{p.roundScore} pt</div>
+                <div className="player-total">Tot: {p.totalScore}</div>
               </div>
-              <div className="player-round">{p.roundScore} pt</div>
-              <div className="player-total">Tot: {p.totalScore}</div>
-            </div>
-          ))}
+            );
+          })}
       </div>
 
       <div>
@@ -651,17 +614,17 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
           🏠 {roomCode}
         </div>
 
-        {/* ✅ PRESENTATORE: Griglia lettere invece della ruota */}
-        {isPresenter && activeLetterType && (
+        {/* ✅ PRESENTATORE: Griglia QWERTY completa SEMPRE visibile */}
+        {isPresenter && (
           <LetterGrid
-            type={activeLetterType}
             usedLetters={gameState.usedLetters || []}
             onLetterClick={handleLetterClick}
-            disabled={false}
+            onPassTurn={handlePassTurn}
+            disabled={!activeLetterType} // Disabilitata finché giocatore non preme pulsante
           />
         )}
 
-        {/* ✅ NON PRESENTATORE: Ruota normale */}
+        {/* ✅ GIOCATORI: Ruota SEMPRE visibile */}
         {!isPresenter && (
           <div className="game-wheel-area">
             <Wheel
@@ -672,28 +635,6 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
               onStop={handleWheelStop}
             />
           </div>
-        )}
-
-        {/* ✅ PULSANTE MESSAGGI - GIOCATORE (sinistra ruota) */}
-        {myRole === "player" && (
-          <button 
-            className={`message-button message-button-left ${hasUnreadMessages ? 'has-unread' : ''}`}
-            onClick={handleOpenMessageBox}
-            title="Messaggi dagli spettatori"
-          >
-            ✉️
-          </button>
-        )}
-        
-        {/* ✅ PULSANTE MESSAGGI - SPETTATORE (destra ruota) */}
-        {myRole === "spectator" && (
-          <button 
-            className="message-button message-button-right"
-            onClick={handleOpenMessageBox}
-            title="Invia messaggio a un giocatore"
-          >
-            💬
-          </button>
         )}
 
         <div className="controls-area">
@@ -708,6 +649,8 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
             forceConsonant={gameState.awaitingConsonant === true}
             disabled={!isMyTurn || betweenRounds}
             isPresenter={isPresenter}
+            gameMode={state?.room?.gameMode || "classic"}
+            showPhrase={showPhrase}
             onViewPhrase={handleViewPhrase}
             onCorrectSolution={handleCorrectSolution}
             onWrongSolution={handleWrongSolution}
@@ -731,7 +674,7 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
         <div className="game-board-area">
           <PhraseManager
             rows={gameState.rows}
-            maskedRows={maskedRows}
+            maskedRows={showPhrase && isPresenter ? gameState.rows : maskedRows}
             revealQueue={revealQueue}
             onRevealDone={handleRevealDone}
             category={gameState.category || "-"}
@@ -835,253 +778,6 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
                 ❌ RIFIUTA
               </button>
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* ✅ POPUP LISTA GIOCATORI (per spettatori) */}
-      {showPlayerList && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          width: '100vw',
-          height: '100vh',
-          background: 'rgba(0,0,0,0.8)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 9999
-        }}>
-          <div style={{
-            background: '#1a1a1a',
-            padding: '20px',
-            borderRadius: '12px',
-            border: '2px solid #00ff55',
-            maxWidth: '300px',
-            width: '90%'
-          }}>
-            <h3 style={{ color: '#00ff55', marginBottom: '15px', textAlign: 'center' }}>Seleziona giocatore</h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {gameState.players.map((player, i) => (
-                <button
-                  key={i}
-                  onClick={() => handleSelectPlayer(player)}
-                  style={{
-                    padding: '12px',
-                    background: '#2d3748',
-                    color: 'white',
-                    border: '2px solid #4a5568',
-                    borderRadius: '8px',
-                    cursor: 'pointer',
-                    fontSize: '1rem',
-                    fontWeight: 'bold'
-                  }}
-                >
-                  {player.name}
-                </button>
-              ))}
-            </div>
-            <button
-              onClick={handleCloseMessageBox}
-              style={{
-                marginTop: '15px',
-                width: '100%',
-                padding: '10px',
-                background: '#e53e3e',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                fontWeight: 'bold'
-              }}
-            >
-              Annulla
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* ✅ TEXTBOX MESSAGGI */}
-      {showMessageBox && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          width: '100vw',
-          height: '100vh',
-          background: 'rgba(0,0,0,0.8)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 9999
-        }}>
-          <div style={{
-            background: '#1a1a1a',
-            padding: '20px',
-            borderRadius: '12px',
-            border: '2px solid #00ff55',
-            maxWidth: '400px',
-            width: '90%',
-            maxHeight: '70vh',
-            display: 'flex',
-            flexDirection: 'column'
-          }}>
-            <h3 style={{ color: '#00ff55', marginBottom: '15px', textAlign: 'center' }}>
-              {myRole === "spectator" ? `Messaggio a ${selectedPlayer?.name}` : "Messaggi ricevuti"}
-            </h3>
-            
-            {myRole === "spectator" && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                <textarea
-                  value={messageText}
-                  onChange={(e) => setMessageText(e.target.value)}
-                  placeholder="Scrivi il tuo messaggio..."
-                  style={{
-                    width: '100%',
-                    height: '100px',
-                    padding: '10px',
-                    background: '#2d3748',
-                    color: 'white',
-                    border: '2px solid #4a5568',
-                    borderRadius: '8px',
-                    fontSize: '1rem',
-                    resize: 'none'
-                  }}
-                />
-                <button
-                  onClick={handleSendMessage}
-                  disabled={!messageText.trim()}
-                  style={{
-                    padding: '12px',
-                    background: messageText.trim() ? '#00ff55' : '#4a5568',
-                    color: messageText.trim() ? 'black' : '#a0aec0',
-                    border: 'none',
-                    borderRadius: '8px',
-                    cursor: messageText.trim() ? 'pointer' : 'not-allowed',
-                    fontWeight: 'bold',
-                    fontSize: '1rem'
-                  }}
-                >
-                  ✉️ Invia
-                </button>
-              </div>
-            )}
-
-            {myRole === "player" && (
-              <div style={{
-                flex: 1,
-                overflowY: 'auto',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '10px',
-                marginBottom: '10px'
-              }}>
-                {receivedMessages.length === 0 ? (
-                  <p style={{ color: '#a0aec0', textAlign: 'center', marginTop: '20px' }}>Nessun messaggio</p>
-                ) : (
-                  receivedMessages.map((msg, i) => (
-                    <div
-                      key={i}
-                      style={{
-                        padding: '10px',
-                        background: '#2d3748',
-                        borderRadius: '8px',
-                        border: '1px solid #4a5568'
-                      }}
-                    >
-                      <div style={{ fontSize: '0.8rem', color: '#a0aec0', marginBottom: '5px' }}>
-                        Da: {msg.from}
-                      </div>
-                      <div style={{ color: 'white' }}>{msg.message}</div>
-                    </div>
-                  ))
-                )}
-              </div>
-            )}
-
-            <button
-              onClick={handleCloseMessageBox}
-              style={{
-                padding: '10px',
-                background: '#e53e3e',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                fontWeight: 'bold'
-              }}
-            >
-              Chiudi
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* ✅ POPUP VISUALIZZA FRASE (PRESENTATORE) */}
-      {isPresenter && showPhrase && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          width: '100vw',
-          height: '100vh',
-          background: 'rgba(0,0,0,0.9)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 9999
-        }}>
-          <div style={{
-            background: '#1a1a1a',
-            padding: '40px',
-            borderRadius: '12px',
-            border: '3px solid #00ff55',
-            textAlign: 'center',
-            maxWidth: '600px',
-            width: '90%'
-          }}>
-            <h2 style={{ color: '#00ff55', marginBottom: '30px', fontSize: '1.8rem' }}>
-              👁️ FRASE COMPLETA
-            </h2>
-            <div style={{
-              background: '#2d3748',
-              padding: '30px',
-              borderRadius: '10px',
-              marginBottom: '30px'
-            }}>
-              <p style={{
-                fontSize: '2rem',
-                fontWeight: 'bold',
-                color: 'white',
-                margin: 0,
-                wordBreak: 'break-word'
-              }}>
-                {gameState.phrase}
-              </p>
-            </div>
-            <div style={{
-              fontSize: '1.2rem',
-              color: '#a0aec0',
-              marginBottom: '30px'
-            }}>
-              Categoria: <span style={{ color: '#00ff55', fontWeight: 'bold' }}>{gameState.category}</span>
-            </div>
-            <button
-              onClick={() => setShowPhrase(false)}
-              style={{
-                padding: '15px 40px',
-                fontSize: '1.2rem',
-                fontWeight: 'bold',
-                background: '#e53e3e',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                cursor: 'pointer'
-              }}
-            >
-              ✕ Chiudi
-            </button>
           </div>
         </div>
       )}

@@ -11,11 +11,13 @@ export default function Controls({
   forceConsonant,
   disabled = false,
   onPanelChange,
-  isPresenter = false,  // ✅ NUOVO: Flag modalità presentatore
-  onViewPhrase,          // ✅ NUOVO: Callback per vedere la frase
-  onCorrectSolution,     // ✅ NUOVO: Callback soluzione corretta
-  onWrongSolution,       // ✅ NUOVO: Callback soluzione sbagliata
-  awaitingSolutionCheck = false, // ✅ NUOVO: In attesa di verifica soluzione
+  isPresenter = false,  // ✅ Flag modalità presentatore
+  gameMode = "classic",  // ✅ classic | presenter
+  showPhrase = false,    // ✅ NUOVO: stato toggle frase
+  onViewPhrase,          // ✅ Callback per vedere la frase
+  onCorrectSolution,     // ✅ Callback soluzione corretta
+  onWrongSolution,       // ✅ Callback soluzione sbagliata
+  awaitingSolutionCheck = false, // ✅ In attesa di verifica soluzione
 }) {
   const [panel, setPanel] = useState(null);
   const [cons, setCons] = useState("");
@@ -139,8 +141,17 @@ export default function Controls({
       {!awaitingSolutionCheck && (
         <div className="controls-row-secondary">
           <button
-            className="btn-secondary btn-compact"
-            onClick={() => !disabled && setPanel(panel === "cons" ? null : "cons")}
+            className={`btn-secondary btn-compact ${gameMode === "presenter" && !isPresenter && panel === "cons" ? "btn-active" : ""}`}
+            onClick={() => {
+              if (disabled) return;
+              // ✅ PRESENTATORE NON GIOCATORE: chiama direttamente callback senza aprire pannello
+              if (gameMode === "presenter" && !isPresenter) {
+                setPanel("cons"); // Imposta come attivo
+                onConsonant && onConsonant(null);
+              } else {
+                setPanel(panel === "cons" ? null : "cons");
+              }
+            }}
             disabled={disabled || !forceConsonant}
             title={disabled ? "Non è il tuo turno" : "Gioca una consonante"}
           >
@@ -148,8 +159,17 @@ export default function Controls({
           </button>
 
           <button
-            className="btn-secondary btn-compact"
-            onClick={() => !disabled && setPanel(panel === "vow" ? null : "vow")}
+            className={`btn-secondary btn-compact ${gameMode === "presenter" && !isPresenter && panel === "vow" ? "btn-active" : ""}`}
+            onClick={() => {
+              if (disabled) return;
+              // ✅ PRESENTATORE NON GIOCATORE: chiama direttamente callback senza aprire pannello
+              if (gameMode === "presenter" && !isPresenter) {
+                setPanel("vow"); // Imposta come attivo
+                onVowel && onVowel(null);
+              } else {
+                setPanel(panel === "vow" ? null : "vow");
+              }
+            }}
             disabled={!vowEnabled}
             title={disabled ? "Non è il tuo turno" : "Compra una vocale"}
           >
@@ -157,22 +177,31 @@ export default function Controls({
           </button>
 
           <button
-            className="btn-secondary btn-compact"
-            onClick={() => !disabled && setPanel(panel === "sol" ? null : "sol")}
+            className={`btn-secondary btn-compact ${gameMode === "presenter" && !isPresenter && panel === "sol" ? "btn-active" : ""}`}
+            onClick={() => {
+              if (disabled) return;
+              // ✅ PRESENTATORE NON GIOCATORE: chiama direttamente callback senza aprire pannello
+              if (gameMode === "presenter" && !isPresenter) {
+                setPanel("sol"); // Imposta come attivo
+                onSolution && onSolution(null);
+              } else {
+                setPanel(panel === "sol" ? null : "sol");
+              }
+            }}
             disabled={!solEnabled}
             title={disabled ? "Non è il tuo turno" : "Prova a risolvere"}
           >
             Soluzione
           </button>
 
-          {/* ✅ PRESENTATORE: Pulsante "GUARDA FRASE" invece di "PASSA TURNO" */}
+          {/* ✅ PRESENTATORE: Pulsante "MOSTRA/NASCONDI FRASE" invece di "PASSA TURNO" */}
           {isPresenter ? (
             <button
               className="btn-secondary btn-compact btn-view-phrase"
               onClick={() => onViewPhrase && onViewPhrase()}
-              title="Visualizza la frase completa"
+              title={showPhrase ? "Nascondi la frase" : "Mostra la frase completa"}
             >
-              👁️ Guarda Frase
+              {showPhrase ? "🙈 Nascondi Frase" : "👁️ Mostra Frase"}
             </button>
           ) : (
             <button

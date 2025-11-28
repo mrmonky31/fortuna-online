@@ -81,6 +81,26 @@
 }
 
 /* ===========================
+   ✨ PULSANTE ATTIVO/ILLUMINATO (Modalità Presentatore)
+   =========================== */
+
+.btn-active {
+  background: linear-gradient(135deg, #00ff55 0%, #00cc44 100%) !important;
+  color: black !important;
+  box-shadow: 0 0 20px rgba(0, 255, 85, 0.8) !important;
+  animation: pulse-active 1.5s infinite !important;
+}
+
+@keyframes pulse-active {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(0, 255, 85, 0.8);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(0, 255, 85, 1);
+  }
+}
+
+/* ===========================
    🔵 GIRA LA RUOTA
    =========================== */
 

@@ -1,5 +1,5 @@
 /* ========================================== */
-/*   LETTER GRID - GRIGLIA PRESENTATORE       */
+/*   LETTER GRID - GRIGLIA QWERTY PRESENTATORE */
 /* ========================================== */
 
 .letter-grid-container {
@@ -8,7 +8,7 @@
   left: 50%;
   transform: translateX(-50%);
   width: 90vw;
-  max-width: 500px;
+  max-width: 600px;
   background: rgba(17, 19, 26, 0.95);
   border: 2px solid #00ff55;
   border-radius: 12px;
@@ -24,17 +24,22 @@
   font-weight: bold;
 }
 
-.letter-grid {
-  display: grid;
+/* ✅ Layout QWERTY a righe */
+.letter-grid-qwerty {
+  display: flex;
+  flex-direction: column;
   gap: 8px;
+}
+
+.letter-row {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
   justify-content: center;
 }
 
-.consonant-grid {
-  grid-template-columns: repeat(4, 1fr);
-}
-
-.vowel-grid {
+/* Ultima riga: 4 lettere + X */
+.letter-row-last {
   grid-template-columns: repeat(5, 1fr);
 }
 
@@ -51,31 +56,48 @@
   transition: all 0.3s ease;
 }
 
-.letter-btn:hover:not(:disabled) {
+.letter-btn:hover:not(:disabled):not(.used) {
   transform: scale(1.1);
   box-shadow: 0 0 20px rgba(0, 255, 85, 0.5);
 }
 
-.letter-btn:active:not(:disabled) {
+.letter-btn:active:not(:disabled):not(.used) {
   transform: scale(0.95);
 }
 
+/* ✅ LETTERE USATE: Più spente */
 .letter-btn.used {
-  background: #4a5568;
-  color: #a0aec0;
+  background: #2d3748;
+  color: #718096;
   cursor: not-allowed;
-  opacity: 0.5;
+  opacity: 0.4;
+  filter: grayscale(100%);
 }
 
-.letter-btn:disabled {
+.letter-btn:disabled:not(.letter-btn-pass) {
   cursor: not-allowed;
-  opacity: 0.6;
+}
+
+/* ✅ PULSANTE X ROSSA per passare turno */
+.letter-btn-pass {
+  background: linear-gradient(135deg, #e53e3e 0%, #c53030 100%) !important;
+  font-size: 2rem !important;
+  font-weight: 900 !important;
+}
+
+.letter-btn-pass:hover:not(:disabled) {
+  background: linear-gradient(135deg, #c53030 0%, #9b2c2c 100%) !important;
+  box-shadow: 0 0 20px rgba(229, 62, 62, 0.7) !important;
+}
+
+.letter-btn-pass:active:not(:disabled) {
+  transform: scale(0.9);
 }
 
 /* Fullscreen mode adjustments */
 .game-wrapper.fullscreen-mode .letter-grid-container {
   top: 65vh;
-  max-width: 550px;
+  max-width: 650px;
 }
 
 .game-wrapper.fullscreen-mode .letter-btn {
