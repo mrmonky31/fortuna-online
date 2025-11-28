@@ -37,7 +37,7 @@
   justify-content: center;
   position: relative;
   z-index: 100;
-  top: -20px;  /* ✅ AGGIUNGI - valore negativo = alza, positivo = abbassa */
+  top: -30px;  /* ✅ AGGIUNGI - valore negativo = alza, positivo = abbassa */
 }
 
 .btn-solution-correct,
