@@ -6,9 +6,9 @@
   position: absolute;
   top: 65vh;
   left: 50%;
-  transform: translateX(-50%) scale(0.82); /* ✅ Scala tutto (cambia 0.85 per rimpicciolire/ingrandire) */
-  width: 85vw;
-  max-width: 600px;
+  transform: translateX(-50%) scale(0.8); /* ✅ Scala tutto (cambia 0.85 per rimpicciolire/ingrandire) */
+  width: 82vw;
+  max-width: 570px;
   background: rgba(17, 19, 26, 0.95);
   border: 2px solid #00ff55;
   border-radius: 12px;
