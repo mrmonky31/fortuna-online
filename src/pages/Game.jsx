@@ -451,6 +451,21 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
     return () => socket.off("showLetterGrid", handleShowLetterGrid);
   }, [isPresenter]);
 
+  // ✅ NUOVO: Listener sincronizza stato pulsanti per TUTTI i client
+  useEffect(() => {
+    function handleButtonStateSync({ type, playerId }) {
+      console.log("🔘 Sincronizza pulsante:", type, playerId);
+      
+      // Se sono il giocatore che ha premuto O sono il presentatore, illumino
+      if (mySocketId === playerId || isPresenter) {
+        setActiveLetterType(type); // "consonant" | "vowel" | "solution"
+      }
+    }
+    
+    socket.on("buttonStateSync", handleButtonStateSync);
+    return () => socket.off("buttonStateSync", handleButtonStateSync);
+  }, [mySocketId, isPresenter]);
+
   const handleSpin = () => {
     if (!roomCode) return;
     socket.emit("spinWheel", { roomCode }, (res) => {
@@ -467,6 +482,7 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
     
     // ✅ MODALITÀ PRESENTATORE: Giocatore NON passa lettera, server notifica presentatore
     if (state?.room?.gameMode === "presenter" && !isPresenter) {
+      setActiveLetterType("consonant"); // Illumina pulsante
       socket.emit("playConsonant", { roomCode, letter: null }, (res) => {
         if (!res?.ok) alert(res?.error || "Errore consonante");
       });
@@ -484,6 +500,7 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
     
     // ✅ MODALITÀ PRESENTATORE: Giocatore NON passa lettera, server notifica presentatore
     if (state?.room?.gameMode === "presenter" && !isPresenter) {
+      setActiveLetterType("vowel"); // Illumina pulsante
       socket.emit("playVowel", { roomCode, letter: null }, (res) => {
         if (!res?.ok) alert(res?.error || "Errore vocale");
       });
@@ -501,6 +518,7 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
     
     // ✅ MODALITÀ PRESENTATORE: Giocatore NON passa testo, server notifica presentatore
     if (state?.room?.gameMode === "presenter" && !isPresenter) {
+      setActiveLetterType("solution"); // Illumina pulsante
       socket.emit("trySolution", { roomCode, text: "" }, (res) => {
         if (!res?.ok) alert(res?.error || "Errore soluzione");
       });
@@ -665,6 +683,7 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
             onCorrectSolution={handleCorrectSolution}
             onWrongSolution={handleWrongSolution}
             awaitingSolutionCheck={awaitingSolutionCheck}
+            activeLetterType={activeLetterType}
           />
         </div>
 

@@ -1,5 +1,5 @@
 /* ========================================== */
-/*   LETTER GRID - GRIGLIA QWERTY PRESENTATORE */
+/*   LETTER GRID - GRIGLIA QWERTY 3 RIGHE    */
 /* ========================================== */
 
 .letter-grid-container {
@@ -8,7 +8,7 @@
   left: 50%;
   transform: translateX(-50%);
   width: 90vw;
-  max-width: 600px;
+  max-width: 650px;
   background: rgba(17, 19, 26, 0.95);
   border: 2px solid #00ff55;
   border-radius: 12px;
@@ -24,7 +24,7 @@
   font-weight: bold;
 }
 
-/* ✅ Layout QWERTY a righe */
+/* ✅ Layout QWERTY 3 righe */
 .letter-grid-qwerty {
   display: flex;
   flex-direction: column;
@@ -33,14 +33,14 @@
 
 .letter-row {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: repeat(10, 1fr);
   gap: 6px;
   justify-content: center;
 }
 
-/* Ultima riga: 4 lettere + X */
+/* Riga 3: 7 lettere + X rossa */
 .letter-row-last {
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(8, 1fr);
 }
 
 .letter-btn {
@@ -65,7 +65,7 @@
   transform: scale(0.95);
 }
 
-/* ✅ LETTERE USATE: Più spente */
+/* ✅ LETTERE USATE */
 .letter-btn.used {
   background: #2d3748;
   color: #718096;
@@ -78,7 +78,7 @@
   cursor: not-allowed;
 }
 
-/* ✅ PULSANTE X ROSSA per passare turno */
+/* ✅ PULSANTE X ROSSA */
 .letter-btn-pass {
   background: linear-gradient(135deg, #e53e3e 0%, #c53030 100%) !important;
   font-size: 2rem !important;
@@ -94,10 +94,10 @@
   transform: scale(0.9);
 }
 
-/* Fullscreen mode adjustments */
+/* Fullscreen mode */
 .game-wrapper.fullscreen-mode .letter-grid-container {
   top: 65vh;
-  max-width: 650px;
+  max-width: 700px;
 }
 
 .game-wrapper.fullscreen-mode .letter-btn {

@@ -1,13 +1,12 @@
-// src/components/LetterGrid.jsx - GRIGLIA QWERTY COMPLETA
+// src/components/LetterGrid.jsx - GRIGLIA QWERTY 3 RIGHE
 import React from "react";
 import "../styles/letter-grid.css";
 
-// ✅ Layout QWERTY classico: 3 righe da 7 + 1 riga da 4 + X
+// ✅ Layout QWERTY standard: 3 righe
 const KEYBOARD_LAYOUT = [
-  ["Q", "W", "E", "R", "T", "Y", "U"],
-  ["I", "O", "P", "A", "S", "D", "F"],
-  ["G", "H", "J", "K", "L", "Z", "X"],
-  ["C", "V", "B", "N", "M"]  // + X rossa
+  ["Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P"],
+  ["A", "S", "D", "F", "G", "H", "J", "K", "L"],
+  ["Z", "X", "C", "V", "B", "N", "M"]
 ];
 
 export default function LetterGrid({ 
@@ -22,8 +21,8 @@ export default function LetterGrid({
         🔤 LETTERE
       </h3>
       <div className="letter-grid-qwerty">
-        {/* Righe 1-3: 7 lettere ciascuna */}
-        {KEYBOARD_LAYOUT.slice(0, 3).map((row, rowIndex) => (
+        {/* Righe 1-2: 10 e 9 lettere */}
+        {KEYBOARD_LAYOUT.slice(0, 2).map((row, rowIndex) => (
           <div key={rowIndex} className="letter-row">
             {row.map(letter => {
               const isUsed = usedLetters.includes(letter);
@@ -41,9 +40,9 @@ export default function LetterGrid({
           </div>
         ))}
         
-        {/* Riga 4: 4 lettere + X rossa */}
+        {/* Riga 3: 7 lettere + X rossa */}
         <div className="letter-row letter-row-last">
-          {KEYBOARD_LAYOUT[3].map(letter => {
+          {KEYBOARD_LAYOUT[2].map(letter => {
             const isUsed = usedLetters.includes(letter);
             return (
               <button

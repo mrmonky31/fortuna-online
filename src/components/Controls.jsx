@@ -18,6 +18,7 @@ export default function Controls({
   onCorrectSolution,     // ✅ Callback soluzione corretta
   onWrongSolution,       // ✅ Callback soluzione sbagliata
   awaitingSolutionCheck = false, // ✅ In attesa di verifica soluzione
+  activeLetterType = null, // ✅ NUOVO: tipo pulsante attivo per sincronizzazione
 }) {
   const [panel, setPanel] = useState(null);
   const [cons, setCons] = useState("");
@@ -141,12 +142,11 @@ export default function Controls({
       {!awaitingSolutionCheck && (
         <div className="controls-row-secondary">
           <button
-            className={`btn-secondary btn-compact ${gameMode === "presenter" && !isPresenter && panel === "cons" ? "btn-active" : ""}`}
+            className={`btn-secondary btn-compact ${gameMode === "presenter" && !isPresenter && panel === "cons" ? "btn-active" : ""} ${gameMode === "presenter" && isPresenter && activeLetterType === "consonant" ? "btn-active" : ""}`}
             onClick={() => {
               if (disabled) return;
-              // ✅ PRESENTATORE NON GIOCATORE: chiama direttamente callback senza aprire pannello
+              // ✅ PRESENTATORE NON GIOCATORE: chiama direttamente callback SENZA aprire pannello
               if (gameMode === "presenter" && !isPresenter) {
-                setPanel("cons"); // Imposta come attivo
                 onConsonant && onConsonant(null);
               } else {
                 setPanel(panel === "cons" ? null : "cons");
@@ -159,12 +159,11 @@ export default function Controls({
           </button>
 
           <button
-            className={`btn-secondary btn-compact ${gameMode === "presenter" && !isPresenter && panel === "vow" ? "btn-active" : ""}`}
+            className={`btn-secondary btn-compact ${gameMode === "presenter" && !isPresenter && panel === "vow" ? "btn-active" : ""} ${gameMode === "presenter" && isPresenter && activeLetterType === "vowel" ? "btn-active" : ""}`}
             onClick={() => {
               if (disabled) return;
-              // ✅ PRESENTATORE NON GIOCATORE: chiama direttamente callback senza aprire pannello
+              // ✅ PRESENTATORE NON GIOCATORE: chiama direttamente callback SENZA aprire pannello
               if (gameMode === "presenter" && !isPresenter) {
-                setPanel("vow"); // Imposta come attivo
                 onVowel && onVowel(null);
               } else {
                 setPanel(panel === "vow" ? null : "vow");
@@ -177,12 +176,11 @@ export default function Controls({
           </button>
 
           <button
-            className={`btn-secondary btn-compact ${gameMode === "presenter" && !isPresenter && panel === "sol" ? "btn-active" : ""}`}
+            className={`btn-secondary btn-compact ${gameMode === "presenter" && !isPresenter && panel === "sol" ? "btn-active" : ""} ${gameMode === "presenter" && isPresenter && activeLetterType === "solution" ? "btn-active" : ""}`}
             onClick={() => {
               if (disabled) return;
-              // ✅ PRESENTATORE NON GIOCATORE: chiama direttamente callback senza aprire pannello
+              // ✅ PRESENTATORE NON GIOCATORE: chiama direttamente callback SENZA aprire pannello
               if (gameMode === "presenter" && !isPresenter) {
-                setPanel("sol"); // Imposta come attivo
                 onSolution && onSolution(null);
               } else {
                 setPanel(panel === "sol" ? null : "sol");

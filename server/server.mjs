@@ -715,6 +715,14 @@ io.on("connection", (socket) => {
           gs.mustSpin = false;
           gs.awaitingConsonant = true;
           gs.gameMessage = { type: "info", text: `Valore: ${outcome.value} pt. Inserisci una consonante.` };
+          
+          // ✅ MODALITÀ PRESENTATORE: Auto-attiva griglia consonanti
+          if (room.gameMode === "presenter") {
+            io.to(code).emit("buttonStateSync", { 
+              type: "consonant", 
+              playerId: gs.currentPlayerId 
+            });
+          }
         } else if (outcome.type === "double") {
   // 🎯 Lo spicchio RADDOPPIA NON assegna punti ora.
   // Attende una consonante per decidere se raddoppiare o no.
@@ -726,6 +734,14 @@ io.on("connection", (socket) => {
     type: "info",
     text: "🎯 RADDOPPIA: inserisci una consonante!"
   };
+  
+  // ✅ MODALITÀ PRESENTATORE: Auto-attiva griglia consonanti
+  if (room.gameMode === "presenter") {
+    io.to(code).emit("buttonStateSync", { 
+      type: "consonant", 
+      playerId: gs.currentPlayerId 
+    });
+  }
         } else if (outcome.type === "pass") {
           nextPlayer(gs); // ✅ Salta presentatore
           gs.mustSpin = true;
@@ -768,7 +784,11 @@ io.on("connection", (socket) => {
       if (room.gameMode === "presenter" && !letter) {
         const host = room.players.find(p => p.isHost);
         if (host) {
-          io.to(host.id).emit("showLetterGrid", { type: "consonant" });
+          // Invia a tutti per sincronizzare illuminazione pulsanti
+          io.to(code).emit("buttonStateSync", { 
+            type: "consonant", 
+            playerId: socket.id 
+          });
           if (callback) callback({ ok: true });
           return;
         }
@@ -908,7 +928,11 @@ if (gs.usedLetters.includes(upper)) {
       if (room.gameMode === "presenter" && !letter) {
         const host = room.players.find(p => p.isHost);
         if (host) {
-          io.to(host.id).emit("showLetterGrid", { type: "vowel" });
+          // Invia a tutti per sincronizzare illuminazione pulsanti
+          io.to(code).emit("buttonStateSync", { 
+            type: "vowel", 
+            playerId: socket.id 
+          });
           if (callback) callback({ ok: true });
           return;
         }
@@ -1004,9 +1028,10 @@ if (gs.usedLetters.includes(upper)) {
       if (room.gameMode === "presenter") {
         const host = room.players.find(p => p.isHost);
         if (host) {
-          io.to(host.id).emit("solutionAttempt", {
-            playerName: gs.players[gs.currentPlayerIndex].name,
-            attempt: text
+          // Invia a tutti per sincronizzare illuminazione pulsanti
+          io.to(code).emit("buttonStateSync", { 
+            type: "solution", 
+            playerId: socket.id 
           });
           
           gs.gameMessage = { type: "info", text: "In attesa di verifica del presentatore..." };
