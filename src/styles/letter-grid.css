@@ -15,13 +15,7 @@
   z-index: 10;
 }
 
-.letter-grid-title {
-  text-align: center;
-  color: #00ff55;
-  font-size: 1.2rem;
-  margin: 0 0 15px 0;
-  font-weight: bold;
-}
+
 
 /* ✅ Layout QWERTY 3 righe */
 .letter-grid-qwerty {
@@ -45,7 +39,7 @@
 .letter-btn {
   aspect-ratio: 1;
   min-height: 50px;
-  font-size: 1.9rem;
+  font-size: 2.5rem;
   font-weight: bold;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
