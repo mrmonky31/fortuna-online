@@ -498,6 +498,16 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
 
   const handleSolution = (text) => {
     if (!roomCode) return;
+    
+    // ✅ MODALITÀ PRESENTATORE: Giocatore NON passa testo, server notifica presentatore
+    if (state?.room?.gameMode === "presenter" && !isPresenter) {
+      socket.emit("trySolution", { roomCode, text: "" }, (res) => {
+        if (!res?.ok) alert(res?.error || "Errore soluzione");
+      });
+      return;
+    }
+    
+    // ✅ Modalità normale: Giocatore passa il testo della soluzione
     socket.emit("trySolution", { roomCode, text }, (res) => {
       if (!res?.ok) alert(res?.error || "Errore soluzione");
     });

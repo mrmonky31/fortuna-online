@@ -106,6 +106,27 @@ function generateWheel() {
   return SPIN_PATTERNS[idx];
 }
 
+// ✅ NUOVO: Funzione per passare al prossimo giocatore (salta il presentatore)
+function nextPlayer(gs) {
+  const startIndex = gs.currentPlayerIndex;
+  let nextIndex = (startIndex + 1) % gs.players.length;
+  
+  // Salta giocatori che sono host (presentatore)
+  let attempts = 0;
+  while (gs.players[nextIndex]?.isHost && attempts < gs.players.length) {
+    nextIndex = (nextIndex + 1) % gs.players.length;
+    attempts++;
+  }
+  
+  // Se tutti sono host (caso impossibile), rimani dove sei
+  if (attempts >= gs.players.length) {
+    nextIndex = startIndex;
+  }
+  
+  gs.currentPlayerIndex = nextIndex;
+  gs.currentPlayerId = gs.players[nextIndex].id;
+}
+
 function nextRound(roomCode, room) {
   const gs = room.gameState;
 
@@ -154,12 +175,22 @@ function nextRound(roomCode, room) {
 }
 
 function initGameState(players, totalRounds, phrase, category) {
+  // ✅ Trova il primo giocatore NON-presentatore
+  const firstNonHostIndex = players.findIndex(p => !p.isHost);
+  const startIndex = firstNonHostIndex !== -1 ? firstNonHostIndex : 0;
+  
   return {
-    players: players.map(p => ({ name: p.name, id: p.id, totalScore: 0, roundScore: 0 })),
+    players: players.map(p => ({ 
+      name: p.name, 
+      id: p.id, 
+      totalScore: 0, 
+      roundScore: 0,
+      isHost: p.isHost || false // ✅ Copia flag host
+    })),
     totalRounds,
     currentRound: 1,
-    currentPlayerIndex: 0,
-    currentPlayerId: players[0].id,
+    currentPlayerIndex: startIndex, // ✅ Inizia dal primo NON-presentatore
+    currentPlayerId: players[startIndex].id,
 
     phrase,
     rows: buildBoard(phrase, 14, 4),
@@ -253,10 +284,7 @@ function handleTemporaryDisconnect(socketId, code, room) {
       room.players.splice(idx, 1);
       
       if (room.gameState && room.gameState.currentPlayerId === socketId) {
-        room.gameState.currentPlayerIndex = (room.gameState.currentPlayerIndex + 1) % room.players.length;
-        if (room.players.length > 0) {
-          room.gameState.currentPlayerId = room.players[room.gameState.currentPlayerIndex].id;
-        }
+        nextPlayer(room.gameState); // ✅ Salta presentatore
         io.to(code).emit("gameStateUpdate", { gameState: room.gameState });
       }
       
@@ -699,8 +727,7 @@ io.on("connection", (socket) => {
     text: "🎯 RADDOPPIA: inserisci una consonante!"
   };
         } else if (outcome.type === "pass") {
-          gs.currentPlayerIndex = (gs.currentPlayerIndex + 1) % gs.players.length;
-          gs.currentPlayerId = gs.players[gs.currentPlayerIndex].id;
+          nextPlayer(gs); // ✅ Salta presentatore
           gs.mustSpin = true;
           gs.lastSpinTarget = 0;
           gs.gameMessage = { type: "warning", text: "PASSA: turno al prossimo." };
@@ -708,8 +735,7 @@ io.on("connection", (socket) => {
           const i = gs.currentPlayerIndex;
           gs.players[i].roundScore = 0;
           gs.players[i].totalScore = 0;
-          gs.currentPlayerIndex = (gs.currentPlayerIndex + 1) % gs.players.length;
-          gs.currentPlayerId = gs.players[gs.currentPlayerIndex].id;
+          nextPlayer(gs); // ✅ Salta presentatore
           gs.mustSpin = true;
           gs.lastSpinTarget = 0;
           gs.gameMessage = { type: "error", text: "BANCAROTTA: punteggi azzerati!" };
@@ -769,8 +795,7 @@ if (gs.usedLetters.includes(upper)) {
   gs.mustSpin = true;
 
   // passa al prossimo giocatore
-  gs.currentPlayerIndex = (gs.currentPlayerIndex + 1) % gs.players.length;
-  gs.currentPlayerId = gs.players[gs.currentPlayerIndex].id;
+  nextPlayer(gs); // ✅ Salta presentatore
 
   gs.gameMessage = {
     type: "error",
@@ -822,8 +847,7 @@ if (gs.usedLetters.includes(upper)) {
     gs.pendingDouble = false;
     gs.awaitingConsonant = false;
     gs.mustSpin = true;
-    gs.currentPlayerIndex = (gs.currentPlayerIndex + 1) % gs.players.length;
-    gs.currentPlayerId = gs.players[gs.currentPlayerIndex].id;
+    nextPlayer(gs); // ✅ Salta presentatore
     gs.gameMessage = {
       type: "error",
       text: "❌ Nessuna lettera. RADDOPPIA annullato, turno al prossimo."
@@ -850,8 +874,7 @@ if (gs.usedLetters.includes(upper)) {
         
         gs.gameMessage = { type: "success", text: message };
       } else {
-        gs.currentPlayerIndex = (gs.currentPlayerIndex + 1) % gs.players.length;
-        gs.currentPlayerId = gs.players[gs.currentPlayerIndex].id;
+        nextPlayer(gs); // ✅ Salta presentatore
         gs.mustSpin = true;
         gs.awaitingConsonant = false;
         gs.pendingDouble = false;
@@ -912,8 +935,7 @@ if (gs.usedLetters.includes(upper)) {
   gs.mustSpin = true;
 
   // Passa turno
-  gs.currentPlayerIndex = (gs.currentPlayerIndex + 1) % gs.players.length;
-  gs.currentPlayerId = gs.players[gs.currentPlayerIndex].id;
+  nextPlayer(gs); // ✅ Salta presentatore
 
   gs.gameMessage = {
     type: "error",
@@ -1032,8 +1054,7 @@ if (gs.usedLetters.includes(upper)) {
         }, 7000);
 
       } else {
-        gs.currentPlayerIndex = (gs.currentPlayerIndex + 1) % gs.players.length;
-        gs.currentPlayerId = gs.players[gs.currentPlayerIndex].id;
+        nextPlayer(gs); // ✅ Salta presentatore
         gs.mustSpin = true;
         gs.awaitingConsonant = false;
         gs.pendingDouble = false;
@@ -1067,8 +1088,7 @@ if (gs.usedLetters.includes(upper)) {
         return;
       }
 
-      gs.currentPlayerIndex = (gs.currentPlayerIndex + 1) % gs.players.length;
-      gs.currentPlayerId = gs.players[gs.currentPlayerIndex].id;
+      nextPlayer(gs); // ✅ Salta presentatore
       gs.mustSpin = true;
       gs.awaitingConsonant = false;
       gs.pendingDouble = false;
@@ -1270,8 +1290,7 @@ if (gs.usedLetters.includes(upper)) {
         }, 7000);
       } else {
         // ❌ Soluzione sbagliata
-        gs.currentPlayerIndex = (gs.currentPlayerIndex + 1) % gs.players.length;
-        gs.currentPlayerId = gs.players[gs.currentPlayerIndex].id;
+        nextPlayer(gs); // ✅ Salta presentatore
         gs.mustSpin = true;
         gs.awaitingConsonant = false;
         gs.pendingDouble = false;
