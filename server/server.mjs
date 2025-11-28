@@ -1034,6 +1034,11 @@ if (gs.usedLetters.includes(upper)) {
             playerId: socket.id 
           });
           
+          // ✅ Invia evento al presentatore per mostrare pulsanti verifica
+          io.to(host.id).emit("solutionAttempt", {
+            playerName: gs.players[gs.currentPlayerIndex].name
+          });
+          
           gs.gameMessage = { type: "info", text: "In attesa di verifica del presentatore..." };
           io.to(code).emit("gameStateUpdate", { gameState: gs });
           
