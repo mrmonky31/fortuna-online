@@ -1,13 +1,15 @@
-// src/pages/Game.jsx - CON SINCRONIZZAZIONE ANIMAZIONE RUOTA
+// src/pages/Game.jsx - MODALITÀ PRESENTATORE
 import React, { useEffect, useState } from "react";
 import "../styles/game-layout.css";
 import "../styles/controls.css";
 import "../styles/tiles.css";
+import "../styles/letter-grid.css";
 
 import Controls from "../components/Controls";
 import PhraseManager from "../components/PhraseManager";
 import Wheel from "../components/Wheel";
 import FinalScoreboard from "../components/FinalScoreboard";
+import LetterGrid from "../components/LetterGrid";
 
 import { maskBoard, buildBoard } from "../game/GameEngine";
 import socket from "../socket";
@@ -17,6 +19,15 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
   const [mySocketId, setMySocketId] = useState(socket.id);
   const [roomCode, setRoomCode] = useState(state?.roomCode || null);
   const [joinRequest, setJoinRequest] = useState(null);
+  
+  // ✅ NUOVO: Determina se sei presentatore
+  const isPresenter = state?.room?.gameMode === "presenter" && 
+                      state?.room?.players?.find(p => p.id === mySocketId)?.isHost;
+  
+  // ✅ NUOVO: Stati per modalità presentatore
+  const [showPhrase, setShowPhrase] = useState(false);
+  const [awaitingSolutionCheck, setAwaitingSolutionCheck] = useState(false);
+  const [activeLetterType, setActiveLetterType] = useState(null); // "consonant" | "vowel" | null
   
   // ✅ NUOVO: Sistema messaggi
   const [showMessageBox, setShowMessageBox] = useState(false);
@@ -436,6 +447,71 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
     setMessageText("");
   };
 
+  // ✅ NUOVO: Handler modalità presentatore
+  const handleViewPhrase = () => {
+    setShowPhrase(true);
+  };
+
+  const handleCorrectSolution = () => {
+    if (!roomCode) return;
+    socket.emit("presenterSolutionCheck", {
+      roomCode,
+      isCorrect: true
+    });
+    setAwaitingSolutionCheck(false);
+  };
+
+  const handleWrongSolution = () => {
+    if (!roomCode) return;
+    socket.emit("presenterSolutionCheck", {
+      roomCode,
+      isCorrect: false
+    });
+    setAwaitingSolutionCheck(false);
+  };
+
+  const handleLetterClick = (letter) => {
+    if (!roomCode || !gameState) return;
+    
+    // Determina se è consonante o vocale
+    const vowels = ["A", "E", "I", "O", "U"];
+    const isVowel = vowels.includes(letter);
+    
+    if (isVowel) {
+      socket.emit("playVowel", { roomCode, letter });
+    } else {
+      socket.emit("playConsonant", { roomCode, letter });
+    }
+    
+    setActiveLetterType(null);
+  };
+
+  // ✅ NUOVO: Listener per richieste soluzione (presentatore)
+  useEffect(() => {
+    if (!isPresenter) return;
+    
+    function handleSolutionAttempt() {
+      console.log("🎯 Giocatore ha tentato soluzione - attesa verifica");
+      setAwaitingSolutionCheck(true);
+    }
+    
+    socket.on("solutionAttempt", handleSolutionAttempt);
+    return () => socket.off("solutionAttempt", handleSolutionAttempt);
+  }, [isPresenter]);
+
+  // ✅ NUOVO: Listener per mostrare griglia (presentatore)
+  useEffect(() => {
+    if (!isPresenter) return;
+    
+    function handleShowLetterGrid({ type }) {
+      console.log("🔤 Mostra griglia:", type);
+      setActiveLetterType(type); // "consonant" | "vowel"
+    }
+    
+    socket.on("showLetterGrid", handleShowLetterGrid);
+    return () => socket.off("showLetterGrid", handleShowLetterGrid);
+  }, [isPresenter]);
+
   const handleSpin = () => {
     if (!roomCode) return;
     socket.emit("spinWheel", { roomCode }, (res) => {
@@ -546,21 +622,23 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
       </button>
 
       <div className="game-players">
-        {gameState.players.map((p, i) => (
-          <div
-            key={i}
-            className={`player-box ${
-              i === gameState.currentPlayerIndex ? "player-active" : ""
-            }`}
-          >
-            <div className="player-name">
-              {p.name}
-              {p.id === mySocketId && " (Tu)"}
+        {gameState.players
+          .filter(p => !(isPresenter && p.id === mySocketId)) // ✅ Nascondi box presentatore
+          .map((p, i) => (
+            <div
+              key={i}
+              className={`player-box ${
+                i === gameState.currentPlayerIndex ? "player-active" : ""
+              }`}
+            >
+              <div className="player-name">
+                {p.name}
+                {p.id === mySocketId && " (Tu)"}
+              </div>
+              <div className="player-round">{p.roundScore} pt</div>
+              <div className="player-total">Tot: {p.totalScore}</div>
             </div>
-            <div className="player-round">{p.roundScore} pt</div>
-            <div className="player-total">Tot: {p.totalScore}</div>
-          </div>
-        ))}
+          ))}
       </div>
 
       <div>
@@ -573,15 +651,28 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
           🏠 {roomCode}
         </div>
 
-        <div className="game-wheel-area">
-          <Wheel
-            slices={gameState.wheel}
-            spinning={wheelSpinning}
-            spinSeed={wheelSpinSeed}
-            targetAngle={wheelTargetAngle}
-            onStop={handleWheelStop}
+        {/* ✅ PRESENTATORE: Griglia lettere invece della ruota */}
+        {isPresenter && activeLetterType && (
+          <LetterGrid
+            type={activeLetterType}
+            usedLetters={gameState.usedLetters || []}
+            onLetterClick={handleLetterClick}
+            disabled={false}
           />
-        </div>
+        )}
+
+        {/* ✅ NON PRESENTATORE: Ruota normale */}
+        {!isPresenter && (
+          <div className="game-wheel-area">
+            <Wheel
+              slices={gameState.wheel}
+              spinning={wheelSpinning}
+              spinSeed={wheelSpinSeed}
+              targetAngle={wheelTargetAngle}
+              onStop={handleWheelStop}
+            />
+          </div>
+        )}
 
         {/* ✅ PULSANTE MESSAGGI - GIOCATORE (sinistra ruota) */}
         {myRole === "player" && (
@@ -616,6 +707,11 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
             lastTarget={gameState.lastSpinTarget}
             forceConsonant={gameState.awaitingConsonant === true}
             disabled={!isMyTurn || betweenRounds}
+            isPresenter={isPresenter}
+            onViewPhrase={handleViewPhrase}
+            onCorrectSolution={handleCorrectSolution}
+            onWrongSolution={handleWrongSolution}
+            awaitingSolutionCheck={awaitingSolutionCheck}
           />
         </div>
 
@@ -917,6 +1013,74 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
               }}
             >
               Chiudi
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ✅ POPUP VISUALIZZA FRASE (PRESENTATORE) */}
+      {isPresenter && showPhrase && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
+          background: 'rgba(0,0,0,0.9)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999
+        }}>
+          <div style={{
+            background: '#1a1a1a',
+            padding: '40px',
+            borderRadius: '12px',
+            border: '3px solid #00ff55',
+            textAlign: 'center',
+            maxWidth: '600px',
+            width: '90%'
+          }}>
+            <h2 style={{ color: '#00ff55', marginBottom: '30px', fontSize: '1.8rem' }}>
+              👁️ FRASE COMPLETA
+            </h2>
+            <div style={{
+              background: '#2d3748',
+              padding: '30px',
+              borderRadius: '10px',
+              marginBottom: '30px'
+            }}>
+              <p style={{
+                fontSize: '2rem',
+                fontWeight: 'bold',
+                color: 'white',
+                margin: 0,
+                wordBreak: 'break-word'
+              }}>
+                {gameState.phrase}
+              </p>
+            </div>
+            <div style={{
+              fontSize: '1.2rem',
+              color: '#a0aec0',
+              marginBottom: '30px'
+            }}>
+              Categoria: <span style={{ color: '#00ff55', fontWeight: 'bold' }}>{gameState.category}</span>
+            </div>
+            <button
+              onClick={() => setShowPhrase(false)}
+              style={{
+                padding: '15px 40px',
+                fontSize: '1.2rem',
+                fontWeight: 'bold',
+                background: '#e53e3e',
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                cursor: 'pointer'
+              }}
+            >
+              ✕ Chiudi
             </button>
           </div>
         </div>

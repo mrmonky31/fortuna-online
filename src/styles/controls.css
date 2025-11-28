@@ -27,6 +27,60 @@
 }
 
 /* ===========================
+   ✅ PULSANTI VERIFICA SOLUZIONE (PRESENTATORE)
+   =========================== */
+
+.solution-check-buttons {
+  display: flex;
+  gap: 10px;
+  margin: 10px 0;
+  justify-content: center;
+}
+
+.btn-solution-correct,
+.btn-solution-wrong {
+  padding: 12px 24px;
+  font-size: 16px;
+  font-weight: bold;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-solution-correct {
+  background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+  color: white;
+}
+
+.btn-solution-correct:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 15px rgba(72, 187, 120, 0.5);
+}
+
+.btn-solution-wrong {
+  background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);
+  color: white;
+}
+
+.btn-solution-wrong:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 15px rgba(245, 101, 101, 0.5);
+}
+
+/* ===========================
+   👁️ PULSANTE GUARDA FRASE
+   =========================== */
+
+.btn-view-phrase {
+  background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%) !important;
+}
+
+.btn-view-phrase:hover:not(:disabled) {
+  background: linear-gradient(135deg, #3182ce 0%, #2c5282 100%) !important;
+}
+
+/* ===========================
    🔵 GIRA LA RUOTA
    =========================== */
 

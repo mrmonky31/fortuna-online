@@ -1,4 +1,4 @@
-// src/components/Controls.jsx - CORRETTO
+// src/components/Controls.jsx - MODALITÀ PRESENTATORE
 import React, { useEffect, useRef, useState } from "react";
 
 export default function Controls({
@@ -11,6 +11,11 @@ export default function Controls({
   forceConsonant,
   disabled = false,
   onPanelChange,
+  isPresenter = false,  // ✅ NUOVO: Flag modalità presentatore
+  onViewPhrase,          // ✅ NUOVO: Callback per vedere la frase
+  onCorrectSolution,     // ✅ NUOVO: Callback soluzione corretta
+  onWrongSolution,       // ✅ NUOVO: Callback soluzione sbagliata
+  awaitingSolutionCheck = false, // ✅ NUOVO: In attesa di verifica soluzione
 }) {
   const [panel, setPanel] = useState(null);
   const [cons, setCons] = useState("");
@@ -27,11 +32,14 @@ export default function Controls({
     }
   }, [panel, onPanelChange]);
 
+  // ✅ PRESENTATORE: Non mostra pannelli input, solo pulsanti azione
   useEffect(() => {
-    if (panel === "cons" && consRef.current) consRef.current.focus();
-    if (panel === "vow" && vowRef.current) vowRef.current.focus();
-    if (panel === "sol" && solRef.current) solRef.current.focus();
-  }, [panel]);
+    if (!isPresenter) {
+      if (panel === "cons" && consRef.current) consRef.current.focus();
+      if (panel === "vow" && vowRef.current) vowRef.current.focus();
+      if (panel === "sol" && solRef.current) solRef.current.focus();
+    }
+  }, [panel, isPresenter]);
 
   useEffect(() => {
     if (forceConsonant && panel === null && !disabled) setPanel("cons");
@@ -109,127 +117,161 @@ export default function Controls({
         </div>
       </div>
 
-      {/* RIGA 2: Consonante + Vocali + Soluzione + Passa Turno */}
-      <div className="controls-row-secondary">
-        <button
-          className="btn-secondary btn-compact"
-          onClick={() => !disabled && setPanel(panel === "cons" ? null : "cons")}
-          disabled={disabled || !forceConsonant}
-          title={disabled ? "Non è il tuo turno" : "Gioca una consonante"}
-        >
-          Consonante
-        </button>
+      {/* ✅ PRESENTATORE: Mostra pulsanti verifica soluzione */}
+      {isPresenter && awaitingSolutionCheck && (
+        <div className="solution-check-buttons">
+          <button
+            className="btn-solution-correct"
+            onClick={() => onCorrectSolution && onCorrectSolution()}
+          >
+            ✅ CORRETTA
+          </button>
+          <button
+            className="btn-solution-wrong"
+            onClick={() => onWrongSolution && onWrongSolution()}
+          >
+            ❌ SBAGLIATA
+          </button>
+        </div>
+      )}
 
-        <button
-          className="btn-secondary btn-compact"
-          onClick={() => !disabled && setPanel(panel === "vow" ? null : "vow")}
-          disabled={!vowEnabled}
-          title={disabled ? "Non è il tuo turno" : "Compra una vocale"}
-        >
-          Vocali
-        </button>
+      {/* RIGA 2: Pulsanti secondari */}
+      {!awaitingSolutionCheck && (
+        <div className="controls-row-secondary">
+          <button
+            className="btn-secondary btn-compact"
+            onClick={() => !disabled && setPanel(panel === "cons" ? null : "cons")}
+            disabled={disabled || !forceConsonant}
+            title={disabled ? "Non è il tuo turno" : "Gioca una consonante"}
+          >
+            Consonante
+          </button>
 
-        <button
-          className="btn-secondary btn-compact"
-          onClick={() => !disabled && setPanel(panel === "sol" ? null : "sol")}
-          disabled={!solEnabled}
-          title={disabled ? "Non è il tuo turno" : "Prova a risolvere"}
-        >
-          Soluzione
-        </button>
+          <button
+            className="btn-secondary btn-compact"
+            onClick={() => !disabled && setPanel(panel === "vow" ? null : "vow")}
+            disabled={!vowEnabled}
+            title={disabled ? "Non è il tuo turno" : "Compra una vocale"}
+          >
+            Vocali
+          </button>
 
-        <button
-          className="btn-secondary btn-compact btn-pass"
-          onClick={handlePassTurn}
-          disabled={disabled}
-          title={disabled ? "Non è il tuo turno" : "Passa il turno al prossimo giocatore"}
-        >
-          Passa Turno
-        </button>
-      </div>
+          <button
+            className="btn-secondary btn-compact"
+            onClick={() => !disabled && setPanel(panel === "sol" ? null : "sol")}
+            disabled={!solEnabled}
+            title={disabled ? "Non è il tuo turno" : "Prova a risolvere"}
+          >
+            Soluzione
+          </button>
 
-      <div className="controls-panels">
-        {/* Pannello Consonanti */}
-        {panel === "cons" && (
-          <div className="panel panel-cons panel-game">
-            <label className="panel-label">Consonante</label>
-            <input
-              ref={consRef}
-              type="text"
-              maxLength={1}
-              value={cons}
-              onChange={(e) =>
-                setCons(e.target.value.replace(/[^A-Za-zÀ-ÖØ-öø-ÿ]/g, ""))
-              }
-              onKeyDown={onKeyDownCons}
-              disabled={disabled}
-              className="panel-input panel-input-game"
-              placeholder="Inserisci consonante"
-              autoComplete="off"
-              autoCorrect="off"
-              autoCapitalize="characters"
-              spellCheck="false"
-              inputMode="text"
-            />
-            <button className="btn-ok" onClick={submitConsonant} disabled={disabled}>
-              OK
+          {/* ✅ PRESENTATORE: Pulsante "GUARDA FRASE" invece di "PASSA TURNO" */}
+          {isPresenter ? (
+            <button
+              className="btn-secondary btn-compact btn-view-phrase"
+              onClick={() => onViewPhrase && onViewPhrase()}
+              title="Visualizza la frase completa"
+            >
+              👁️ Guarda Frase
             </button>
-          </div>
-        )}
-
-        {/* Pannello Vocali */}
-        {panel === "vow" && (
-          <div className="panel panel-vow panel-game">
-            <label className="panel-label">Vocale</label>
-            <input
-              ref={vowRef}
-              type="text"
-              maxLength={1}
-              value={vow}
-              onChange={(e) =>
-                setVow(e.target.value.replace(/[^AEIOUaeiouÀ-ÖØ-öø-ÿ]/g, ""))
-              }
-              onKeyDown={onKeyDownVow}
+          ) : (
+            <button
+              className="btn-secondary btn-compact btn-pass"
+              onClick={handlePassTurn}
               disabled={disabled}
-              className="panel-input panel-input-game"
-              placeholder="A, E, I, O, U"
-              autoComplete="off"
-              autoCorrect="off"
-              autoCapitalize="characters"
-              spellCheck="false"
-              inputMode="text"
-            />
-            <button className="btn-ok" onClick={submitVowel} disabled={disabled}>
-              OK
+              title={disabled ? "Non è il tuo turno" : "Passa il turno al prossimo giocatore"}
+            >
+              Passa Turno
             </button>
-          </div>
-        )}
+          )}
+        </div>
+      )}
 
-        {/* Pannello Soluzione */}
-        {panel === "sol" && (
-          <div className="panel panel-sol panel-game">
-            <label className="panel-label">Soluzione</label>
-            <input
-              ref={solRef}
-              type="text"
-              value={sol}
-              onChange={(e) => setSol(e.target.value)}
-              onKeyDown={onKeyDownSol}
-              disabled={disabled}
-              className="panel-input panel-input-game"
-              placeholder="Scrivi la frase"
-              autoComplete="off"
-              autoCorrect="off"
-              autoCapitalize="characters"
-              spellCheck="false"
-              inputMode="text"
-            />
-            <button className="btn-ok" onClick={submitSolution} disabled={disabled}>
-              OK
-            </button>
-          </div>
-        )}
-      </div>
+      {/* ✅ PANNELLI INPUT: Solo per NON presentatori */}
+      {!isPresenter && (
+        <div className="controls-panels">
+          {/* Pannello Consonanti */}
+          {panel === "cons" && (
+            <div className="panel panel-cons panel-game">
+              <label className="panel-label">Consonante</label>
+              <input
+                ref={consRef}
+                type="text"
+                maxLength={1}
+                value={cons}
+                onChange={(e) =>
+                  setCons(e.target.value.replace(/[^A-Za-zÀ-ÖØ-öø-ÿ]/g, ""))
+                }
+                onKeyDown={onKeyDownCons}
+                disabled={disabled}
+                className="panel-input panel-input-game"
+                placeholder="Inserisci consonante"
+                autoComplete="off"
+                autoCorrect="off"
+                autoCapitalize="characters"
+                spellCheck="false"
+                inputMode="text"
+              />
+              <button className="btn-ok" onClick={submitConsonant} disabled={disabled}>
+                OK
+              </button>
+            </div>
+          )}
+
+          {/* Pannello Vocali */}
+          {panel === "vow" && (
+            <div className="panel panel-vow panel-game">
+              <label className="panel-label">Vocale</label>
+              <input
+                ref={vowRef}
+                type="text"
+                maxLength={1}
+                value={vow}
+                onChange={(e) =>
+                  setVow(e.target.value.replace(/[^AEIOUaeiouÀ-ÖØ-öø-ÿ]/g, ""))
+                }
+                onKeyDown={onKeyDownVow}
+                disabled={disabled}
+                className="panel-input panel-input-game"
+                placeholder="A, E, I, O, U"
+                autoComplete="off"
+                autoCorrect="off"
+                autoCapitalize="characters"
+                spellCheck="false"
+                inputMode="text"
+              />
+              <button className="btn-ok" onClick={submitVowel} disabled={disabled}>
+                OK
+              </button>
+            </div>
+          )}
+
+          {/* Pannello Soluzione */}
+          {panel === "sol" && (
+            <div className="panel panel-sol panel-game">
+              <label className="panel-label">Soluzione</label>
+              <input
+                ref={solRef}
+                type="text"
+                value={sol}
+                onChange={(e) => setSol(e.target.value)}
+                onKeyDown={onKeyDownSol}
+                disabled={disabled}
+                className="panel-input panel-input-game"
+                placeholder="Scrivi la frase"
+                autoComplete="off"
+                autoCorrect="off"
+                autoCapitalize="characters"
+                spellCheck="false"
+                inputMode="text"
+              />
+              <button className="btn-ok" onClick={submitSolution} disabled={disabled}>
+                OK
+              </button>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

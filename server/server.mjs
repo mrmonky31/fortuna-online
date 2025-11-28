@@ -282,7 +282,7 @@ io.on("connection", (socket) => {
   }
 
   // CREA STANZA
-  socket.on("createRoom", async ({ playerName, totalRounds, roomName }, callback) => {
+  socket.on("createRoom", async ({ playerName, totalRounds, roomName, gameMode }, callback) => {
     try {
       const rawName = roomName && String(roomName).trim();
       const code = rawName && rawName.length > 0
@@ -295,6 +295,7 @@ io.on("connection", (socket) => {
       }
 
       const name = String(playerName || "").trim() || "Giocatore";
+      const mode = gameMode === "presenter" ? "presenter" : "classic"; // ✅ NUOVO
       
       // ✅ Carica set frasi (personalizzato o random)
       const phraseSet = await loadPhrases(rawName);
@@ -304,13 +305,14 @@ io.on("connection", (socket) => {
         players: [{ name, id: socket.id, isHost: true }],
         spectators: [],
         totalRounds: Number(totalRounds) || 3,
+        gameMode: mode, // ✅ NUOVO: Salva modalità
         gameState: null,
         phraseSet: phraseSet, // ✅ Salva il set frasi nella room
         currentPhraseIndex: 0, // ✅ Per modalità sequenziale
       };
 
       socket.join(code);
-      console.log(`✅ Stanza creata: ${code} da ${name} [${phraseSet.mode === "sequential" ? `SET: ${phraseSet.customName}` : "RANDOM"}]`);
+      console.log(`✅ Stanza creata: ${code} da ${name} [${mode.toUpperCase()}] [${phraseSet.mode === "sequential" ? `SET: ${phraseSet.customName}` : "RANDOM"}]`);
 
       if (callback) callback({
         ok: true,
@@ -736,7 +738,17 @@ io.on("connection", (socket) => {
 
       const gs = room.gameState;
 
-      if (gs.currentPlayerId !== socket.id) {
+      // ✅ MODALITÀ PRESENTATORE: Mostra griglia al presentatore
+      if (room.gameMode === "presenter" && !letter) {
+        const host = room.players.find(p => p.isHost);
+        if (host) {
+          io.to(host.id).emit("showLetterGrid", { type: "consonant" });
+          if (callback) callback({ ok: true });
+          return;
+        }
+      }
+
+      if (gs.currentPlayerId !== socket.id && room.gameMode !== "presenter") {
         if (callback) callback({ ok: false, error: "Non è il tuo turno" });
         return;
       }
@@ -869,7 +881,17 @@ if (gs.usedLetters.includes(upper)) {
 
       const gs = room.gameState;
 
-      if (gs.currentPlayerId !== socket.id) {
+      // ✅ MODALITÀ PRESENTATORE: Mostra griglia al presentatore
+      if (room.gameMode === "presenter" && !letter) {
+        const host = room.players.find(p => p.isHost);
+        if (host) {
+          io.to(host.id).emit("showLetterGrid", { type: "vowel" });
+          if (callback) callback({ ok: true });
+          return;
+        }
+      }
+
+      if (gs.currentPlayerId !== socket.id && room.gameMode !== "presenter") {
         if (callback) callback({ ok: false, error: "Non è il tuo turno" });
         return;
       }
@@ -956,6 +978,24 @@ if (gs.usedLetters.includes(upper)) {
         return;
       }
 
+      // ✅ MODALITÀ PRESENTATORE: Notifica presentatore e attendi verifica
+      if (room.gameMode === "presenter") {
+        const host = room.players.find(p => p.isHost);
+        if (host) {
+          io.to(host.id).emit("solutionAttempt", {
+            playerName: gs.players[gs.currentPlayerIndex].name,
+            attempt: text
+          });
+          
+          gs.gameMessage = { type: "info", text: "In attesa di verifica del presentatore..." };
+          io.to(code).emit("gameStateUpdate", { gameState: gs });
+          
+          if (callback) callback({ ok: true });
+          return;
+        }
+      }
+
+      // ✅ MODALITÀ CLASSICA: Verifica automatica
       const guess = normalizeText(text);
       const target = normalizeText(gs.phrase);
 
@@ -1187,6 +1227,62 @@ if (gs.usedLetters.includes(upper)) {
       }
     } catch (err) {
       console.error("Errore sendMessageToPlayer:", err);
+    }
+  });
+
+  // ✅ MODALITÀ PRESENTATORE: Verifica soluzione
+  socket.on("presenterSolutionCheck", ({ roomCode, isCorrect }) => {
+    try {
+      const code = String(roomCode || "").trim().toUpperCase();
+      const room = rooms[code];
+
+      if (!room || !room.gameState) return;
+      if (room.gameMode !== "presenter") return;
+
+      const gs = room.gameState;
+      const i = gs.currentPlayerIndex;
+
+      if (isCorrect) {
+        // ✅ Soluzione corretta
+        const winnerName = gs.players[i].name;
+        
+        gs.players[i].totalScore += gs.players[i].roundScore;
+        const bonus = 1000;
+        gs.players[i].totalScore += bonus;
+
+        const allLetters = [...normalizeText(gs.phrase)].filter(ch => /[A-Z]/.test(ch));
+        gs.revealedLetters = [...new Set(allLetters)];
+
+        gs.gameMessage = { type: "success", text: `✅ ${winnerName} ha indovinato! +${bonus} BONUS!` };
+        gs.mustSpin = false;
+        gs.awaitingConsonant = false;
+        gs.pendingDouble = false;
+
+        io.to(code).emit("roundWon", {
+          winnerName,
+          countdown: 7
+        });
+
+        io.to(code).emit("gameStateUpdate", { gameState: gs });
+
+        setTimeout(() => {
+          nextRound(code, room);
+        }, 7000);
+      } else {
+        // ❌ Soluzione sbagliata
+        gs.currentPlayerIndex = (gs.currentPlayerIndex + 1) % gs.players.length;
+        gs.currentPlayerId = gs.players[gs.currentPlayerIndex].id;
+        gs.mustSpin = true;
+        gs.awaitingConsonant = false;
+        gs.pendingDouble = false;
+        gs.gameMessage = { type: "error", text: "Soluzione non corretta." };
+
+        io.to(code).emit("gameStateUpdate", { gameState: gs });
+      }
+
+      console.log(`🎯 Presentatore verifica soluzione: ${isCorrect ? "CORRETTA" : "SBAGLIATA"}`);
+    } catch (err) {
+      console.error("Errore presenterSolutionCheck:", err);
     }
   });
 
