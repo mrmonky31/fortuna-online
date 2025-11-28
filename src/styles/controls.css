@@ -32,11 +32,12 @@
 
 .solution-check-buttons {
   display: flex;
-  top: 330px;
   gap: 10px;
   margin: 10px 0;
- 
-  z-index: 100;  
+  justify-content: center;
+  position: relative;
+  z-index: 100;
+  top: -20px;  /* ✅ AGGIUNGI - valore negativo = alza, positivo = abbassa */
 }
 
 .btn-solution-correct,
