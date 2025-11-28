@@ -44,10 +44,11 @@ export default function Controls({
     }
   }, [panel, isPresenter]);
 
-  useEffect(() => {
-    if (forceConsonant && panel === null && !disabled) setPanel("cons");
-    if (!forceConsonant && panel === "cons") setPanel(null);
-  }, [forceConsonant, disabled]);
+  // ❌ DISATTIVATO: Apertura automatica consonanti
+  // useEffect(() => {
+  //   if (forceConsonant && panel === null && !disabled) setPanel("cons");
+  //   if (!forceConsonant && panel === "cons") setPanel(null);
+  // }, [forceConsonant, disabled]);
 
   const handleSpinClick = () => {
     if (disabled) return;
@@ -142,7 +143,7 @@ export default function Controls({
       {!awaitingSolutionCheck && (
         <div className="controls-row-secondary">
           <button
-            className={`btn-secondary btn-compact ${gameMode === "presenter" && !isPresenter && panel === "cons" ? "btn-active" : ""} ${gameMode === "presenter" && isPresenter && activeLetterType === "consonant" ? "btn-active" : ""}`}
+            className={`btn-secondary btn-compact ${activeLetterType === "consonant" ? "btn-active" : ""}`}
             onClick={() => {
               if (disabled) return;
               // ✅ PRESENTATORE NON GIOCATORE: chiama direttamente callback SENZA aprire pannello
@@ -159,7 +160,7 @@ export default function Controls({
           </button>
 
           <button
-            className={`btn-secondary btn-compact ${gameMode === "presenter" && !isPresenter && panel === "vow" ? "btn-active" : ""} ${gameMode === "presenter" && isPresenter && activeLetterType === "vowel" ? "btn-active" : ""}`}
+            className={`btn-secondary btn-compact ${activeLetterType === "vowel" ? "btn-active" : ""}`}
             onClick={() => {
               if (disabled) return;
               // ✅ PRESENTATORE NON GIOCATORE: chiama direttamente callback SENZA aprire pannello
@@ -176,7 +177,7 @@ export default function Controls({
           </button>
 
           <button
-            className={`btn-secondary btn-compact ${gameMode === "presenter" && !isPresenter && panel === "sol" ? "btn-active" : ""} ${gameMode === "presenter" && isPresenter && activeLetterType === "solution" ? "btn-active" : ""}`}
+            className={`btn-secondary btn-compact ${activeLetterType === "solution" ? "btn-active" : ""}`}
             onClick={() => {
               if (disabled) return;
               // ✅ PRESENTATORE NON GIOCATORE: chiama direttamente callback SENZA aprire pannello

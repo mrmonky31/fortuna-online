@@ -149,7 +149,7 @@
   font-size: 12px;
 }
 
-.btn-secondary:hover:not(:disabled) {
+.btn-secondary:hover:not(:disabled):not(.btn-active) {
   background: #2d3748;
 }
 
