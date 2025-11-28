@@ -13,8 +13,11 @@ export default function LetterGrid({
   usedLetters = [], 
   onLetterClick,
   onPassTurn,
-  disabled = false 
+  disabled = false,
+  activeLetterType = null // "consonant" | "vowel" | null
 }) {
+  const VOWELS = ["A", "E", "I", "O", "U"];
+  
   return (
     <div className="letter-grid-container">
       <h3 className="letter-grid-title">
@@ -26,12 +29,20 @@ export default function LetterGrid({
           <div key={rowIndex} className="letter-row">
             {row.map(letter => {
               const isUsed = usedLetters.includes(letter);
+              const isVowel = VOWELS.includes(letter);
+              
+              // ✅ Disabilita vocali se activeLetterType === "consonant"
+              // ✅ Disabilita consonanti se activeLetterType === "vowel"
+              const isWrongType = 
+                (activeLetterType === "consonant" && isVowel) ||
+                (activeLetterType === "vowel" && !isVowel);
+              
               return (
                 <button
                   key={letter}
-                  className={`letter-btn ${isUsed ? "used" : ""}`}
-                  onClick={() => !isUsed && !disabled && onLetterClick && onLetterClick(letter)}
-                  disabled={disabled}
+                  className={`letter-btn ${isUsed ? "used" : ""} ${isWrongType ? "disabled" : ""}`}
+                  onClick={() => !isUsed && !disabled && !isWrongType && onLetterClick && onLetterClick(letter)}
+                  disabled={disabled || isWrongType}
                 >
                   {letter}
                 </button>
@@ -44,12 +55,17 @@ export default function LetterGrid({
         <div className="letter-row letter-row-last">
           {KEYBOARD_LAYOUT[2].map(letter => {
             const isUsed = usedLetters.includes(letter);
+            const isVowel = VOWELS.includes(letter);
+            const isWrongType = 
+              (activeLetterType === "consonant" && isVowel) ||
+              (activeLetterType === "vowel" && !isVowel);
+            
             return (
               <button
                 key={letter}
-                className={`letter-btn ${isUsed ? "used" : ""}`}
-                onClick={() => !isUsed && !disabled && onLetterClick && onLetterClick(letter)}
-                disabled={disabled}
+                className={`letter-btn ${isUsed ? "used" : ""} ${isWrongType ? "disabled" : ""}`}
+                onClick={() => !isUsed && !disabled && !isWrongType && onLetterClick && onLetterClick(letter)}
+                disabled={disabled || isWrongType}
               >
                 {letter}
               </button>

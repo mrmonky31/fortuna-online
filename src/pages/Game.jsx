@@ -20,10 +20,6 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
   const [roomCode, setRoomCode] = useState(state?.roomCode || null);
   const [joinRequest, setJoinRequest] = useState(null);
   
-  // ✅ NUOVO: Determina se sei presentatore
-  const isPresenter = state?.room?.gameMode === "presenter" && 
-                      state?.room?.players?.find(p => p.id === mySocketId)?.isHost;
-  
   // ✅ NUOVO: Stati per modalità presentatore
   const [showPhrase, setShowPhrase] = useState(false);
   const [awaitingSolutionCheck, setAwaitingSolutionCheck] = useState(false);
@@ -92,6 +88,10 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
   const [wheelSpinning, setWheelSpinning] = useState(false);
   const [wheelSpinSeed, setWheelSpinSeed] = useState(null);
   const [wheelTargetAngle, setWheelTargetAngle] = useState(null);
+
+  // ✅ Calcola dinamicamente se sei presentatore dal gameState
+  const isPresenter = state?.room?.gameMode === "presenter" && 
+                      gameState?.players?.find(p => p.id === mySocketId)?.isHost;
 
   // Funzione toggle fullscreen
   const toggleFullscreen = async () => {
@@ -649,6 +649,7 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
             onLetterClick={handleLetterClick}
             onPassTurn={handlePassTurn}
             disabled={!activeLetterType} // Disabilitata finché giocatore non preme pulsante
+            activeLetterType={activeLetterType}
           />
         )}
 
