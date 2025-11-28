@@ -10,8 +10,7 @@
   width: 82vw;
   max-width: 570px;
   background: rgba(17, 19, 26, 0.95);
-  border: 2px solid #00ff55;
-  border-radius: 12px;
+  
   padding: 15px;
   z-index: 10;
 }
