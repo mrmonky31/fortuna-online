@@ -80,7 +80,7 @@ export default function PhraseManager({
     const newSet = new Set(cellKeys);
     
     // ⏱️ RIGA MODIFICABILE: Delay tra illuminazione caselle (ms)
-    const DELAY_BETWEEN_CELLS = 100; // ← Cambia questo valore (100ms = 0.1s)
+    const DELAY_BETWEEN_CELLS = 300; // ← Cambia questo valore (100ms = 0.1s)
     
     cellKeys.forEach((key, index) => {
       setTimeout(() => {
@@ -89,7 +89,7 @@ export default function PhraseManager({
     });
 
     // ⏱️ RIGA MODIFICABILE: Durata totale animazione reveal (ms)
-    const REVEAL_DURATION = 500; // ← Cambia questo valore (500ms = 0.5s)
+    const REVEAL_DURATION = 600; // ← Cambia questo valore (500ms = 0.5s)
     
     setTimeout(() => {
       setRevealingCells(new Set());
