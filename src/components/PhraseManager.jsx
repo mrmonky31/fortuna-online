@@ -15,7 +15,16 @@ function parseToCells(text) {
   while (i < str.length) {
     const ch = str[i];
     
-    if (ch === " ") {
+    if (ch === "_") {
+      // ✅ "_ " = L' mascherata (underscore + spazio)
+      if (i + 1 < str.length && str[i + 1] === " ") {
+        cells.push({ type: "letter", char: "_ " });
+        i += 2;
+      } else {
+        cells.push({ type: "letter", char: "_" });
+        i++;
+      }
+    } else if (ch === " ") {
       cells.push({ type: "space", char: " " });
       i++;
     } else if (isPunct(ch)) {
@@ -30,10 +39,6 @@ function parseToCells(text) {
         cells.push({ type: "letter", char: ch });
         i++;
       }
-    } else if (ch === "_") {
-      // Underscore = lettera mascherata (può essere L' mascherata)
-      cells.push({ type: "letter", char: ch });
-      i++;
     } else if (isApostrophe(ch)) {
       cells.push({ type: "letter", char: ch });
       i++;

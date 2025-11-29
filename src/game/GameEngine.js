@@ -114,7 +114,7 @@ function parseToCells(text) {
 
 /* =========================
    maskBoard: maschera usando STESSA struttura caselle
-   ✅ ZERO errori di allineamento
+   ✅ L' mascherata = "_ " (con spazio) per mantenere lunghezza
    ========================= */
 export function maskBoard(rows, revealedLetters) {
   const base = Array.isArray(rows) ? rows : [];
@@ -126,25 +126,31 @@ export function maskBoard(rows, revealedLetters) {
   const masked = base.map((row) => {
     const cells = parseToCells(row);
     
-    const maskedCells = cells.map(cell => {
+    const maskedChars = cells.map(cell => {
       if (cell.type === "space") return " ";
-      if (cell.type === "punct") return cell.char; // :!? visibili
+      if (cell.type === "punct") return cell.char;
       
       if (cell.type === "letter") {
-        // Estrai la LETTERA base (senza apostrofo) per controllo
         const baseLetter = cell.char.replace(/['`´']/g, "");
         
         if (set.has(normalize(baseLetter))) {
-          return cell.char; // Rivelata (con apostrofo se c'è)
+          return cell.char; // Rivelata
         } else {
-          return "_"; // Mascherata (sempre 1 underscore)
+          // ✅ Mascherata: ritorna STESSA lunghezza dell'originale
+          // L' (2 char) → "_ " (underscore + spazio)
+          // E (1 char) → "_"
+          if (cell.char.length === 2) {
+            return "_ "; // Mantiene lunghezza per L', D', ecc
+          } else {
+            return "_";
+          }
         }
       }
       
       return cell.char;
     });
     
-    return maskedCells.join("");
+    return maskedChars.join("");
   });
 
   return masked;

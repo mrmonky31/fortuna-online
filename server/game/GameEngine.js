@@ -4,18 +4,15 @@
 /* =========================
    Normalizzazione / confronto
    ========================= */
-// ✅ Normalizza per CONFRONTO: rimuove accenti e apostrofi
 export const normalize = (s) =>
   String(s || "")
     .toUpperCase()
     .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")  // Rimuove accenti
-    .replace(/['`´']/g, "");           // Rimuove apostrofi
+    .replace(/[\u0300-\u036f]/g, "");
 
 const isLetter = (ch) => /^[A-ZÀ-ÖØ-Ý]$/i.test(ch);
 const isSpace  = (ch) => ch === " ";
 const isPunct  = (ch) => ":!?".includes(ch);
-const isApostrophe = (ch) => "'`´'".includes(ch);
 
 // confronta due caratteri letterali ignorando accenti/case
 export const eqMatch = (a, b) => normalize(a) === normalize(b);
@@ -24,7 +21,7 @@ export const eqMatch = (a, b) => normalize(a) === normalize(b);
    buildBoard: spezza una frase
    in righe maxCols x maxRows
    ========================= */
-export function buildBoard(text, maxCols = 14, maxRows = 4) {
+export function buildBoard(text, maxCols = 14, maxRows = 5) {
   const raw = String(text || "");
   const words = raw.split(/\s+/).filter(Boolean);
 
@@ -74,55 +71,29 @@ export function buildBoard(text, maxCols = 14, maxRows = 4) {
 
 /* =========================
    maskBoard: maschera le righe
-   mantenendo SOLO spazi e :!?
-   ✅ Raggruppa lettera+apostrofo in una sola cella (L' → _ non __)
+   mantenendo spazi e :!?
    ========================= */
 export function maskBoard(rows, revealedLetters) {
   const base = Array.isArray(rows) ? rows : [];
+  // revealed può essere Set o Array
   const set =
     revealedLetters instanceof Set
       ? new Set([...revealedLetters].map((c) => normalize(c)))
       : new Set((revealedLetters || []).map((c) => normalize(c)));
 
   const masked = base.map((row) => {
-    const text = String(row || "");
-    let result = "";
-    let i = 0;
-    
-    while (i < text.length) {
-      const ch = text[i];
-      
-      if (isSpace(ch)) {
-        result += " ";
-        i++;
-      } else if (isPunct(ch)) {
-        result += ch; // :!? visibili
-        i++;
-      } else if (isLetter(ch)) {
-        // Lettera SEGUITA da apostrofo
-        if (i + 1 < text.length && isApostrophe(text[i + 1])) {
-          // Se la lettera è rivelata, mostra L', altrimenti _ (1 underscore)
-          if (set.has(normalize(ch))) {
-            result += ch + text[i + 1]; // Es: L'
-          } else {
-            result += "_"; // ✅ 1 underscore per L' mascherata
-          }
-          i += 2;
-        } else {
-          result += set.has(normalize(ch)) ? ch : "_";
-          i++;
+    const chars = String(row || "").split("");
+    return chars
+      .map((ch) => {
+        if (isSpace(ch)) return " ";
+        if (isPunct(ch)) return ch; // lascia visibili :!?
+        if (isLetter(ch)) {
+          return set.has(normalize(ch)) ? ch : "_";
         }
-      } else if (isApostrophe(ch)) {
-        // Apostrofo isolato (non dopo lettera) → maschera
-        result += "_";
-        i++;
-      } else {
-        result += ch;
-        i++;
-      }
-    }
-    
-    return result;
+        // altri caratteri (numeri, simboli): lasciali passare
+        return ch;
+      })
+      .join("");
   });
 
   return masked;
@@ -130,24 +101,18 @@ export function maskBoard(rows, revealedLetters) {
 
 /* =========================
    Ricerca occorrenze di una lettera
-   ✅ Include apostrofi DOPO la lettera (es. L' → trova L e ')
+   (usata da UI per reveal animato, ecc.)
    ========================= */
 export function letterOccurrences(rows, targetUpper) {
   const norm = normalize(targetUpper);
   const hits = [];
   (Array.isArray(rows) ? rows : []).forEach((row, r) => {
-    const chars = String(row || "").split("");
-    chars.forEach((ch, c) => {
-      if (isSpace(ch) || isPunct(ch)) return;
-      if (isLetter(ch) && eqMatch(norm, ch)) {
-        hits.push({ r, c, ch });
-        
-        // ✅ Se c'è un apostrofo DOPO questa lettera, rivelalo (L')
-        if (c + 1 < chars.length && isApostrophe(chars[c + 1])) {
-          hits.push({ r, c: c + 1, ch: chars[c + 1] });
-        }
-      }
-    });
+    String(row || "")
+      .split("")
+      .forEach((ch, c) => {
+        if (isSpace(ch) || isPunct(ch)) return;
+        if (isLetter(ch) && eqMatch(norm, ch)) hits.push({ r, c, ch });
+      });
   });
   return hits;
 }
