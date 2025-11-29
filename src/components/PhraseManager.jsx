@@ -84,9 +84,9 @@ export default function PhraseManager({
     });
 
     // ✅ ANIMAZIONE CORRETTA
-    const GLOW_DELAY = 150;        // Delay tra illuminazioni
+    const GLOW_DELAY = 400;        // Delay tra illuminazioni
     const PAUSE_ALL_GLOWING = 500; // Pausa quando tutte accese
-    const REVEAL_DELAY = 100;      // Delay tra rivelazioni
+    const REVEAL_DELAY = 500;      // Delay tra rivelazioni
     
     let timeoutIds = [];
     

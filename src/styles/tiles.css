@@ -38,6 +38,8 @@
   border-color: var(--round-color, #00ff55) !important;
   box-shadow: 0 0 25px var(--round-color, #00ff55) !important;
   transform: scale(1.08);
+  background-color: color-mix(in srgb, var(--round-color, #00ff55) 70%, black);
+
 }
 
 /* Flash successo/errore */
