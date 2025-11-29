@@ -42,7 +42,7 @@
 
 /* Caselle nascoste */
 .pm-cell:not(.vis):not(.space) {
-  background: rgba(240, 240, 240, 0.15);
+  background: rgb(255, 254, 254);
   color: transparent;
 }
 
