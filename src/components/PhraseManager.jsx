@@ -1,5 +1,5 @@
 // src/components/PhraseManager.jsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import "../styles/phrase-manager.css";
 import { parseToCells } from "../game/GameEngine";
 
@@ -14,7 +14,9 @@ export default function PhraseManager({
   roundColor = null,
 }) {
   const [glowingCells, setGlowingCells] = useState(new Set());
-  const [revealedCells, setRevealedCells] = useState(new Set());
+  const [revealingCells, setRevealingCells] = useState(new Set());
+  const timeoutsRef = useRef([]);
+  const lastRevealQueueRef = useRef(null);
   
   const boardData = rows.map((origRow, rowIndex) => {
     const origCells = parseToCells(origRow);
@@ -59,10 +61,19 @@ export default function PhraseManager({
   });
 
   useEffect(() => {
+    timeoutsRef.current.forEach(clearTimeout);
+    timeoutsRef.current = [];
+    
     if (!revealQueue || revealQueue.length === 0) {
-      setGlowingCells(new Set());
-      setRevealedCells(new Set());
       return;
+    }
+
+    // ✅ Reset su nuovo revealQueue
+    const currentQueueKey = JSON.stringify(revealQueue);
+    if (currentQueueKey !== lastRevealQueueRef.current) {
+      setGlowingCells(new Set());
+      setRevealingCells(new Set());
+      lastRevealQueueRef.current = currentQueueKey;
     }
 
     const revealCellKeys = [];
@@ -83,47 +94,41 @@ export default function PhraseManager({
       }
     });
 
-    // ✅ ANIMAZIONE CORRETTA
-    const GLOW_DELAY = 400;        // Delay tra illuminazioni
-    const PAUSE_ALL_GLOWING = 500; // Pausa quando tutte accese
-    const REVEAL_DELAY = 500;      // Delay tra rivelazioni
+    const GLOW_DELAY = 150;
+    const PAUSE_ALL_GLOWING = 500;
+    const REVEAL_DELAY = 100;
     
-    let timeoutIds = [];
-    
-    setGlowingCells(new Set());
-    setRevealedCells(new Set());
-    
-    // ✅ FASE 1: Illumina caselle una per volta
+    // ✅ FASE 1: GLOW - Illumina caselle una per volta (SENZA mostrare lettera)
     revealCellKeys.forEach((key, index) => {
-      const glowTimeout = setTimeout(() => {
+      const t = setTimeout(() => {
         setGlowingCells(prev => new Set([...prev, key]));
       }, index * GLOW_DELAY);
-      timeoutIds.push(glowTimeout);
+      timeoutsRef.current.push(t);
     });
     
-    // ✅ FASE 2: Quando tutte illuminate, aspetta un po'
     const totalGlowTime = revealCellKeys.length * GLOW_DELAY;
     
-    // ✅ FASE 3: Rivela caselle una per volta
+    // ✅ FASE 2: REVEAL - Rivela lettere una per volta
     revealCellKeys.forEach((key, index) => {
-      const revealTimeout = setTimeout(() => {
-        setRevealedCells(prev => new Set([...prev, key]));
+      const t = setTimeout(() => {
+        setRevealingCells(prev => new Set([...prev, key]));
       }, totalGlowTime + PAUSE_ALL_GLOWING + (index * REVEAL_DELAY));
-      timeoutIds.push(revealTimeout);
+      timeoutsRef.current.push(t);
     });
     
-    // ✅ FASE 4: Spegni glow quando finito
-    const finalTimeout = setTimeout(() => {
+    // ✅ FASE 3: Cleanup - spegni glow
+    const t = setTimeout(() => {
       setGlowingCells(new Set());
       onRevealDone && onRevealDone();
     }, totalGlowTime + PAUSE_ALL_GLOWING + (revealCellKeys.length * REVEAL_DELAY) + 200);
-    timeoutIds.push(finalTimeout);
+    timeoutsRef.current.push(t);
     
     return () => {
-      timeoutIds.forEach(clearTimeout);
+      timeoutsRef.current.forEach(clearTimeout);
+      timeoutsRef.current = [];
     };
 
-  }, [revealQueue, onRevealDone, boardData]);
+  }, [revealQueue]);
 
   const flashClass =
     flash === "success"
@@ -169,20 +174,23 @@ export default function PhraseManager({
                   const isMasked = cell.char === "_";
                   const cellKey = `${r}-${cellIndex}`;
                   const isGlowing = glowingCells.has(cellKey);
-                  const isRevealed = revealedCells.has(cellKey);
+                  const isRevealing = revealingCells.has(cellKey);
                   const isVisible = !isMasked && !isSpace;
+                  
+                  // ✅ Mostra lettera SOLO se: già visibile O è stata rivelata (NON durante glow)
+                  const shouldShowLetter = isVisible || isRevealing;
                   
                   return (
                     <div
                       key={cellIndex}
                       className={`pm-cell ${
-                        isSpace ? "space" : (isVisible || isRevealed) ? "vis" : ""
-                      } ${isGlowing ? "revealing" : ""}`}
+                        isSpace ? "space" : shouldShowLetter ? "vis" : ""
+                      } ${isGlowing ? "glowing" : ""}`}
                     >
                       <span>
                         {isSpace 
                           ? "\u00A0" 
-                          : (isRevealed || isVisible ? cell.char : "\u00A0")
+                          : (shouldShowLetter ? cell.char : "\u00A0")
                         }
                       </span>
                     </div>
