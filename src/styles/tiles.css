@@ -5,8 +5,8 @@
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  gap: 10px; /* spazio costante tra righe */
-  min-height: 340px; /* forza una riga in più di spazio */
+  gap: 10px;
+  min-height: 340px;
 }
 
 .pm-cell {
@@ -24,38 +24,39 @@
   line-height: 1;
   position: relative;
   overflow: hidden;
+  transition: all 0.2s ease;
 }
 
-.pm-cell.vis { border-color: #3b4358; }
+.pm-cell.vis { 
+  border-color: #3b4358;
+  background: #ffffff;
+  color: #111;
+}
 
-/* ✅ ANIMAZIONE RIVELAZIONE */
+/* ✅ ANIMAZIONE GLOW - SMOOTH E PROGRESSIVA */
 .pm-cell.revealing {
-  animation: revealGlow 0.5s ease-in-out; /* ⏱️ Durata transizione reveal */
+  animation: smoothGlow 0.4s ease-in-out;
   border-color: var(--round-color, #00ff55);
-  box-shadow: 0 0 20px var(--round-color, #00ff55);
+  box-shadow: 0 0 25px var(--round-color, #00ff55);
+  transform: scale(1.08);
 }
 
-@keyframes revealGlow {
+@keyframes smoothGlow {
   0% {
-    background: #151821;
-    border-color: #2a2f3a;
-    box-shadow: none;
+    box-shadow: 0 0 0 transparent;
+    transform: scale(1);
   }
   50% {
-    background: var(--round-color, #00ff55);
-    border-color: var(--round-color, #00ff55);
-    box-shadow: 0 0 25px var(--round-color, #00ff55);
+    box-shadow: 0 0 30px var(--round-color, #00ff55);
     transform: scale(1.1);
   }
   100% {
-    background: #151821;
-    border-color: #3b4358;
-    box-shadow: none;
-    transform: scale(1);
+    box-shadow: 0 0 25px var(--round-color, #00ff55);
+    transform: scale(1.08);
   }
 }
 
-/* Flash */
+/* Flash successo/errore */
 .tiles-flash-success .pm-cell { animation: flashGreen 160ms ease-in-out 5; }
 .tiles-flash-error  .pm-cell { animation: flashRed 180ms ease-in-out 1; }
 

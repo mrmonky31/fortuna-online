@@ -13,7 +13,8 @@ export default function PhraseManager({
   flash = null,
   roundColor = null,
 }) {
-  const [revealingCells, setRevealingCells] = useState(new Set());
+  const [glowingCells, setGlowingCells] = useState(new Set());
+  const [revealedCells, setRevealedCells] = useState(new Set());
   
   // ✅ Crea struttura celle con mappatura indici
   const boardData = rows.map((origRow, rowIndex) => {
@@ -29,12 +30,10 @@ export default function PhraseManager({
     origCells.forEach((origCell, cellIndex) => {
       const maskCell = maskCells[cellIndex];
       
-      // ✅ Mappa TUTTI i caratteri di questa casella all'indice render corrente
       for (let i = 0; i < origCell.char.length; i++) {
         charIndexToRenderIndex.set(charIndex + i, renderCells.length);
       }
       
-      // Aggiungi la cella
       renderCells.push({
         type: origCell.type,
         char: maskCell ? maskCell.char : origCell.char,
@@ -43,7 +42,6 @@ export default function PhraseManager({
       
       charIndex += origCell.char.length;
       
-      // ✅ Se ha apostrofo o è accentata, aggiungi spazio
       if (origCell.type === "letter") {
         const hasApostrophe = origCell.char.includes("'") || origCell.char.includes("'") || 
                              origCell.char.includes("`") || origCell.char.includes("´");
@@ -63,13 +61,14 @@ export default function PhraseManager({
 
   useEffect(() => {
     if (!revealQueue || revealQueue.length === 0) {
-      setRevealingCells(new Set());
+      setGlowingCells(new Set());
+      setRevealedCells(new Set());
       return;
     }
 
-    // ✅ Converti indici e FILTRA celle space
+    // ✅ Converti indici e filtra
     const revealCellKeys = [];
-    const seenRenderIndexes = new Set(); // Evita duplicati
+    const seenRenderIndexes = new Set();
     
     revealQueue.forEach(({ r, c }) => {
       const rowData = boardData[r];
@@ -78,7 +77,6 @@ export default function PhraseManager({
         if (renderIndex !== undefined) {
           const cell = rowData.renderCells[renderIndex];
           
-          // ✅ Illumina SOLO se NON è una cella space E non l'abbiamo già aggiunta
           if (cell && cell.type !== "space" && !seenRenderIndexes.has(`${r}-${renderIndex}`)) {
             revealCellKeys.push(`${r}-${renderIndex}`);
             seenRenderIndexes.add(`${r}-${renderIndex}`);
@@ -87,20 +85,46 @@ export default function PhraseManager({
       }
     });
 
-    const DELAY_BETWEEN_CELLS = 100;
+    // ✅ ANIMAZIONE SEQUENZIALE
+    const GLOW_DELAY = 150;      // Delay tra illuminazioni
+    const GLOW_DURATION = 400;   // Durata glow su singola cella
+    const REVEAL_DELAY = 100;    // Delay dopo glow prima di rivelare
+    
+    let timeoutIds = [];
+    
+    // Reset stato
+    setGlowingCells(new Set());
+    setRevealedCells(new Set());
     
     revealCellKeys.forEach((key, index) => {
-      setTimeout(() => {
-        setRevealingCells(prev => new Set([...prev, key]));
-      }, index * DELAY_BETWEEN_CELLS);
+      // ✅ FASE 1: Illumina (glow)
+      const glowTimeout = setTimeout(() => {
+        setGlowingCells(prev => new Set([...prev, key]));
+      }, index * GLOW_DELAY);
+      timeoutIds.push(glowTimeout);
+      
+      // ✅ FASE 2: Rivela lettera (dopo il glow)
+      const revealTimeout = setTimeout(() => {
+        setRevealedCells(prev => new Set([...prev, key]));
+        setGlowingCells(prev => {
+          const next = new Set(prev);
+          next.delete(key);
+          return next;
+        });
+      }, index * GLOW_DELAY + GLOW_DURATION + REVEAL_DELAY);
+      timeoutIds.push(revealTimeout);
     });
-
-    const REVEAL_DURATION = 500;
     
-    setTimeout(() => {
-      setRevealingCells(new Set());
+    // ✅ Cleanup finale
+    const finalTimeout = setTimeout(() => {
+      setGlowingCells(new Set());
       onRevealDone && onRevealDone();
-    }, revealCellKeys.length * DELAY_BETWEEN_CELLS + REVEAL_DURATION);
+    }, revealCellKeys.length * GLOW_DELAY + GLOW_DURATION + REVEAL_DELAY + 200);
+    timeoutIds.push(finalTimeout);
+    
+    return () => {
+      timeoutIds.forEach(clearTimeout);
+    };
 
   }, [revealQueue, onRevealDone, boardData]);
 
@@ -146,19 +170,22 @@ export default function PhraseManager({
                 {rowData.renderCells.map((cell, cellIndex) => {
                   const isSpace = cell.type === "space";
                   const isMasked = cell.char === "_";
+                  const cellKey = `${r}-${cellIndex}`;
+                  const isGlowing = glowingCells.has(cellKey);
+                  const isRevealed = revealedCells.has(cellKey);
                   const isVisible = !isMasked && !isSpace;
                   
                   return (
                     <div
                       key={cellIndex}
                       className={`pm-cell ${
-                        isSpace ? "space" : isVisible ? "vis" : ""
-                      } ${revealingCells.has(`${r}-${cellIndex}`) ? "revealing" : ""}`}
+                        isSpace ? "space" : (isVisible || isRevealed) ? "vis" : ""
+                      } ${isGlowing ? "revealing" : ""}`}
                     >
                       <span>
                         {isSpace 
                           ? "\u00A0" 
-                          : (isMasked ? "\u00A0" : cell.char)
+                          : (isRevealed || isVisible ? cell.char : "\u00A0")
                         }
                       </span>
                     </div>
