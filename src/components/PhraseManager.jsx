@@ -22,7 +22,7 @@ export default function PhraseManager({
     const maskCells = parseToCells(maskRow);
     
     const renderCells = [];
-    const charIndexToRenderIndex = new Map(); // Mappa: indice char originale → indice cella renderizzata
+    const charIndexToRenderIndex = new Map();
     
     let charIndex = 0;
     
@@ -67,14 +67,22 @@ export default function PhraseManager({
       return;
     }
 
-    // ✅ Converti indici da revealQueue (caratteri originali) a celle renderizzate
+    // ✅ Converti indici e FILTRA celle space
     const revealCellKeys = [];
+    const seenRenderIndexes = new Set(); // Evita duplicati
+    
     revealQueue.forEach(({ r, c }) => {
       const rowData = boardData[r];
       if (rowData) {
         const renderIndex = rowData.charIndexToRenderIndex.get(c);
         if (renderIndex !== undefined) {
-          revealCellKeys.push(`${r}-${renderIndex}`);
+          const cell = rowData.renderCells[renderIndex];
+          
+          // ✅ Illumina SOLO se NON è una cella space E non l'abbiamo già aggiunta
+          if (cell && cell.type !== "space" && !seenRenderIndexes.has(`${r}-${renderIndex}`)) {
+            revealCellKeys.push(`${r}-${renderIndex}`);
+            seenRenderIndexes.add(`${r}-${renderIndex}`);
+          }
         }
       }
     });
