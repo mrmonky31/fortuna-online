@@ -25,6 +25,17 @@ function toRow(row) {
   while (i < text.length) {
     const ch = text[i];
 
+// ➕ Dopo apostrofo/accento, se manca lo spazio lo aggiunge (PRIMA DI TUTTO)
+if ("'`´’".includes(ch)) {
+  const next = text[i + 1] || "";
+  if (next !== " ") {
+    cells.push(toCell(ch));
+    cells.push(toCell(" "));
+    i++;
+    continue;
+  }
+}
+
     
     if (ch === " ") {
       // Spazio = casella nera
@@ -69,6 +80,36 @@ export default function PhraseManager({
   )
     .map(toRow)
     .filter((r) => r.length > 0);
+    
+    // 🔍 Controllo extra sulla mascheratura: verifica che maskedRows e rows coincidano
+if (maskedRows?.length) {
+  const parsedOriginal = rows.map(toRow);
+  const parsedMasked = maskedRows.map(toRow);
+
+  let mismatch = false;
+
+  if (parsedOriginal.length !== parsedMasked.length) {
+    mismatch = true;
+  } else {
+    for (let r = 0; r < parsedOriginal.length; r++) {
+      if (parsedOriginal[r].length !== parsedMasked[r].length) {
+        mismatch = true;
+        break;
+      }
+    }
+  }
+
+  // Se la mascheratura è sbagliata → rigenera automaticamente
+  if (mismatch) {
+    console.warn("⚠️ Mascheratura sfasata: rigenero maskedRows automaticamente");
+    base.splice(
+      0,
+      base.length,
+      ...parsedOriginal
+    );
+  }
+}
+
 
   // ✅ Gestione rivelazione animata
   useEffect(() => {
@@ -81,7 +122,7 @@ export default function PhraseManager({
     const newSet = new Set(cellKeys);
     
     // ⏱️ RIGA MODIFICABILE: Delay tra illuminazione caselle (ms)
-    const DELAY_BETWEEN_CELLS = 600; // ← Cambia questo valore (100ms = 0.1s)
+    const DELAY_BETWEEN_CELLS = 800; // ← Cambia questo valore (100ms = 0.1s)
     
     cellKeys.forEach((key, index) => {
       setTimeout(() => {
@@ -90,7 +131,7 @@ export default function PhraseManager({
     });
 
     // ⏱️ RIGA MODIFICABILE: Durata totale animazione reveal (ms)
-    const REVEAL_DURATION = 300; // ← Cambia questo valore (500ms = 0.5s)
+    const REVEAL_DURATION = 100; // ← Cambia questo valore (500ms = 0.5s)
     
     setTimeout(() => {
       setRevealingCells(new Set());
