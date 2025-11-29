@@ -3,6 +3,17 @@ import React, { useState, useEffect, useRef } from "react";
 import "../styles/phrase-manager.css";
 import { parseToCells } from "../game/GameEngine";
 
+// ⏱️ ============================================
+// PARAMETRI TIMING ANIMAZIONE - MODIFICA QUI
+// ============================================
+const TIMING = {
+  GLOW_DELAY: 350,           // Delay tra illuminazione caselle (ms)
+  PAUSE_BEFORE_REVEAL: 600,  // Pausa con tutte illuminate prima di rivelare (ms)
+  REVEAL_DELAY: 350,         // Delay tra rivelazione lettere (ms)
+  GLOW_FADE_OUT: 300,        // Durata fade-out glow dopo ultima rivelazione (ms)
+};
+// ============================================
+
 export default function PhraseManager({
   rows = [],
   maskedRows = [],
@@ -14,7 +25,7 @@ export default function PhraseManager({
   roundColor = null,
 }) {
   const [glowingCells, setGlowingCells] = useState(new Set());
-  const [revealingCells, setRevealingCells] = useState(new Set());
+  const [revealedCells, setRevealedCells] = useState(new Set());
   const timeoutsRef = useRef([]);
   const lastRevealQueueRef = useRef(null);
   
@@ -68,11 +79,10 @@ export default function PhraseManager({
       return;
     }
 
-    // ✅ Reset su nuovo revealQueue
     const currentQueueKey = JSON.stringify(revealQueue);
     if (currentQueueKey !== lastRevealQueueRef.current) {
       setGlowingCells(new Set());
-      setRevealingCells(new Set());
+      setRevealedCells(new Set());
       lastRevealQueueRef.current = currentQueueKey;
     }
 
@@ -94,33 +104,43 @@ export default function PhraseManager({
       }
     });
 
-    const GLOW_DELAY = 150;
-    const PAUSE_ALL_GLOWING = 500;
-    const REVEAL_DELAY = 100;
+    // ✅ CALCOLO AUTOMATICO TIMING
+    const numCells = revealCellKeys.length;
+    const totalGlowTime = (numCells - 1) * TIMING.GLOW_DELAY; // Prima cella a 0ms, ultima a (n-1)*delay
+    const revealStartTime = totalGlowTime + TIMING.PAUSE_BEFORE_REVEAL;
+    const totalRevealTime = (numCells - 1) * TIMING.REVEAL_DELAY;
+    const totalAnimationTime = revealStartTime + totalRevealTime + TIMING.GLOW_FADE_OUT;
     
-    // ✅ FASE 1: GLOW - Illumina caselle una per volta (SENZA mostrare lettera)
+    console.log(`🎬 Animazione timing:
+      - Celle da illuminare: ${numCells}
+      - Fase GLOW: 0ms → ${totalGlowTime}ms
+      - PAUSA: ${TIMING.PAUSE_BEFORE_REVEAL}ms
+      - Fase REVEAL: ${revealStartTime}ms → ${revealStartTime + totalRevealTime}ms
+      - Fade-out glow: ${TIMING.GLOW_FADE_OUT}ms
+      - Durata totale: ${totalAnimationTime}ms
+    `);
+    
+    // ✅ FASE 1: Illumina caselle una per volta
     revealCellKeys.forEach((key, index) => {
       const t = setTimeout(() => {
         setGlowingCells(prev => new Set([...prev, key]));
-      }, index * GLOW_DELAY);
+      }, index * TIMING.GLOW_DELAY);
       timeoutsRef.current.push(t);
     });
     
-    const totalGlowTime = revealCellKeys.length * GLOW_DELAY;
-    
-    // ✅ FASE 2: REVEAL - Rivela lettere una per volta
+    // ✅ FASE 2: Rivela lettere una per volta (glow ancora attivo)
     revealCellKeys.forEach((key, index) => {
       const t = setTimeout(() => {
-        setRevealingCells(prev => new Set([...prev, key]));
-      }, totalGlowTime + PAUSE_ALL_GLOWING + (index * REVEAL_DELAY));
+        setRevealedCells(prev => new Set([...prev, key]));
+      }, revealStartTime + (index * TIMING.REVEAL_DELAY));
       timeoutsRef.current.push(t);
     });
     
-    // ✅ FASE 3: Cleanup - spegni glow
+    // ✅ FASE 3: Spegni glow dopo fade-out
     const t = setTimeout(() => {
       setGlowingCells(new Set());
       onRevealDone && onRevealDone();
-    }, totalGlowTime + PAUSE_ALL_GLOWING + (revealCellKeys.length * REVEAL_DELAY) + 200);
+    }, totalAnimationTime);
     timeoutsRef.current.push(t);
     
     return () => {
@@ -174,11 +194,10 @@ export default function PhraseManager({
                   const isMasked = cell.char === "_";
                   const cellKey = `${r}-${cellIndex}`;
                   const isGlowing = glowingCells.has(cellKey);
-                  const isRevealing = revealingCells.has(cellKey);
+                  const isRevealed = revealedCells.has(cellKey);
                   const isVisible = !isMasked && !isSpace;
                   
-                  // ✅ Mostra lettera SOLO se: già visibile O è stata rivelata (NON durante glow)
-                  const shouldShowLetter = isVisible || isRevealing;
+                  const shouldShowLetter = isVisible || isRevealed;
                   
                   return (
                     <div
