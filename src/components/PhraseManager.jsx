@@ -2,6 +2,50 @@
 import React, { useState, useEffect } from "react";
 import "../styles/phrase-manager.css";
 
+// ✅ STESSA logica di GameEngine.js parseToCells
+function parseToCells(text) {
+  const isApostrophe = (ch) => "'`´'".includes(ch);
+  const isLetter = (ch) => /^[A-ZÀ-ÖØ-Ý]$/i.test(ch);
+  const isPunct = (ch) => ":!?".includes(ch);
+  
+  const cells = [];
+  const str = String(text || "");
+  let i = 0;
+  
+  while (i < str.length) {
+    const ch = str[i];
+    
+    if (ch === " ") {
+      cells.push({ type: "space", char: " " });
+      i++;
+    } else if (isPunct(ch)) {
+      cells.push({ type: "punct", char: ch });
+      i++;
+    } else if (isLetter(ch)) {
+      // Lettera + apostrofo = 1 casella
+      if (i + 1 < str.length && isApostrophe(str[i + 1])) {
+        cells.push({ type: "letter", char: ch + str[i + 1] });
+        i += 2;
+      } else {
+        cells.push({ type: "letter", char: ch });
+        i++;
+      }
+    } else if (ch === "_") {
+      // Underscore = lettera mascherata (può essere L' mascherata)
+      cells.push({ type: "letter", char: ch });
+      i++;
+    } else if (isApostrophe(ch)) {
+      cells.push({ type: "letter", char: ch });
+      i++;
+    } else {
+      cells.push({ type: "other", char: ch });
+      i++;
+    }
+  }
+  
+  return cells;
+}
+
 function toCell(cell) {
   if (cell && typeof cell === "object" && "char" in cell) {
     const ch = String(cell.char ?? "");
@@ -15,37 +59,9 @@ function toCell(cell) {
 function toRow(row) {
   if (Array.isArray(row)) return row.map(toCell);
   
-  // ✅ RAGGRUPPA lettera+apostrofo in UNA SOLA CELLA (L')
-  const text = String(row || "");
-  const cells = [];
-  const isApostrophe = (ch) => "'`´'".includes(ch);
-  const isLetter = (ch) => /^[A-ZÀ-ÖØ-Ý]$/i.test(ch);
-  
-  let i = 0;
-  while (i < text.length) {
-    const ch = text[i];
-    
-    if (ch === " ") {
-      // Spazio = casella nera
-      cells.push(toCell(ch));
-      i++;
-    } else if (isLetter(ch)) {
-      // Lettera SEGUITA da apostrofo → uniscili (L')
-      if (i + 1 < text.length && isApostrophe(text[i + 1])) {
-        cells.push(toCell(ch + text[i + 1])); // Es: L'
-        i += 2;
-      } else {
-        cells.push(toCell(ch));
-        i++;
-      }
-    } else {
-      // Carattere normale (_, lettere singole, ecc)
-      cells.push(toCell(ch));
-      i++;
-    }
-  }
-  
-  return cells;
+  // ✅ USA parseToCells per COERENZA con GameEngine
+  const cells = parseToCells(row);
+  return cells.map(cell => toCell(cell.char));
 }
 
 export default function PhraseManager({
