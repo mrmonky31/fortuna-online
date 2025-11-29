@@ -101,30 +101,72 @@ function buildBoard(text, maxCols = 14, maxRows = 4) {
   return rows.slice(0, maxRows);
 }
 
-// ✅ Trova posizioni di una lettera nelle righe + apostrofi DOPO
-function letterOccurrences(rows, targetLetter) {
-  const norm = normalizeText(targetLetter);
-  const hits = [];
-  const isVowel = (ch) => "AEIOU".includes(ch);
+// ✅ Converte stringa in caselle strutturate (L' = 1 casella)
+function parseToCells(text) {
   const isLetter = (ch) => /^[A-ZÀ-ÖØ-Ý]$/i.test(ch);
   const isSpace = (ch) => ch === " ";
   const isPunct = (ch) => ":!?".includes(ch);
   const isApostrophe = (ch) => "'`´'".includes(ch);
   
+  const cells = [];
+  const str = String(text || "");
+  let i = 0;
+  
+  while (i < str.length) {
+    const ch = str[i];
+    
+    if (isSpace(ch)) {
+      cells.push({ type: "space", char: " " });
+      i++;
+    } else if (isPunct(ch)) {
+      cells.push({ type: "punct", char: ch });
+      i++;
+    } else if (isLetter(ch)) {
+      // Lettera + apostrofo = 1 casella
+      if (i + 1 < str.length && isApostrophe(str[i + 1])) {
+        cells.push({ type: "letter", char: ch + str[i + 1] });
+        i += 2;
+      } else {
+        cells.push({ type: "letter", char: ch });
+        i++;
+      }
+    } else if (isApostrophe(ch)) {
+      cells.push({ type: "letter", char: ch });
+      i++;
+    } else {
+      cells.push({ type: "other", char: ch });
+      i++;
+    }
+  }
+  
+  return cells;
+}
+
+// ✅ Trova posizioni lettere usando parseToCells
+function letterOccurrences(rows, targetLetter) {
+  const norm = normalizeText(targetLetter);
+  const hits = [];
+  
   (Array.isArray(rows) ? rows : []).forEach((row, r) => {
-    const chars = String(row || "").split("");
-    chars.forEach((ch, c) => {
-      if (isSpace(ch) || isPunct(ch)) return;
-      if (isLetter(ch) && normalizeText(ch) === norm) {
-        hits.push({ r, c, ch });
+    const cells = parseToCells(row);
+    let charIndex = 0;
+    
+    cells.forEach((cell) => {
+      if (cell.type === "letter") {
+        const baseLetter = cell.char.replace(/['`´']/g, "");
         
-        // ✅ Se c'è apostrofo DOPO questa lettera, rivelalo (L')
-        if (c + 1 < chars.length && isApostrophe(chars[c + 1])) {
-          hits.push({ r, c: c + 1, ch: chars[c + 1] });
+        if (normalizeText(baseLetter) === norm) {
+          // Aggiungi TUTTI i caratteri di questa casella (L e ')
+          for (let i = 0; i < cell.char.length; i++) {
+            hits.push({ r, c: charIndex + i, ch: cell.char[i] });
+          }
         }
       }
+      
+      charIndex += cell.char.length;
     });
   });
+  
   return hits;
 }
 

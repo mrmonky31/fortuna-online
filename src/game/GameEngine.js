@@ -73,9 +73,48 @@ export function buildBoard(text, maxCols = 14, maxRows = 4) {
 }
 
 /* =========================
-   maskBoard: maschera le righe
-   mantenendo SOLO spazi e :!?
-   ✅ Raggruppa lettera+apostrofo in una sola cella (L' → _ non __)
+   parseToCells: converte stringa in array di caselle
+   ✅ Definisce ESATTAMENTE la struttura: L' = 1 casella
+   ========================= */
+function parseToCells(text) {
+  const cells = [];
+  const str = String(text || "");
+  let i = 0;
+  
+  while (i < str.length) {
+    const ch = str[i];
+    
+    if (ch === " ") {
+      cells.push({ type: "space", char: " " });
+      i++;
+    } else if (isPunct(ch)) {
+      cells.push({ type: "punct", char: ch });
+      i++;
+    } else if (isLetter(ch)) {
+      // Lettera SEGUITA da apostrofo → 1 casella
+      if (i + 1 < str.length && isApostrophe(str[i + 1])) {
+        cells.push({ type: "letter", char: ch + str[i + 1] }); // L'
+        i += 2;
+      } else {
+        cells.push({ type: "letter", char: ch });
+        i++;
+      }
+    } else if (isApostrophe(ch)) {
+      // Apostrofo isolato
+      cells.push({ type: "letter", char: ch });
+      i++;
+    } else {
+      cells.push({ type: "other", char: ch });
+      i++;
+    }
+  }
+  
+  return cells;
+}
+
+/* =========================
+   maskBoard: maschera usando STESSA struttura caselle
+   ✅ ZERO errori di allineamento
    ========================= */
 export function maskBoard(rows, revealedLetters) {
   const base = Array.isArray(rows) ? rows : [];
@@ -85,44 +124,27 @@ export function maskBoard(rows, revealedLetters) {
       : new Set((revealedLetters || []).map((c) => normalize(c)));
 
   const masked = base.map((row) => {
-    const text = String(row || "");
-    let result = "";
-    let i = 0;
+    const cells = parseToCells(row);
     
-    while (i < text.length) {
-      const ch = text[i];
+    const maskedCells = cells.map(cell => {
+      if (cell.type === "space") return " ";
+      if (cell.type === "punct") return cell.char; // :!? visibili
       
-      if (isSpace(ch)) {
-        result += " ";
-        i++;
-      } else if (isPunct(ch)) {
-        result += ch; // :!? visibili
-        i++;
-      } else if (isLetter(ch)) {
-        // Lettera SEGUITA da apostrofo
-        if (i + 1 < text.length && isApostrophe(text[i + 1])) {
-          // Se la lettera è rivelata, mostra L', altrimenti _ (1 underscore)
-          if (set.has(normalize(ch))) {
-            result += ch + text[i + 1]; // Es: L'
-          } else {
-            result += "_"; // ✅ 1 underscore per L' mascherata
-          }
-          i += 2;
+      if (cell.type === "letter") {
+        // Estrai la LETTERA base (senza apostrofo) per controllo
+        const baseLetter = cell.char.replace(/['`´']/g, "");
+        
+        if (set.has(normalize(baseLetter))) {
+          return cell.char; // Rivelata (con apostrofo se c'è)
         } else {
-          result += set.has(normalize(ch)) ? ch : "_";
-          i++;
+          return "_"; // Mascherata (sempre 1 underscore)
         }
-      } else if (isApostrophe(ch)) {
-        // Apostrofo isolato (non dopo lettera) → maschera
-        result += "_";
-        i++;
-      } else {
-        result += ch;
-        i++;
       }
-    }
+      
+      return cell.char;
+    });
     
-    return result;
+    return maskedCells.join("");
   });
 
   return masked;
@@ -130,24 +152,40 @@ export function maskBoard(rows, revealedLetters) {
 
 /* =========================
    Ricerca occorrenze di una lettera
-   ✅ Include apostrofi DOPO la lettera (es. L' → trova L e ')
+   ✅ USA parseToCells per consistenza struttura
    ========================= */
 export function letterOccurrences(rows, targetUpper) {
   const norm = normalize(targetUpper);
   const hits = [];
+  
   (Array.isArray(rows) ? rows : []).forEach((row, r) => {
-    const chars = String(row || "").split("");
-    chars.forEach((ch, c) => {
-      if (isSpace(ch) || isPunct(ch)) return;
-      if (isLetter(ch) && eqMatch(norm, ch)) {
-        hits.push({ r, c, ch });
+    const cells = parseToCells(row);
+    let cellIndex = 0;
+    
+    cells.forEach((cell) => {
+      if (cell.type === "letter") {
+        // Estrai lettera base senza apostrofo
+        const baseLetter = cell.char.replace(/['`´']/g, "");
         
-        // ✅ Se c'è un apostrofo DOPO questa lettera, rivelalo (L')
-        if (c + 1 < chars.length && isApostrophe(chars[c + 1])) {
-          hits.push({ r, c: c + 1, ch: chars[c + 1] });
+        if (eqMatch(norm, baseLetter)) {
+          // Trova TUTTE le posizioni carattere di questa casella
+          // Se è L' devo aggiungere sia L che '
+          const charPositions = [];
+          let charCount = 0;
+          
+          for (let i = 0; i < cell.char.length; i++) {
+            charPositions.push({ r, c: cellIndex + i, ch: cell.char[i] });
+            charCount++;
+          }
+          
+          hits.push(...charPositions);
         }
       }
+      
+      // Avanza cellIndex del numero di caratteri in questa casella
+      cellIndex += cell.char.length;
     });
   });
+  
   return hits;
 }
