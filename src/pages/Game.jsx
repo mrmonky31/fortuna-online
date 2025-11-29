@@ -261,10 +261,15 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
   }, []);
 
   useEffect(() => {
-    function handleGameStateUpdate({ gameState: serverState }) {
-      console.log("🔄 Update dal server:", serverState);
+    function handleGameStateUpdate({ gameState: serverState, revealQueue: newRevealQueue }) {
+      console.log("🔄 Update dal server:", serverState, "revealQueue:", newRevealQueue);
       if (serverState) {
         setGameState(serverState);
+        
+        // ✅ Aggiorna revealQueue se presente
+        if (newRevealQueue && newRevealQueue.length > 0) {
+          setRevealQueue(newRevealQueue);
+        }
         
         // ⭐ NUOVO: Ferma spinning quando finisce
         if (serverState && !serverState.spinning) {

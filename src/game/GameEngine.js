@@ -74,7 +74,7 @@ export function buildBoard(text, maxCols = 14, maxRows = 4) {
 
 /* =========================
    maskBoard: maschera le righe
-   mantenendo spazi, :!? e apostrofi
+   mantenendo SOLO spazi e :!?
    ========================= */
 export function maskBoard(rows, revealedLetters) {
   const base = Array.isArray(rows) ? rows : [];
@@ -90,7 +90,8 @@ export function maskBoard(rows, revealedLetters) {
       .map((ch) => {
         if (isSpace(ch)) return " ";
         if (isPunct(ch)) return ch; // lascia visibili :!?
-        if (isApostrophe(ch)) return ch; // ✅ lascia visibili apostrofi
+        // ✅ Apostrofi vengono MASCHERATI insieme alla lettera
+        if (isApostrophe(ch)) return "_";
         if (isLetter(ch)) {
           return set.has(normalize(ch)) ? ch : "_";
         }
@@ -105,18 +106,24 @@ export function maskBoard(rows, revealedLetters) {
 
 /* =========================
    Ricerca occorrenze di una lettera
-   (usata da UI per reveal animato, ecc.)
+   ✅ Include apostrofi PRIMA della lettera (es. L' → trova L e ')
    ========================= */
 export function letterOccurrences(rows, targetUpper) {
   const norm = normalize(targetUpper);
   const hits = [];
   (Array.isArray(rows) ? rows : []).forEach((row, r) => {
-    String(row || "")
-      .split("")
-      .forEach((ch, c) => {
-        if (isSpace(ch) || isPunct(ch) || isApostrophe(ch)) return; // ✅ Ignora apostrofi
-        if (isLetter(ch) && eqMatch(norm, ch)) hits.push({ r, c, ch });
-      });
+    const chars = String(row || "").split("");
+    chars.forEach((ch, c) => {
+      if (isSpace(ch) || isPunct(ch)) return;
+      if (isLetter(ch) && eqMatch(norm, ch)) {
+        hits.push({ r, c, ch });
+        
+        // ✅ Se c'è un apostrofo PRIMA di questa lettera, rivelalo
+        if (c > 0 && isApostrophe(chars[c - 1])) {
+          hits.push({ r, c: c - 1, ch: chars[c - 1] });
+        }
+      }
+    });
   });
   return hits;
 }

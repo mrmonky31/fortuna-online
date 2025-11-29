@@ -101,6 +101,33 @@ function buildBoard(text, maxCols = 14, maxRows = 4) {
   return rows.slice(0, maxRows);
 }
 
+// ✅ Trova posizioni di una lettera nelle righe + apostrofi adiacenti
+function letterOccurrences(rows, targetLetter) {
+  const norm = normalizeText(targetLetter);
+  const hits = [];
+  const isVowel = (ch) => "AEIOU".includes(ch);
+  const isLetter = (ch) => /^[A-ZÀ-ÖØ-Ý]$/i.test(ch);
+  const isSpace = (ch) => ch === " ";
+  const isPunct = (ch) => ":!?".includes(ch);
+  const isApostrophe = (ch) => "'`´'".includes(ch);
+  
+  (Array.isArray(rows) ? rows : []).forEach((row, r) => {
+    const chars = String(row || "").split("");
+    chars.forEach((ch, c) => {
+      if (isSpace(ch) || isPunct(ch)) return;
+      if (isLetter(ch) && normalizeText(ch) === norm) {
+        hits.push({ r, c, ch });
+        
+        // ✅ Se c'è apostrofo PRIMA della lettera, rivelalo
+        if (c > 0 && isApostrophe(chars[c - 1])) {
+          hits.push({ r, c: c - 1, ch: chars[c - 1] });
+        }
+      }
+    });
+  });
+  return hits;
+}
+
 function generateWheel() {
   const idx = Math.floor(Math.random() * SPIN_PATTERNS.length);
   return SPIN_PATTERNS[idx];
@@ -865,6 +892,18 @@ if (gs.usedLetters.includes(upper)) {
         type: "success",
         text: `🎯 Lettere trovate! +${gained} pt (valore 100 per RADDOPPIA)`
       };
+      
+      gs.revealedLetters.push(upper);
+      
+      // ✅ Calcola posizioni lettere per animazione
+      const revealQueue = letterOccurrences(gs.rows, upper);
+      io.to(code).emit("gameStateUpdate", { 
+        gameState: gs,
+        revealQueue: revealQueue
+      });
+      
+      if (callback) callback({ ok: true });
+      return;
     }
   } else {
     // ❌ Consonante NON trovata → passa turno e niente raddoppio
@@ -897,6 +936,16 @@ if (gs.usedLetters.includes(upper)) {
           : `Trovate ${hits} ${upper}! +${gained} pt`;
         
         gs.gameMessage = { type: "success", text: message };
+        
+        // ✅ Calcola posizioni lettere rivelate per animazione
+        const revealQueue = letterOccurrences(gs.rows, upper);
+        io.to(code).emit("gameStateUpdate", { 
+          gameState: gs,
+          revealQueue: revealQueue  // ✅ Invia posizioni per animazione
+        });
+        
+        if (callback) callback({ ok: true });
+        return;
       } else {
         nextPlayer(gs); // ✅ Salta presentatore
         gs.mustSpin = true;
@@ -904,11 +953,11 @@ if (gs.usedLetters.includes(upper)) {
         gs.pendingDouble = false;
         gs.lastSpinTarget = 0;
         gs.gameMessage = { type: "error", text: `Nessuna ${upper}. Turno al prossimo.` };
+        
+        io.to(code).emit("gameStateUpdate", { gameState: gs });
+        if (callback) callback({ ok: true });
+        return;
       }
-
-      io.to(code).emit("gameStateUpdate", { gameState: gs });
-
-      if (callback) callback({ ok: true });
     } catch (err) {
       console.error("Errore playConsonant:", err);
       if (callback) callback({ ok: false, error: "Errore consonante" });
@@ -995,13 +1044,20 @@ if (gs.usedLetters.includes(upper)) {
         gs.mustSpin = true;
         gs.awaitingConsonant = false;
         gs.gameMessage = { type: "success", text: `Rivelate ${hits} ${upper}! (-${cost} pt)` };
+        
+        // ✅ Calcola posizioni per animazione
+        const revealQueue = letterOccurrences(gs.rows, upper);
+        io.to(code).emit("gameStateUpdate", { 
+          gameState: gs,
+          revealQueue: revealQueue
+        });
       } else {
         gs.mustSpin = true;
         gs.awaitingConsonant = false;
         gs.gameMessage = { type: "error", text: `Nessuna ${upper}. (-${cost} pt)` };
+        
+        io.to(code).emit("gameStateUpdate", { gameState: gs });
       }
-
-      io.to(code).emit("gameStateUpdate", { gameState: gs });
 
       if (callback) callback({ ok: true });
     } catch (err) {
