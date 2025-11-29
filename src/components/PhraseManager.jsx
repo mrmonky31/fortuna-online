@@ -9,8 +9,8 @@ import { parseToCells } from "../game/GameEngine";
 const TIMING = {
   GLOW_DELAY: 350,           // Delay tra illuminazione caselle (ms)
   PAUSE_BEFORE_REVEAL: 600,  // Pausa con tutte illuminate prima di rivelare (ms)
+  GLOW_DURATION: 800,        // Durata glow su singola cella (ms)
   REVEAL_DELAY: 350,         // Delay tra rivelazione lettere (ms)
-  GLOW_FADE_OUT: 300,        // Durata fade-out glow dopo ultima rivelazione (ms)
 };
 // ============================================
 
@@ -106,41 +106,53 @@ export default function PhraseManager({
 
     // ✅ CALCOLO AUTOMATICO TIMING
     const numCells = revealCellKeys.length;
-    const totalGlowTime = (numCells - 1) * TIMING.GLOW_DELAY; // Prima cella a 0ms, ultima a (n-1)*delay
+    const totalGlowTime = (numCells - 1) * TIMING.GLOW_DELAY;
     const revealStartTime = totalGlowTime + TIMING.PAUSE_BEFORE_REVEAL;
-    const totalRevealTime = (numCells - 1) * TIMING.REVEAL_DELAY;
-    const totalAnimationTime = revealStartTime + totalRevealTime + TIMING.GLOW_FADE_OUT;
     
-    console.log(`🎬 Animazione timing:
-      - Celle da illuminare: ${numCells}
-      - Fase GLOW: 0ms → ${totalGlowTime}ms
+    console.log(`🎬 Animazione timing (${numCells} celle):
+      - GLOW fase: 0ms → ${totalGlowTime}ms (delay: ${TIMING.GLOW_DELAY}ms)
       - PAUSA: ${TIMING.PAUSE_BEFORE_REVEAL}ms
-      - Fase REVEAL: ${revealStartTime}ms → ${revealStartTime + totalRevealTime}ms
-      - Fade-out glow: ${TIMING.GLOW_FADE_OUT}ms
-      - Durata totale: ${totalAnimationTime}ms
+      - REVEAL inizio: ${revealStartTime}ms
+      - Durata glow singola cella: ${TIMING.GLOW_DURATION}ms
     `);
     
     // ✅ FASE 1: Illumina caselle una per volta
     revealCellKeys.forEach((key, index) => {
-      const t = setTimeout(() => {
+      const glowStartTime = index * TIMING.GLOW_DELAY;
+      
+      // Accendi glow
+      const t1 = setTimeout(() => {
         setGlowingCells(prev => new Set([...prev, key]));
-      }, index * TIMING.GLOW_DELAY);
-      timeoutsRef.current.push(t);
+      }, glowStartTime);
+      timeoutsRef.current.push(t1);
     });
     
-    // ✅ FASE 2: Rivela lettere una per volta (glow ancora attivo)
+    // ✅ FASE 2: Rivela lettere una per volta DOPO il glow
     revealCellKeys.forEach((key, index) => {
-      const t = setTimeout(() => {
+      const revealTime = revealStartTime + (index * TIMING.REVEAL_DELAY);
+      
+      // Prima spegni il glow su questa cella
+      const t2 = setTimeout(() => {
+        setGlowingCells(prev => {
+          const next = new Set(prev);
+          next.delete(key);
+          return next;
+        });
+      }, revealTime);
+      timeoutsRef.current.push(t2);
+      
+      // Poi rivela la lettera (dopo fade-out glow)
+      const t3 = setTimeout(() => {
         setRevealedCells(prev => new Set([...prev, key]));
-      }, revealStartTime + (index * TIMING.REVEAL_DELAY));
-      timeoutsRef.current.push(t);
+      }, revealTime + TIMING.GLOW_DURATION);
+      timeoutsRef.current.push(t3);
     });
     
-    // ✅ FASE 3: Spegni glow dopo fade-out
+    // ✅ FASE 3: Callback finale
+    const totalTime = revealStartTime + ((numCells - 1) * TIMING.REVEAL_DELAY) + TIMING.GLOW_DURATION + 100;
     const t = setTimeout(() => {
-      setGlowingCells(new Set());
       onRevealDone && onRevealDone();
-    }, totalAnimationTime);
+    }, totalTime);
     timeoutsRef.current.push(t);
     
     return () => {
@@ -197,6 +209,7 @@ export default function PhraseManager({
                   const isRevealed = revealedCells.has(cellKey);
                   const isVisible = !isMasked && !isSpace;
                   
+                  // ✅ Mostra lettera SOLO se rivelata O già visibile (NON durante glow)
                   const shouldShowLetter = isVisible || isRevealed;
                   
                   return (
