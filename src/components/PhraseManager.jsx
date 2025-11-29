@@ -1,5 +1,5 @@
 // src/components/PhraseManager.jsx
-import React from "react";
+import React, { useState, useEffect } from "react";
 import "../styles/phrase-manager.css";
 
 function toCell(cell) {
@@ -26,7 +26,10 @@ export default function PhraseManager({
   category = "-",
   onChangePhrase = () => {},
   flash = null, // "success" | "error" | null
+  roundColor = null, // ✅ NUOVO: colore per round
 }) {
+  const [revealingCells, setRevealingCells] = useState(new Set());
+  
   const base = (Array.isArray(rows) && rows.length
     ? maskedRows?.length
       ? maskedRows
@@ -36,6 +39,35 @@ export default function PhraseManager({
     .map(toRow)
     .filter((r) => r.length > 0);
 
+  // ✅ Gestione rivelazione animata
+  useEffect(() => {
+    if (!revealQueue || revealQueue.length === 0) {
+      setRevealingCells(new Set());
+      return;
+    }
+
+    const cellKeys = revealQueue.map(({ r, c }) => `${r}-${c}`);
+    const newSet = new Set(cellKeys);
+    
+    // ⏱️ RIGA MODIFICABILE: Delay tra illuminazione caselle (ms)
+    const DELAY_BETWEEN_CELLS = 100; // ← Cambia questo valore (100ms = 0.1s)
+    
+    cellKeys.forEach((key, index) => {
+      setTimeout(() => {
+        setRevealingCells(prev => new Set([...prev, key]));
+      }, index * DELAY_BETWEEN_CELLS);
+    });
+
+    // ⏱️ RIGA MODIFICABILE: Durata totale animazione reveal (ms)
+    const REVEAL_DURATION = 500; // ← Cambia questo valore (500ms = 0.5s)
+    
+    setTimeout(() => {
+      setRevealingCells(new Set());
+      onRevealDone && onRevealDone();
+    }, cellKeys.length * DELAY_BETWEEN_CELLS + REVEAL_DURATION);
+
+  }, [revealQueue, onRevealDone]);
+
   const flashClass =
     flash === "success"
       ? "tiles-flash-success"
@@ -44,7 +76,13 @@ export default function PhraseManager({
       : "";
 
   return (
-    <div className={`phrase-manager ${flashClass}`}>
+    <div 
+      className={`phrase-manager ${flashClass}`}
+      style={{
+        // ✅ Passa colore round come variabile CSS
+        '--round-color': roundColor || '#00ff55'
+      }}
+    >
       {/* 🔹 HEADER ORDINATA: Cambia frase → Categoria */}
       <div
   className="pm-header"
@@ -80,7 +118,7 @@ export default function PhraseManager({
   
   className={`pm-cell ${
     cell.char === " " ? "space" : cell.visible ? "vis" : ""
-  }`}
+  } ${revealingCells.has(`${r}-${c}`) ? "revealing" : ""}`}
   
 >
   <span>{cell.char === "_" ? "\u00A0" : (cell.visible ? cell.char : "\u00A0")}</span>

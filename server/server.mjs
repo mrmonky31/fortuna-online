@@ -671,41 +671,45 @@ io.on("connection", (socket) => {
       const sliceIndex = Math.floor(Math.random() * gs.wheel.length);
       const targetSlice = gs.wheel[sliceIndex];
       
-      // ✅ Calcola angolo finale preciso per far coincidere puntatore con spicchio
+      // ✅ Gestione spicchi doppi: scegli metà sinistra o destra
+      let halfOffset = 0; // Offset angolare per metà spicchio
+      let chosen = targetSlice;
+      
+      if (typeof targetSlice === "string" && targetSlice.includes("/")) {
+        const [a, b] = targetSlice.split("/");
+        const isLeftHalf = Math.random() < 0.5;
+        chosen = isLeftHalf ? a : b;
+        
+        // ✅ Calcola offset per centrare sulla metà corretta
+        const SLICE_DEG = 360 / gs.wheel.length; // 18° per 20 spicchi
+        halfOffset = isLeftHalf ? -SLICE_DEG / 4 : SLICE_DEG / 4; // ±4.5° per centrare su metà
+      }
+      
+      // ✅ Calcola angolo finale preciso
       const SLICE_DEG = 360 / gs.wheel.length; // 18° per 20 spicchi
-      const targetAngle = sliceIndex * SLICE_DEG; // Angolo centrale dello spicchio
+      const targetAngle = sliceIndex * SLICE_DEG + halfOffset;
       
       io.to(code).emit("wheelSpinStart", { 
         spinning: true,
         spinSeed: spinSeed,
-        targetAngle: targetAngle, // ✅ NUOVO: angolo preciso
-        sliceIndex: sliceIndex     // ✅ NUOVO: indice spicchio
+        targetAngle: targetAngle, // ✅ Angolo preciso (con offset per mezzi spicchi)
+        sliceIndex: sliceIndex
       });
 
       // ✅ Simula risultato dopo 5 secondi (durata max animazione 4.5s + rimbalzo 0.3s)
       setTimeout(() => {
-        const slice = targetSlice;
-
         let outcome;
-        if (typeof slice === "string" && slice.includes("/")) {
-          const [a, b] = slice.split("/");
-          const chosen = Math.random() < 0.5 ? a : b;
-          
+        
+        if (typeof chosen === "string") {
           if (chosen === "PASSA") outcome = { type: "pass", label: "PASSA" };
           else if (chosen === "BANCAROTTA") outcome = { type: "bankrupt", label: "BANCAROTTA" };
           else if (chosen === "RADDOPPIA") outcome = { type: "double", label: "RADDOPPIA" };
           else if (!isNaN(Number(chosen))) outcome = { type: "points", value: Number(chosen), label: chosen };
           else outcome = { type: "custom", label: chosen };
-        } else if (typeof slice === "number") {
-          outcome = { type: "points", value: slice, label: slice };
-        } else if (slice === "PASSA") {
-          outcome = { type: "pass", label: "PASSA" };
-        } else if (slice === "BANCAROTTA") {
-          outcome = { type: "bankrupt", label: "BANCAROTTA" };
-        } else if (slice === "RADDOPPIA") {
-          outcome = { type: "double", label: "RADDOPPIA" };
+        } else if (typeof chosen === "number") {
+          outcome = { type: "points", value: chosen, label: chosen };
         } else {
-          outcome = { type: "custom", label: String(slice) };
+          outcome = { type: "custom", label: String(chosen) };
         }
 
         gs.spinning = false;
@@ -1332,6 +1336,21 @@ if (gs.usedLetters.includes(upper)) {
       console.log(`🎯 Presentatore verifica soluzione: ${isCorrect ? "CORRETTA" : "SBAGLIATA"}`);
     } catch (err) {
       console.error("Errore presenterSolutionCheck:", err);
+    }
+  });
+
+  // ✅ NUOVO: Richiesta stato gioco (per riconnessione)
+  socket.on("requestGameState", ({ roomCode }) => {
+    try {
+      const code = String(roomCode || "").trim().toUpperCase();
+      const room = rooms[code];
+      
+      if (room && room.gameState) {
+        socket.emit("gameStateUpdate", { gameState: room.gameState });
+        console.log(`🔄 Stato gioco inviato a ${socket.id} per room ${code}`);
+      }
+    } catch (err) {
+      console.error("Errore requestGameState:", err);
     }
   });
 

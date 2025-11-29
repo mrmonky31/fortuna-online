@@ -4,15 +4,18 @@
 /* =========================
    Normalizzazione / confronto
    ========================= */
+// ✅ Normalizza per CONFRONTO: rimuove accenti e apostrofi
 export const normalize = (s) =>
   String(s || "")
     .toUpperCase()
     .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
+    .replace(/[\u0300-\u036f]/g, "")  // Rimuove accenti
+    .replace(/['`´']/g, "");           // Rimuove apostrofi
 
 const isLetter = (ch) => /^[A-ZÀ-ÖØ-Ý]$/i.test(ch);
 const isSpace  = (ch) => ch === " ";
 const isPunct  = (ch) => ":!?".includes(ch);
+const isApostrophe = (ch) => "'`´'".includes(ch);
 
 // confronta due caratteri letterali ignorando accenti/case
 export const eqMatch = (a, b) => normalize(a) === normalize(b);
@@ -71,7 +74,7 @@ export function buildBoard(text, maxCols = 14, maxRows = 4) {
 
 /* =========================
    maskBoard: maschera le righe
-   mantenendo spazi e :!?
+   mantenendo spazi, :!? e apostrofi
    ========================= */
 export function maskBoard(rows, revealedLetters) {
   const base = Array.isArray(rows) ? rows : [];
@@ -87,6 +90,7 @@ export function maskBoard(rows, revealedLetters) {
       .map((ch) => {
         if (isSpace(ch)) return " ";
         if (isPunct(ch)) return ch; // lascia visibili :!?
+        if (isApostrophe(ch)) return ch; // ✅ lascia visibili apostrofi
         if (isLetter(ch)) {
           return set.has(normalize(ch)) ? ch : "_";
         }
@@ -110,7 +114,7 @@ export function letterOccurrences(rows, targetUpper) {
     String(row || "")
       .split("")
       .forEach((ch, c) => {
-        if (isSpace(ch) || isPunct(ch)) return;
+        if (isSpace(ch) || isPunct(ch) || isApostrophe(ch)) return; // ✅ Ignora apostrofi
         if (isLetter(ch) && eqMatch(norm, ch)) hits.push({ r, c, ch });
       });
   });

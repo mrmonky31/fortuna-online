@@ -89,6 +89,16 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
   const [wheelSpinSeed, setWheelSpinSeed] = useState(null);
   const [wheelTargetAngle, setWheelTargetAngle] = useState(null);
 
+  // ✅ NUOVO: Colore random per round (mai bianco/nero)
+  const [roundColor, setRoundColor] = useState(() => {
+    const colors = [
+      '#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8',
+      '#F7DC6F', '#BB8FCE', '#85C1E2', '#F8B739', '#52B788',
+      '#E63946', '#F77F00', '#06FFA5', '#7209B7', '#3A86FF'
+    ];
+    return colors[Math.floor(Math.random() * colors.length)];
+  });
+
   // ✅ Calcola dinamicamente se sei presentatore dal gameState
   const isPresenter = state?.room?.gameMode === "presenter" && 
                       gameState?.players?.find(p => p.id === mySocketId)?.isHost;
@@ -176,6 +186,30 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
     };
   }, [isFullscreen]);
 
+  // ✅ NUOVO: Riconnessione socket quando torni sull'app (fix crash)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        // Riconnetti socket se disconnesso
+        if (!socket.connected) {
+          console.log("🔄 Riconnessione socket...");
+          socket.connect();
+          
+          // Richiedi aggiornamento stato
+          if (roomCode) {
+            socket.emit("requestGameState", { roomCode });
+          }
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [roomCode]);
+
   // ✅ NUOVO: Listener per richieste join durante partita
   useEffect(() => {
     function handleJoinRequest(request) {
@@ -256,6 +290,14 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
       setWinnerName(winnerName);
       setBetweenRounds(true);
       setRoundCountdown(countdown);
+      
+      // ✅ Genera nuovo colore per il prossimo round
+      const colors = [
+        '#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8',
+        '#F7DC6F', '#BB8FCE', '#85C1E2', '#F8B739', '#52B788',
+        '#E63946', '#F77F00', '#06FFA5', '#7209B7', '#3A86FF'
+      ];
+      setRoundColor(colors[Math.floor(Math.random() * colors.length)]);
     }
 
     socket.on("roundWon", handleRoundWon);
@@ -710,6 +752,7 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
             category={gameState.category || "-"}
             onChangePhrase={handleChangePhrase}
             flash={flashType}
+            roundColor={roundColor}
           />
         </div>
       </div>

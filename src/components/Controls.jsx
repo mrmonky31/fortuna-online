@@ -44,11 +44,13 @@ export default function Controls({
     }
   }, [panel, isPresenter]);
 
-  // ❌ DISATTIVATO: Apertura automatica consonanti
-  // useEffect(() => {
-  //   if (forceConsonant && panel === null && !disabled) setPanel("cons");
-  //   if (!forceConsonant && panel === "cons") setPanel(null);
-  // }, [forceConsonant, disabled]);
+  // ✅ Apertura automatica consonante SOLO in modalità classica
+  useEffect(() => {
+    if (gameMode === "presenter") return; // Disabilita per presentatore
+    
+    if (forceConsonant && panel === null && !disabled) setPanel("cons");
+    if (!forceConsonant && panel === "cons") setPanel(null);
+  }, [forceConsonant, disabled, gameMode]);
 
   const handleSpinClick = () => {
     if (disabled) return;
