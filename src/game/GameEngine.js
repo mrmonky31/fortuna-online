@@ -1,29 +1,20 @@
 // VERSIONE SENZA TIMER - MOD by MARCO
 // src/game/GameEngine.js
 
-/* =========================
-   Normalizzazione / confronto
-   ========================= */
-// ✅ Normalizza per CONFRONTO: rimuove accenti e apostrofi
 export const normalize = (s) =>
   String(s || "")
     .toUpperCase()
     .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")  // Rimuove accenti
-    .replace(/['`´']/g, "");           // Rimuove apostrofi
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/['`´']/g, "");
 
 const isLetter = (ch) => /^[A-ZÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝÞ]$/i.test(ch);
 const isSpace  = (ch) => ch === " ";
 const isPunct  = (ch) => ":!?".includes(ch);
 const isApostrophe = (ch) => "'`´'".includes(ch);
 
-// confronta due caratteri letterali ignorando accenti/case
 export const eqMatch = (a, b) => normalize(a) === normalize(b);
 
-/* =========================
-   buildBoard: spezza una frase
-   in righe maxCols x maxRows
-   ========================= */
 export function buildBoard(text, maxCols = 14, maxRows = 4) {
   const raw = String(text || "");
   const words = raw.split(/\s+/).filter(Boolean);
@@ -39,11 +30,9 @@ export function buildBoard(text, maxCols = 14, maxRows = 4) {
   for (let i = 0; i < words.length; i++) {
     const w = words[i];
     if (cur.length === 0) {
-      // nuova riga
       if (w.length <= maxCols) {
         cur = w;
       } else {
-        // parola più lunga di maxCols → hard wrap
         cur = w.slice(0, maxCols);
         flush();
         let rest = w.slice(maxCols);
@@ -56,28 +45,26 @@ export function buildBoard(text, maxCols = 14, maxRows = 4) {
         cur = "";
       }
     } else {
-      // prova ad aggiungere con spazio
       if (cur.length + 1 + w.length <= maxCols) {
         cur += " " + w;
       } else {
         flush();
-        i--; // rielabora la stessa parola sulla prossima riga
+        i--;
       }
     }
     if (rows.length >= maxRows) break;
   }
   if (rows.length < maxRows && cur.length > 0) flush();
 
-  // Se abbiamo superato maxRows per hard wrap, tronchiamo
   return rows.slice(0, maxRows);
 }
 
 /* =========================
-   parseToCells: converte stringa in array di caselle
-   ✅ Definisce ESATTAMENTE la struttura: L' = 1 casella
-   ✅ GESTISCE "_ " per L' mascherata
+   parseToCells
+   ✅ L' = 1 CASELLA (contiene 2 char: L e ')
+   ✅ È = 1 CASELLA (contiene 1 char)
    ========================= */
-function parseToCells(text) {
+export function parseToCells(text) {
   const cells = [];
   const str = String(text || "");
   let i = 0;
@@ -85,18 +72,7 @@ function parseToCells(text) {
   while (i < str.length) {
     const ch = str[i];
     
-    // ✅ NUOVO: Gestione underscore per mascheratura
-    if (ch === "_") {
-      // "_ " = L' mascherata (underscore + spazio)
-      if (i + 1 < str.length && str[i + 1] === " ") {
-        cells.push({ type: "letter", char: "_ " });
-        i += 2;
-      } else {
-        cells.push({ type: "letter", char: "_" });
-        i++;
-      }
-    } 
-    else if (ch === " ") {
+    if (ch === " ") {
       cells.push({ type: "space", char: " " });
       i++;
     } 
@@ -104,10 +80,15 @@ function parseToCells(text) {
       cells.push({ type: "punct", char: ch });
       i++;
     } 
+    else if (ch === "_") {
+      // Underscore = casella mascherata
+      cells.push({ type: "letter", char: "_" });
+      i++;
+    }
     else if (isLetter(ch)) {
-      // Lettera SEGUITA da apostrofo → 1 casella
+      // ✅ Lettera + apostrofo = 1 CASELLA
       if (i + 1 < str.length && isApostrophe(str[i + 1])) {
-        cells.push({ type: "letter", char: ch + str[i + 1] }); // L'
+        cells.push({ type: "letter", char: ch + str[i + 1] }); // "L'"
         i += 2;
       } else {
         cells.push({ type: "letter", char: ch });
@@ -115,10 +96,9 @@ function parseToCells(text) {
       }
     } 
     else if (isApostrophe(ch)) {
-      // Apostrofo isolato
       cells.push({ type: "letter", char: ch });
       i++;
-    } 
+    }
     else {
       cells.push({ type: "other", char: ch });
       i++;
@@ -129,8 +109,8 @@ function parseToCells(text) {
 }
 
 /* =========================
-   maskBoard: maschera usando STESSA struttura caselle
-   ✅ L' mascherata = "_ " (con spazio) per mantenere lunghezza
+   maskBoard
+   ✅ L' mascherata = "_" (1 underscore per 1 casella)
    ========================= */
 export function maskBoard(rows, revealedLetters) {
   const base = Array.isArray(rows) ? rows : [];
@@ -150,16 +130,10 @@ export function maskBoard(rows, revealedLetters) {
         const baseLetter = cell.char.replace(/['`´']/g, "");
         
         if (set.has(normalize(baseLetter))) {
-          return cell.char; // Rivelata
+          return cell.char; // Rivelata: "L'" oppure "È"
         } else {
-          // ✅ Mascherata: ritorna STESSA lunghezza dell'originale
-          // L' (2 char) → "_ " (underscore + spazio)
-          // E (1 char) → "_"
-          if (cell.char.length === 2) {
-            return "_ "; // Mantiene lunghezza per L', D', ecc
-          } else {
-            return "_";
-          }
+          // ✅ Mascherata: SEMPRE "_" (1 underscore per casella)
+          return "_";
         }
       }
       
@@ -172,43 +146,29 @@ export function maskBoard(rows, revealedLetters) {
   return masked;
 }
 
-/* =========================
-   Ricerca occorrenze di una lettera
-   ✅ USA parseToCells per consistenza struttura
-   ========================= */
 export function letterOccurrences(rows, targetUpper) {
   const norm = normalize(targetUpper);
   const hits = [];
   
   (Array.isArray(rows) ? rows : []).forEach((row, r) => {
     const cells = parseToCells(row);
-    let cellIndex = 0;
+    let charIndex = 0;
     
     cells.forEach((cell) => {
       if (cell.type === "letter") {
-        // Estrai lettera base senza apostrofo
         const baseLetter = cell.char.replace(/['`´']/g, "");
         
         if (eqMatch(norm, baseLetter)) {
-          // Trova TUTTE le posizioni carattere di questa casella
-          // Se è L' devo aggiungere sia L che '
-          const charPositions = [];
-          
+          // ✅ Aggiungi TUTTI i caratteri della casella
           for (let i = 0; i < cell.char.length; i++) {
-            charPositions.push({ r, c: cellIndex + i, ch: cell.char[i] });
+            hits.push({ r, c: charIndex + i, ch: cell.char[i] });
           }
-          
-          hits.push(...charPositions);
         }
       }
       
-      // Avanza cellIndex del numero di caratteri in questa casella
-      cellIndex += cell.char.length;
+      charIndex += cell.char.length;
     });
   });
   
   return hits;
 }
-
-// ✅ ESPORTA parseToCells per uso in PhraseManager
-export { parseToCells };

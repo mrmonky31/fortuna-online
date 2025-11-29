@@ -3,24 +3,6 @@ import React, { useState, useEffect } from "react";
 import "../styles/phrase-manager.css";
 import { parseToCells } from "../game/GameEngine";
 
-function toCell(cell) {
-  if (cell && typeof cell === "object" && "char" in cell) {
-    const ch = String(cell.char ?? "");
-    return { char: ch, visible: Boolean(cell.visible) };
-  }
-  const ch = String(cell ?? "");
-  const isSpace = ch === " ";
-  return { char: ch, visible: !isSpace && ch !== "" };
-}
-
-function toRow(row) {
-  if (Array.isArray(row)) return row.map(toCell);
-  
-  // ✅ USA parseToCells da GameEngine per COERENZA
-  const cells = parseToCells(row);
-  return cells.map(cell => toCell(cell.char));
-}
-
 export default function PhraseManager({
   rows = [],
   maskedRows = [],
@@ -33,14 +15,34 @@ export default function PhraseManager({
 }) {
   const [revealingCells, setRevealingCells] = useState(new Set());
   
-  const base = (Array.isArray(rows) && rows.length
-    ? maskedRows?.length
-      ? maskedRows
-      : rows
-    : []
-  )
-    .map(toRow)
-    .filter((r) => r.length > 0);
+  // ✅ Converti righe in celle da renderizzare
+  const boardCells = (maskedRows?.length ? maskedRows : rows).map(row => {
+    const cells = parseToCells(row);
+    const renderCells = [];
+    
+    cells.forEach((cell, idx) => {
+      // Aggiungi la cella
+      renderCells.push(cell);
+      
+      // ✅ Se la cella contiene apostrofo o è lettera accentata, aggiungi SPAZIO dopo
+      if (cell.type === "letter") {
+        const hasApostrophe = cell.char.includes("'") || cell.char.includes("'") || 
+                             cell.char.includes("`") || cell.char.includes("´");
+        const isAccented = /[ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝÞ]/i.test(cell.char);
+        
+        // Se ha apostrofo O è accentata, aggiungi spazio DOPO
+        if (hasApostrophe || isAccented) {
+          // Guarda la prossima cella: se NON è già uno spazio, aggiungilo
+          const nextCell = cells[idx + 1];
+          if (!nextCell || nextCell.type !== "space") {
+            renderCells.push({ type: "space", char: " " });
+          }
+        }
+      }
+    });
+    
+    return renderCells;
+  });
 
   useEffect(() => {
     if (!revealQueue || revealQueue.length === 0) {
@@ -102,25 +104,31 @@ export default function PhraseManager({
 
       <div className="pm-board-wrapper">
         <div className="pm-board">
-          {base.length > 0 ? (
-            base.map((row, r) => (
+          {boardCells.length > 0 ? (
+            boardCells.map((rowCells, r) => (
               <div key={r} className="pm-row">
-                {row.map((cell, c) => {
-                  const cellChar = cell.char || "";
-                  const isSpace = cellChar === " ";
-                  const isMasked = cellChar.includes("_");
+                {rowCells.map((cell, cellIndex) => {
+                  const isSpace = cell.type === "space";
+                  const isMasked = cell.char === "_";
+                  const isVisible = !isMasked && !isSpace;
+                  
+                  // Calcola indice carattere per reveal
+                  let charIndex = 0;
+                  for (let i = 0; i < cellIndex; i++) {
+                    charIndex += rowCells[i].char.length;
+                  }
                   
                   return (
                     <div
-                      key={c}
+                      key={cellIndex}
                       className={`pm-cell ${
-                        isSpace ? "space" : cell.visible ? "vis" : ""
-                      } ${revealingCells.has(`${r}-${c}`) ? "revealing" : ""}`}
+                        isSpace ? "space" : isVisible ? "vis" : ""
+                      } ${revealingCells.has(`${r}-${charIndex}`) ? "revealing" : ""}`}
                     >
                       <span>
                         {isSpace 
                           ? "\u00A0" 
-                          : (cell.visible ? cellChar : "\u00A0")
+                          : (isMasked ? "\u00A0" : cell.char)
                         }
                       </span>
                     </div>
