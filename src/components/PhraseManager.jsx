@@ -16,7 +16,6 @@ export default function PhraseManager({
   const [glowingCells, setGlowingCells] = useState(new Set());
   const [revealedCells, setRevealedCells] = useState(new Set());
   
-  // ✅ Crea struttura celle con mappatura indici
   const boardData = rows.map((origRow, rowIndex) => {
     const origCells = parseToCells(origRow);
     const maskRow = maskedRows[rowIndex] || origRow;
@@ -66,7 +65,6 @@ export default function PhraseManager({
       return;
     }
 
-    // ✅ Converti indici e filtra
     const revealCellKeys = [];
     const seenRenderIndexes = new Set();
     
@@ -85,41 +83,40 @@ export default function PhraseManager({
       }
     });
 
-    // ✅ ANIMAZIONE SEQUENZIALE
-    const GLOW_DELAY = 150;      // Delay tra illuminazioni
-    const GLOW_DURATION = 400;   // Durata glow su singola cella
-    const REVEAL_DELAY = 100;    // Delay dopo glow prima di rivelare
+    // ✅ ANIMAZIONE CORRETTA
+    const GLOW_DELAY = 150;        // Delay tra illuminazioni
+    const PAUSE_ALL_GLOWING = 500; // Pausa quando tutte accese
+    const REVEAL_DELAY = 100;      // Delay tra rivelazioni
     
     let timeoutIds = [];
     
-    // Reset stato
     setGlowingCells(new Set());
     setRevealedCells(new Set());
     
+    // ✅ FASE 1: Illumina caselle una per volta
     revealCellKeys.forEach((key, index) => {
-      // ✅ FASE 1: Illumina (glow)
       const glowTimeout = setTimeout(() => {
         setGlowingCells(prev => new Set([...prev, key]));
       }, index * GLOW_DELAY);
       timeoutIds.push(glowTimeout);
-      
-      // ✅ FASE 2: Rivela lettera (dopo il glow)
+    });
+    
+    // ✅ FASE 2: Quando tutte illuminate, aspetta un po'
+    const totalGlowTime = revealCellKeys.length * GLOW_DELAY;
+    
+    // ✅ FASE 3: Rivela caselle una per volta
+    revealCellKeys.forEach((key, index) => {
       const revealTimeout = setTimeout(() => {
         setRevealedCells(prev => new Set([...prev, key]));
-        setGlowingCells(prev => {
-          const next = new Set(prev);
-          next.delete(key);
-          return next;
-        });
-      }, index * GLOW_DELAY + GLOW_DURATION + REVEAL_DELAY);
+      }, totalGlowTime + PAUSE_ALL_GLOWING + (index * REVEAL_DELAY));
       timeoutIds.push(revealTimeout);
     });
     
-    // ✅ Cleanup finale
+    // ✅ FASE 4: Spegni glow quando finito
     const finalTimeout = setTimeout(() => {
       setGlowingCells(new Set());
       onRevealDone && onRevealDone();
-    }, revealCellKeys.length * GLOW_DELAY + GLOW_DURATION + REVEAL_DELAY + 200);
+    }, totalGlowTime + PAUSE_ALL_GLOWING + (revealCellKeys.length * REVEAL_DELAY) + 200);
     timeoutIds.push(finalTimeout);
     
     return () => {
