@@ -13,9 +13,39 @@ function toCell(cell) {
 }
 
 function toRow(row) {
-  if (typeof row === "string") return row.split("").map(toCell);
   if (Array.isArray(row)) return row.map(toCell);
-  return [];
+  
+  // ✅ RAGGRUPPA lettera+apostrofo in UNA SOLA CELLA (L' non 'L)
+  const text = String(row || "");
+  const cells = [];
+  const isApostrophe = (ch) => "'`´'".includes(ch);
+  const isLetter = (ch) => /^[A-ZÀ-ÖØ-Ý]$/i.test(ch);
+  
+  let i = 0;
+  while (i < text.length) {
+    const ch = text[i];
+    
+    if (ch === " ") {
+      // Spazio rimane spazio
+      cells.push(toCell(ch));
+      i++;
+    } else if (isLetter(ch)) {
+      // Lettera SEGUITA da apostrofo → uniscili (L')
+      if (i + 1 < text.length && isApostrophe(text[i + 1])) {
+        cells.push(toCell(ch + text[i + 1])); // Es: L'
+        i += 2;
+      } else {
+        cells.push(toCell(ch));
+        i++;
+      }
+    } else {
+      // Carattere normale (inclusi apostrofi isolati)
+      cells.push(toCell(ch));
+      i++;
+    }
+  }
+  
+  return cells;
 }
 
 export default function PhraseManager({

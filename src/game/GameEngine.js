@@ -75,30 +75,54 @@ export function buildBoard(text, maxCols = 14, maxRows = 4) {
 /* =========================
    maskBoard: maschera le righe
    mantenendo SOLO spazi e :!?
+   ✅ Raggruppa lettera+apostrofo in una sola cella (L' non 'L)
    ========================= */
 export function maskBoard(rows, revealedLetters) {
   const base = Array.isArray(rows) ? rows : [];
-  // revealed può essere Set o Array
   const set =
     revealedLetters instanceof Set
       ? new Set([...revealedLetters].map((c) => normalize(c)))
       : new Set((revealedLetters || []).map((c) => normalize(c)));
 
   const masked = base.map((row) => {
-    const chars = String(row || "").split("");
-    return chars
-      .map((ch) => {
-        if (isSpace(ch)) return " ";
-        if (isPunct(ch)) return ch; // lascia visibili :!?
-        // ✅ Apostrofi vengono MASCHERATI insieme alla lettera
-        if (isApostrophe(ch)) return "_";
-        if (isLetter(ch)) {
-          return set.has(normalize(ch)) ? ch : "_";
+    const text = String(row || "");
+    let result = "";
+    let i = 0;
+    
+    while (i < text.length) {
+      const ch = text[i];
+      
+      if (isSpace(ch)) {
+        result += " ";
+        i++;
+      } else if (isPunct(ch)) {
+        result += ch; // :!? visibili
+        i++;
+      } else if (isLetter(ch)) {
+        // Lettera SEGUITA da apostrofo
+        if (i + 1 < text.length && isApostrophe(text[i + 1])) {
+          // Se la lettera è rivelata, mostra L', altrimenti __
+          if (set.has(normalize(ch))) {
+            result += ch + text[i + 1]; // Es: L'
+          } else {
+            result += "__"; // Lettera+apostrofo mascherati
+          }
+          i += 2;
+        } else {
+          result += set.has(normalize(ch)) ? ch : "_";
+          i++;
         }
-        // altri caratteri (numeri, simboli): lasciali passare
-        return ch;
-      })
-      .join("");
+      } else if (isApostrophe(ch)) {
+        // Apostrofo isolato (non dopo lettera) → maschera
+        result += "_";
+        i++;
+      } else {
+        result += ch;
+        i++;
+      }
+    }
+    
+    return result;
   });
 
   return masked;
@@ -106,7 +130,7 @@ export function maskBoard(rows, revealedLetters) {
 
 /* =========================
    Ricerca occorrenze di una lettera
-   ✅ Include apostrofi PRIMA della lettera (es. L' → trova L e ')
+   ✅ Include apostrofi DOPO la lettera (es. L' → trova L e ')
    ========================= */
 export function letterOccurrences(rows, targetUpper) {
   const norm = normalize(targetUpper);
@@ -118,9 +142,9 @@ export function letterOccurrences(rows, targetUpper) {
       if (isLetter(ch) && eqMatch(norm, ch)) {
         hits.push({ r, c, ch });
         
-        // ✅ Se c'è un apostrofo PRIMA di questa lettera, rivelalo
-        if (c > 0 && isApostrophe(chars[c - 1])) {
-          hits.push({ r, c: c - 1, ch: chars[c - 1] });
+        // ✅ Se c'è un apostrofo DOPO questa lettera, rivelalo (L')
+        if (c + 1 < chars.length && isApostrophe(chars[c + 1])) {
+          hits.push({ r, c: c + 1, ch: chars[c + 1] });
         }
       }
     });

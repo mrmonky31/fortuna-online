@@ -101,7 +101,7 @@ function buildBoard(text, maxCols = 14, maxRows = 4) {
   return rows.slice(0, maxRows);
 }
 
-// ✅ Trova posizioni di una lettera nelle righe + apostrofi adiacenti
+// ✅ Trova posizioni di una lettera nelle righe + apostrofi DOPO
 function letterOccurrences(rows, targetLetter) {
   const norm = normalizeText(targetLetter);
   const hits = [];
@@ -118,9 +118,9 @@ function letterOccurrences(rows, targetLetter) {
       if (isLetter(ch) && normalizeText(ch) === norm) {
         hits.push({ r, c, ch });
         
-        // ✅ Se c'è apostrofo PRIMA della lettera, rivelalo
-        if (c > 0 && isApostrophe(chars[c - 1])) {
-          hits.push({ r, c: c - 1, ch: chars[c - 1] });
+        // ✅ Se c'è apostrofo DOPO questa lettera, rivelalo (L')
+        if (c + 1 < chars.length && isApostrophe(chars[c + 1])) {
+          hits.push({ r, c: c + 1, ch: chars[c + 1] });
         }
       }
     });
