@@ -24,17 +24,8 @@ function toRow(row) {
   let i = 0;
   while (i < text.length) {
     const ch = text[i];
+
     
-    // ➕ Dopo apostrofo/accento, se manca lo spazio lo aggiunge
-if ("'`´’".includes(ch)) {
-  const next = text[i + 1] || "";
-  if (next !== " ") {
-    cells.push(toCell(ch));
-    cells.push(toCell(" "));
-    i++;
-    continue;
-  }
-}
     if (ch === " ") {
       // Spazio = casella nera
       cells.push(toCell(ch));
@@ -90,7 +81,7 @@ export default function PhraseManager({
     const newSet = new Set(cellKeys);
     
     // ⏱️ RIGA MODIFICABILE: Delay tra illuminazione caselle (ms)
-    const DELAY_BETWEEN_CELLS = 300; // ← Cambia questo valore (100ms = 0.1s)
+    const DELAY_BETWEEN_CELLS = 600; // ← Cambia questo valore (100ms = 0.1s)
     
     cellKeys.forEach((key, index) => {
       setTimeout(() => {
@@ -99,7 +90,7 @@ export default function PhraseManager({
     });
 
     // ⏱️ RIGA MODIFICABILE: Durata totale animazione reveal (ms)
-    const REVEAL_DURATION = 600; // ← Cambia questo valore (500ms = 0.5s)
+    const REVEAL_DURATION = 300; // ← Cambia questo valore (500ms = 0.5s)
     
     setTimeout(() => {
       setRevealingCells(new Set());
