@@ -75,7 +75,7 @@ export function buildBoard(text, maxCols = 14, maxRows = 4) {
 /* =========================
    maskBoard: maschera le righe
    mantenendo SOLO spazi e :!?
-   ✅ Raggruppa lettera+apostrofo in una sola cella (L' non 'L)
+   ✅ Raggruppa lettera+apostrofo in una sola cella (L' → _ non __)
    ========================= */
 export function maskBoard(rows, revealedLetters) {
   const base = Array.isArray(rows) ? rows : [];
@@ -101,11 +101,11 @@ export function maskBoard(rows, revealedLetters) {
       } else if (isLetter(ch)) {
         // Lettera SEGUITA da apostrofo
         if (i + 1 < text.length && isApostrophe(text[i + 1])) {
-          // Se la lettera è rivelata, mostra L', altrimenti __
+          // Se la lettera è rivelata, mostra L', altrimenti _ (1 underscore)
           if (set.has(normalize(ch))) {
             result += ch + text[i + 1]; // Es: L'
           } else {
-            result += "__"; // Lettera+apostrofo mascherati
+            result += "_"; // ✅ 1 underscore per L' mascherata
           }
           i += 2;
         } else {

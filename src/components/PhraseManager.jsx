@@ -15,7 +15,7 @@ function toCell(cell) {
 function toRow(row) {
   if (Array.isArray(row)) return row.map(toCell);
   
-  // ✅ RAGGRUPPA lettera+apostrofo in UNA SOLA CELLA (L' non 'L)
+  // ✅ RAGGRUPPA lettera+apostrofo in UNA SOLA CELLA (L')
   const text = String(row || "");
   const cells = [];
   const isApostrophe = (ch) => "'`´'".includes(ch);
@@ -26,7 +26,7 @@ function toRow(row) {
     const ch = text[i];
     
     if (ch === " ") {
-      // Spazio rimane spazio
+      // Spazio = casella nera
       cells.push(toCell(ch));
       i++;
     } else if (isLetter(ch)) {
@@ -39,7 +39,7 @@ function toRow(row) {
         i++;
       }
     } else {
-      // Carattere normale (inclusi apostrofi isolati)
+      // Carattere normale (_, lettere singole, ecc)
       cells.push(toCell(ch));
       i++;
     }
