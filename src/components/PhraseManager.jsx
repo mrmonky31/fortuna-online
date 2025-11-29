@@ -25,6 +25,16 @@ function toRow(row) {
   while (i < text.length) {
     const ch = text[i];
     
+    // ➕ Dopo apostrofo/accento, se manca lo spazio lo aggiunge
+if ("'`´’".includes(ch)) {
+  const next = text[i + 1] || "";
+  if (next !== " ") {
+    cells.push(toCell(ch));
+    cells.push(toCell(" "));
+    i++;
+    continue;
+  }
+}
     if (ch === " ") {
       // Spazio = casella nera
       cells.push(toCell(ch));
