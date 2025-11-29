@@ -15,24 +15,42 @@ export default function PhraseManager({
 }) {
   const [revealingCells, setRevealingCells] = useState(new Set());
   
-  // ✅ Converti righe in celle da renderizzare
-  const boardCells = (maskedRows?.length ? maskedRows : rows).map(row => {
-    const cells = parseToCells(row);
-    const renderCells = [];
+  // ✅ Crea struttura celle con mappatura indici
+  const boardData = rows.map((origRow, rowIndex) => {
+    const origCells = parseToCells(origRow);
+    const maskRow = maskedRows[rowIndex] || origRow;
+    const maskCells = parseToCells(maskRow);
     
-    cells.forEach((cell, idx) => {
-      // Aggiungi la cella
-      renderCells.push(cell);
+    const renderCells = [];
+    const charIndexToRenderIndex = new Map(); // Mappa: indice char originale → indice cella renderizzata
+    
+    let charIndex = 0;
+    
+    origCells.forEach((origCell, cellIndex) => {
+      const maskCell = maskCells[cellIndex];
       
-      // ✅ Se la cella contiene apostrofo (anche se mascherata come "_'"), aggiungi SPAZIO dopo
-      if (cell.type === "letter") {
-        const hasApostrophe = cell.char.includes("'") || cell.char.includes("'") || 
-                             cell.char.includes("`") || cell.char.includes("´");
-        const isAccented = /[ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝÞ]/i.test(cell.char);
+      // ✅ Mappa TUTTI i caratteri di questa casella all'indice render corrente
+      for (let i = 0; i < origCell.char.length; i++) {
+        charIndexToRenderIndex.set(charIndex + i, renderCells.length);
+      }
+      
+      // Aggiungi la cella
+      renderCells.push({
+        type: origCell.type,
+        char: maskCell ? maskCell.char : origCell.char,
+        originalChar: origCell.char
+      });
+      
+      charIndex += origCell.char.length;
+      
+      // ✅ Se ha apostrofo o è accentata, aggiungi spazio
+      if (origCell.type === "letter") {
+        const hasApostrophe = origCell.char.includes("'") || origCell.char.includes("'") || 
+                             origCell.char.includes("`") || origCell.char.includes("´");
+        const isAccented = /[ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝÞ]/i.test(origCell.char);
         
-        // Se ha apostrofo (anche "_'") O è accentata, aggiungi spazio DOPO
         if (hasApostrophe || isAccented) {
-          const nextCell = cells[idx + 1];
+          const nextCell = origCells[cellIndex + 1];
           if (!nextCell || nextCell.type !== "space") {
             renderCells.push({ type: "space", char: " " });
           }
@@ -40,7 +58,7 @@ export default function PhraseManager({
       }
     });
     
-    return renderCells;
+    return { renderCells, charIndexToRenderIndex };
   });
 
   useEffect(() => {
@@ -49,10 +67,21 @@ export default function PhraseManager({
       return;
     }
 
-    const cellKeys = revealQueue.map(({ r, c }) => `${r}-${c}`);
+    // ✅ Converti indici da revealQueue (caratteri originali) a celle renderizzate
+    const revealCellKeys = [];
+    revealQueue.forEach(({ r, c }) => {
+      const rowData = boardData[r];
+      if (rowData) {
+        const renderIndex = rowData.charIndexToRenderIndex.get(c);
+        if (renderIndex !== undefined) {
+          revealCellKeys.push(`${r}-${renderIndex}`);
+        }
+      }
+    });
+
     const DELAY_BETWEEN_CELLS = 100;
     
-    cellKeys.forEach((key, index) => {
+    revealCellKeys.forEach((key, index) => {
       setTimeout(() => {
         setRevealingCells(prev => new Set([...prev, key]));
       }, index * DELAY_BETWEEN_CELLS);
@@ -63,9 +92,9 @@ export default function PhraseManager({
     setTimeout(() => {
       setRevealingCells(new Set());
       onRevealDone && onRevealDone();
-    }, cellKeys.length * DELAY_BETWEEN_CELLS + REVEAL_DURATION);
+    }, revealCellKeys.length * DELAY_BETWEEN_CELLS + REVEAL_DURATION);
 
-  }, [revealQueue, onRevealDone]);
+  }, [revealQueue, onRevealDone, boardData]);
 
   const flashClass =
     flash === "success"
@@ -103,34 +132,25 @@ export default function PhraseManager({
 
       <div className="pm-board-wrapper">
         <div className="pm-board">
-          {boardCells.length > 0 ? (
-            boardCells.map((rowCells, r) => (
+          {boardData.length > 0 ? (
+            boardData.map((rowData, r) => (
               <div key={r} className="pm-row">
-                {rowCells.map((cell, cellIndex) => {
+                {rowData.renderCells.map((cell, cellIndex) => {
                   const isSpace = cell.type === "space";
-                  const isMasked = cell.char.includes("_");
+                  const isMasked = cell.char === "_";
                   const isVisible = !isMasked && !isSpace;
-                  
-                  // ✅ Nascondi underscore ma mostra apostrofi anche se mascherati
-                  const displayChar = isMasked ? cell.char.replace(/_/g, "") : cell.char;
-                  
-                  // Calcola indice carattere per reveal
-                  let charIndex = 0;
-                  for (let i = 0; i < cellIndex; i++) {
-                    charIndex += rowCells[i].char.length;
-                  }
                   
                   return (
                     <div
                       key={cellIndex}
                       className={`pm-cell ${
                         isSpace ? "space" : isVisible ? "vis" : ""
-                      } ${revealingCells.has(`${r}-${charIndex}`) ? "revealing" : ""}`}
+                      } ${revealingCells.has(`${r}-${cellIndex}`) ? "revealing" : ""}`}
                     >
                       <span>
                         {isSpace 
                           ? "\u00A0" 
-                          : (isMasked ? displayChar : cell.char)
+                          : (isMasked ? "\u00A0" : cell.char)
                         }
                       </span>
                     </div>

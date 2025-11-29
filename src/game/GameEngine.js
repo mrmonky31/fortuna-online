@@ -76,14 +76,8 @@ export function parseToCells(text) {
       i++;
     } 
     else if (ch === "_") {
-      // ✅ Underscore seguito da apostrofo = L' mascherata
-      if (i + 1 < str.length && isApostrophe(str[i + 1])) {
-        cells.push({ type: "letter", char: "_" + str[i + 1] }); // "_'"
-        i += 2;
-      } else {
-        cells.push({ type: "letter", char: "_" });
-        i++;
-      }
+      cells.push({ type: "letter", char: "_" });
+      i++;
     }
     else if (isLetter(ch)) {
       // Lettera + apostrofo = 1 CASELLA
@@ -108,11 +102,6 @@ export function parseToCells(text) {
   return cells;
 }
 
-/* =========================
-   maskBoard
-   ✅ L' mascherata = "_'" (underscore + apostrofo)
-   ✅ È mascherata = "_" (solo underscore)
-   ========================= */
 export function maskBoard(rows, revealedLetters) {
   const base = Array.isArray(rows) ? rows : [];
   const set =
@@ -131,17 +120,9 @@ export function maskBoard(rows, revealedLetters) {
         const baseLetter = cell.char.replace(/['`´']/g, "");
         
         if (set.has(normalize(baseLetter))) {
-          return cell.char; // Rivelata: "L'" oppure "È"
+          return cell.char; // Rivelata
         } else {
-          // ✅ Mascherata: mantieni apostrofo se presente
-          // L' → "_'" (underscore + apostrofo)
-          // È → "_"
-          const hasApostrophe = cell.char.length === 2 && isApostrophe(cell.char[1]);
-          if (hasApostrophe) {
-            return "_" + cell.char[1]; // Mantieni apostrofo
-          } else {
-            return "_";
-          }
+          return "_"; // ✅ Mascherata: SEMPRE solo underscore
         }
       }
       
