@@ -7,10 +7,10 @@ import { parseToCells } from "../game/GameEngine";
 // PARAMETRI TIMING ANIMAZIONE - MODIFICA QUI
 // ============================================
 const TIMING = {
-  GLOW_DELAY: 250,           // Delay tra illuminazione caselle (ms)
-  PAUSE_BEFORE_REVEAL: 600,  // Pausa con tutte illuminate prima di rivelare (ms)
-  GLOW_DURATION: 800,        // Durata glow su singola cella (ms)
-  REVEAL_DELAY: 350,         // Delay tra rivelazione lettere (ms)
+  GLOW_DELAY: 150,           // Delay tra illuminazione caselle (ms)
+  PAUSE_BEFORE_REVEAL: 700,  // Pausa con tutte illuminate prima di rivelare (ms)
+  GLOW_DURATION: 850,        // Durata glow su singola cella (ms)
+  REVEAL_DELAY: 450,         // Delay tra rivelazione lettere (ms)
 };
 // ============================================
 
