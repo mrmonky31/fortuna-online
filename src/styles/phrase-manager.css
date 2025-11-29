@@ -1,5 +1,5 @@
 /* ========================================== */
-/*   STILE TABELLONE — VERSIONE GLOW COLORATO */
+/*   STILE TABELLONE — GLOW OVERLAY         */
 /* ========================================== */
 
 .pm-board {
@@ -12,7 +12,6 @@
   min-height: 380px;
 }
 
-/* Ogni riga del tabellone */
 .pm-row {
   display: grid;
   grid-template-columns: repeat(14, 50px);
@@ -21,7 +20,6 @@
   justify-content: center;
 }
 
-/* Ogni singola casella */
 .pm-cell {
   width: 50px;
   height: 58px;
@@ -32,10 +30,10 @@
   font-size: 48px;
   border-radius: 5px;
   box-shadow: 0 3px 6px rgba(5, 169, 251, 0.6);
+  position: relative; /* ✅ Per positioning del ::before */
   transition: all 0.2s ease;
 }
 
-/* Caselle nere per spazi */
 .pm-cell.space {
   background: #000;
 }
@@ -43,32 +41,48 @@
 /* ✅ Caselle nascoste - BIANCHE */
 .pm-cell:not(.vis):not(.space) {
   background: rgb(240, 240, 240);
-  color: transparent;
 }
 
-/* Caselle rivelate */
+/* ✅ Caselle rivelate - BIANCHE con testo nero */
 .pm-cell.vis {
   background: #ffffff;
-  color: #111;
 }
 
-/* ✅ GLOW - COPRE COMPLETAMENTE come un lenzuolo */
-.pm-cell.glowing {
-  background: color-mix(in srgb, var(--round-color, #00ff55) 70%, black) !important;
-  border: 3px solid var(--round-color, #00ff55) !important;
+/* ✅ GLOW OVERLAY - pseudo-elemento SOPRA la casella */
+.pm-cell.glowing::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: color-mix(in srgb, var(--round-color, #00ff55) 70%, black);
+  border-radius: 5px;
+  z-index: 10; /* ✅ Sopra il testo */
   box-shadow:
     0 0 35px var(--round-color, #00ff55),
-    inset 0 0 30px var(--round-color, #00ff55) !important;
+    inset 0 0 30px var(--round-color, #00ff55);
+  pointer-events: none;
+}
+
+.pm-cell.glowing {
+  border: 3px solid var(--round-color, #00ff55) !important;
   transform: scale(1.15) !important;
 }
 
-/* ✅ Durante glow, NESSUNA lettera visibile (lenzuolo opaco) */
-.pm-cell.glowing span {
-  color: transparent !important;
-  visibility: hidden !important;
+/* ✅ TESTO: transizione da BIANCO a NERO */
+.pm-cell span {
+  position: relative;
+  z-index: 5; /* Sotto il glow overlay */
+  transition: color 1000ms ease-in-out; /* ⏱️ DURATA FADE */
 }
 
-/* Testo nascosto nelle celle non visibili */
+/* Testo BIANCO quando nascosto */
 .pm-cell:not(.vis) span {
-  color: transparent !important;
+  color: white;
+}
+
+/* Testo NERO quando rivelato (transizione 1000ms) */
+.pm-cell.vis span {
+  color: #111;
 }
