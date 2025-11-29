@@ -24,15 +24,14 @@ export default function PhraseManager({
       // Aggiungi la cella
       renderCells.push(cell);
       
-      // ✅ Se la cella contiene apostrofo o è lettera accentata, aggiungi SPAZIO dopo
+      // ✅ Se la cella contiene apostrofo (anche se mascherata come "_'"), aggiungi SPAZIO dopo
       if (cell.type === "letter") {
         const hasApostrophe = cell.char.includes("'") || cell.char.includes("'") || 
                              cell.char.includes("`") || cell.char.includes("´");
         const isAccented = /[ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝÞ]/i.test(cell.char);
         
-        // Se ha apostrofo O è accentata, aggiungi spazio DOPO
+        // Se ha apostrofo (anche "_'") O è accentata, aggiungi spazio DOPO
         if (hasApostrophe || isAccented) {
-          // Guarda la prossima cella: se NON è già uno spazio, aggiungilo
           const nextCell = cells[idx + 1];
           if (!nextCell || nextCell.type !== "space") {
             renderCells.push({ type: "space", char: " " });
@@ -109,8 +108,11 @@ export default function PhraseManager({
               <div key={r} className="pm-row">
                 {rowCells.map((cell, cellIndex) => {
                   const isSpace = cell.type === "space";
-                  const isMasked = cell.char === "_";
+                  const isMasked = cell.char.includes("_");
                   const isVisible = !isMasked && !isSpace;
+                  
+                  // ✅ Nascondi underscore ma mostra apostrofi anche se mascherati
+                  const displayChar = isMasked ? cell.char.replace(/_/g, "") : cell.char;
                   
                   // Calcola indice carattere per reveal
                   let charIndex = 0;
@@ -128,7 +130,7 @@ export default function PhraseManager({
                       <span>
                         {isSpace 
                           ? "\u00A0" 
-                          : (isMasked ? "\u00A0" : cell.char)
+                          : (isMasked ? displayChar : cell.char)
                         }
                       </span>
                     </div>

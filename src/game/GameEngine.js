@@ -59,11 +59,6 @@ export function buildBoard(text, maxCols = 14, maxRows = 4) {
   return rows.slice(0, maxRows);
 }
 
-/* =========================
-   parseToCells
-   ✅ L' = 1 CASELLA (contiene 2 char: L e ')
-   ✅ È = 1 CASELLA (contiene 1 char)
-   ========================= */
 export function parseToCells(text) {
   const cells = [];
   const str = String(text || "");
@@ -81,12 +76,17 @@ export function parseToCells(text) {
       i++;
     } 
     else if (ch === "_") {
-      // Underscore = casella mascherata
-      cells.push({ type: "letter", char: "_" });
-      i++;
+      // ✅ Underscore seguito da apostrofo = L' mascherata
+      if (i + 1 < str.length && isApostrophe(str[i + 1])) {
+        cells.push({ type: "letter", char: "_" + str[i + 1] }); // "_'"
+        i += 2;
+      } else {
+        cells.push({ type: "letter", char: "_" });
+        i++;
+      }
     }
     else if (isLetter(ch)) {
-      // ✅ Lettera + apostrofo = 1 CASELLA
+      // Lettera + apostrofo = 1 CASELLA
       if (i + 1 < str.length && isApostrophe(str[i + 1])) {
         cells.push({ type: "letter", char: ch + str[i + 1] }); // "L'"
         i += 2;
@@ -110,7 +110,8 @@ export function parseToCells(text) {
 
 /* =========================
    maskBoard
-   ✅ L' mascherata = "_" (1 underscore per 1 casella)
+   ✅ L' mascherata = "_'" (underscore + apostrofo)
+   ✅ È mascherata = "_" (solo underscore)
    ========================= */
 export function maskBoard(rows, revealedLetters) {
   const base = Array.isArray(rows) ? rows : [];
@@ -132,8 +133,15 @@ export function maskBoard(rows, revealedLetters) {
         if (set.has(normalize(baseLetter))) {
           return cell.char; // Rivelata: "L'" oppure "È"
         } else {
-          // ✅ Mascherata: SEMPRE "_" (1 underscore per casella)
-          return "_";
+          // ✅ Mascherata: mantieni apostrofo se presente
+          // L' → "_'" (underscore + apostrofo)
+          // È → "_"
+          const hasApostrophe = cell.char.length === 2 && isApostrophe(cell.char[1]);
+          if (hasApostrophe) {
+            return "_" + cell.char[1]; // Mantieni apostrofo
+          } else {
+            return "_";
+          }
         }
       }
       
@@ -159,7 +167,6 @@ export function letterOccurrences(rows, targetUpper) {
         const baseLetter = cell.char.replace(/['`´']/g, "");
         
         if (eqMatch(norm, baseLetter)) {
-          // ✅ Aggiungi TUTTI i caratteri della casella
           for (let i = 0; i < cell.char.length; i++) {
             hits.push({ r, c: charIndex + i, ch: cell.char[i] });
           }
