@@ -12,7 +12,7 @@ export const normalize = (s) =>
     .replace(/[\u0300-\u036f]/g, "")  // Rimuove accenti
     .replace(/['`´']/g, "");           // Rimuove apostrofi
 
-const isLetter = (ch) => /^[A-ZÀ-ÖØ-Ý]$/i.test(ch);
+const isLetter = (ch) => /^[A-ZÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝÞ]$/i.test(ch);
 const isSpace  = (ch) => ch === " ";
 const isPunct  = (ch) => ":!?".includes(ch);
 const isApostrophe = (ch) => "'`´'".includes(ch);
@@ -75,6 +75,7 @@ export function buildBoard(text, maxCols = 14, maxRows = 4) {
 /* =========================
    parseToCells: converte stringa in array di caselle
    ✅ Definisce ESATTAMENTE la struttura: L' = 1 casella
+   ✅ GESTISCE "_ " per L' mascherata
    ========================= */
 function parseToCells(text) {
   const cells = [];
@@ -84,13 +85,26 @@ function parseToCells(text) {
   while (i < str.length) {
     const ch = str[i];
     
-    if (ch === " ") {
+    // ✅ NUOVO: Gestione underscore per mascheratura
+    if (ch === "_") {
+      // "_ " = L' mascherata (underscore + spazio)
+      if (i + 1 < str.length && str[i + 1] === " ") {
+        cells.push({ type: "letter", char: "_ " });
+        i += 2;
+      } else {
+        cells.push({ type: "letter", char: "_" });
+        i++;
+      }
+    } 
+    else if (ch === " ") {
       cells.push({ type: "space", char: " " });
       i++;
-    } else if (isPunct(ch)) {
+    } 
+    else if (isPunct(ch)) {
       cells.push({ type: "punct", char: ch });
       i++;
-    } else if (isLetter(ch)) {
+    } 
+    else if (isLetter(ch)) {
       // Lettera SEGUITA da apostrofo → 1 casella
       if (i + 1 < str.length && isApostrophe(str[i + 1])) {
         cells.push({ type: "letter", char: ch + str[i + 1] }); // L'
@@ -99,11 +113,13 @@ function parseToCells(text) {
         cells.push({ type: "letter", char: ch });
         i++;
       }
-    } else if (isApostrophe(ch)) {
+    } 
+    else if (isApostrophe(ch)) {
       // Apostrofo isolato
       cells.push({ type: "letter", char: ch });
       i++;
-    } else {
+    } 
+    else {
       cells.push({ type: "other", char: ch });
       i++;
     }
@@ -177,11 +193,9 @@ export function letterOccurrences(rows, targetUpper) {
           // Trova TUTTE le posizioni carattere di questa casella
           // Se è L' devo aggiungere sia L che '
           const charPositions = [];
-          let charCount = 0;
           
           for (let i = 0; i < cell.char.length; i++) {
             charPositions.push({ r, c: cellIndex + i, ch: cell.char[i] });
-            charCount++;
           }
           
           hits.push(...charPositions);
@@ -195,3 +209,6 @@ export function letterOccurrences(rows, targetUpper) {
   
   return hits;
 }
+
+// ✅ ESPORTA parseToCells per uso in PhraseManager
+export { parseToCells };
