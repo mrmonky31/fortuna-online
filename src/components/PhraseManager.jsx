@@ -121,11 +121,12 @@ export default function PhraseManager({
           {rowCells.map((cell) => {
             const cellKey = `${cell.x}-${cell.y}`;
             const isSpace = cell.type === "space";
-            const isMasked = cell.masked === "_";
             const isGlowing = glowingCells.has(cellKey);
             const isFading = fadingCells.has(cellKey);
             const isRevealed = revealedCells.has(cellKey);
-            const isVisible = !isMasked && !isSpace;
+            
+            // ✅ Mostra lettera SOLO se isRevealed (dopo animazione)
+            const shouldShowLetter = isRevealed;
             
             return (
               <div
@@ -137,13 +138,13 @@ export default function PhraseManager({
                 } ${
                   isFading ? "fading-out" : ""
                 } ${
-                  (isVisible || isRevealed) && !isGlowing && !isFading ? "vis" : ""
+                  shouldShowLetter && !isGlowing && !isFading ? "vis" : ""
                 }`}
               >
                 <span>
                   {isSpace 
                     ? "\u00A0" 
-                    : (isRevealed || isVisible ? cell.masked : "\u00A0")
+                    : (shouldShowLetter ? cell.masked : "\u00A0")
                   }
                 </span>
               </div>
