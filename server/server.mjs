@@ -146,11 +146,17 @@ function parseToCells(text) {
 }
 
 // ✅ Trova posizioni lettere usando parseToCells
-function letterOccurrences(rows, targetLetter) {
-  // ✅ NUOVO: Usa coordinate XY invece di r,c lineari
-  const phrase = Array.isArray(rows) ? rows.join(" ") : "";
+function letterOccurrences(phrase, targetLetter) {
+  console.log("🔍 letterOccurrences chiamata");
+  console.log("📝 phrase:", phrase);
+  console.log("🔤 targetLetter:", targetLetter);
+  
+  // ✅ Costruisci grid dalla frase
   const grid = buildGridWithCoordinates(phrase, 14, 4);
+  console.log("📐 Grid costruita:", grid);
+  
   const coordinates = findLetterCoordinates(grid, targetLetter);
+  console.log("📍 Coordinate trovate:", coordinates);
   
   // ✅ Ritorna formato {x, y, char} per il client
   return coordinates;
@@ -924,7 +930,7 @@ if (gs.usedLetters.includes(upper)) {
       gs.revealedLetters.push(upper);
       
       // ✅ Calcola posizioni lettere per animazione
-      const revealQueue = letterOccurrences(gs.rows, upper);
+      const revealQueue = letterOccurrences(gs.phrase, upper);
       io.to(code).emit("gameStateUpdate", { 
         gameState: gs,
         revealQueue: revealQueue
@@ -966,7 +972,7 @@ if (gs.usedLetters.includes(upper)) {
         gs.gameMessage = { type: "success", text: message };
         
         // ✅ Calcola posizioni lettere rivelate per animazione
-        const revealQueue = letterOccurrences(gs.rows, upper);
+        const revealQueue = letterOccurrences(gs.phrase, upper);
         io.to(code).emit("gameStateUpdate", { 
           gameState: gs,
           revealQueue: revealQueue  // ✅ Invia posizioni per animazione
@@ -1074,7 +1080,7 @@ if (gs.usedLetters.includes(upper)) {
         gs.gameMessage = { type: "success", text: `Rivelate ${hits} ${upper}! (-${cost} pt)` };
         
         // ✅ Calcola posizioni per animazione
-        const revealQueue = letterOccurrences(gs.rows, upper);
+        const revealQueue = letterOccurrences(gs.phrase, upper);
         io.to(code).emit("gameStateUpdate", { 
           gameState: gs,
           revealQueue: revealQueue
