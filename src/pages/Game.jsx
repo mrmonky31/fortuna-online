@@ -75,6 +75,7 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
   const [grid, setGrid] = useState(null);
   const [maskedGrid, setMaskedGrid] = useState(null);
   const [revealQueue, setRevealQueue] = useState([]);
+  const [pendingLetter, setPendingLetter] = useState(null); // ✅ Lettera in attesa di animazione
   const [turnTimer, setTurnTimer] = useState(60);
   const [timerPaused, setTimerPaused] = useState(false);
   const [betweenRounds, setBetweenRounds] = useState(false);
@@ -262,7 +263,7 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
   }, []);
 
   useEffect(() => {
-    function handleGameStateUpdate({ gameState: serverState, revealQueue: newRevealQueue }) {
+    function handleGameStateUpdate({ gameState: serverState, revealQueue: newRevealQueue, letterToReveal }) {
       if (serverState) {
         setGameState(serverState);
         
@@ -275,6 +276,11 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
             char: coord.ch || coord.char
           }));
           setRevealQueue(converted);
+          
+          // ✅ Salva lettera da confermare dopo animazione
+          if (letterToReveal) {
+            setPendingLetter(letterToReveal);
+          }
         }
         
         // ⭐ NUOVO: Ferma spinning quando finisce
@@ -406,7 +412,17 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
     return () => clearInterval(id);
   }, [gameState, timerPaused, mySocketId]);
 
-  const handleRevealDone = () => setRevealQueue([]);
+  const handleRevealDone = () => {
+    // ✅ Manda conferma al server
+    if (pendingLetter && roomCode) {
+      socket.emit("animationComplete", { 
+        roomCode: roomCode, 
+        letter: pendingLetter 
+      });
+      setPendingLetter(null);
+    }
+    setRevealQueue([]);
+  };
 
   const handlePanelChange = (panelName) => {
     setTimerPaused(panelName !== null);

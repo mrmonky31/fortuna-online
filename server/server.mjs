@@ -917,13 +917,15 @@ if (gs.usedLetters.includes(upper)) {
         text: `🎯 Lettere trovate! +${gained} pt (valore 100 per RADDOPPIA)`
       };
       
-      gs.revealedLetters.push(upper);
+      // ✅ NON aggiungere ancora a revealedLetters - lo farà il client dopo animazione
+      // gs.revealedLetters.push(upper);
       
       // ✅ Calcola posizioni lettere per animazione
       const revealQueue = letterOccurrences(gs.phrase, upper);
       io.to(code).emit("gameStateUpdate", { 
         gameState: gs,
-        revealQueue: revealQueue
+        revealQueue: revealQueue,
+        letterToReveal: upper // ✅ Passa la lettera da rivelare
       });
       
       if (callback) callback({ ok: true });
@@ -951,7 +953,8 @@ if (gs.usedLetters.includes(upper)) {
         
         gs.players[i].roundScore += gained;
         
-        gs.revealedLetters.push(upper);
+        // ✅ NON aggiungere ancora a revealedLetters - lo farà il client dopo animazione
+        // gs.revealedLetters.push(upper);
         gs.mustSpin = true;
         gs.awaitingConsonant = false;
         
@@ -965,7 +968,8 @@ if (gs.usedLetters.includes(upper)) {
         const revealQueue = letterOccurrences(gs.phrase, upper);
         io.to(code).emit("gameStateUpdate", { 
           gameState: gs,
-          revealQueue: revealQueue  // ✅ Invia posizioni per animazione
+          revealQueue: revealQueue,
+          letterToReveal: upper // ✅ Passa la lettera da rivelare
         });
         
         if (callback) callback({ ok: true });
@@ -1064,7 +1068,8 @@ if (gs.usedLetters.includes(upper)) {
       const hits = [...phrase].filter(ch => normalizeText(ch) === upper && "AEIOU".includes(ch)).length;
 
       if (hits > 0) {
-        gs.revealedLetters.push(upper);
+        // ✅ NON aggiungere ancora a revealedLetters - lo farà il client dopo animazione
+        // gs.revealedLetters.push(upper);
         gs.mustSpin = true;
         gs.awaitingConsonant = false;
         gs.gameMessage = { type: "success", text: `Rivelate ${hits} ${upper}! (-${cost} pt)` };
@@ -1073,7 +1078,8 @@ if (gs.usedLetters.includes(upper)) {
         const revealQueue = letterOccurrences(gs.phrase, upper);
         io.to(code).emit("gameStateUpdate", { 
           gameState: gs,
-          revealQueue: revealQueue
+          revealQueue: revealQueue,
+          letterToReveal: upper // ✅ Passa la lettera da rivelare
         });
       } else {
         gs.mustSpin = true;
@@ -1214,6 +1220,29 @@ if (gs.usedLetters.includes(upper)) {
     } catch (err) {
       console.error("Errore passTurn:", err);
       if (callback) callback({ ok: false, error: "Errore passa turno" });
+    }
+  });
+
+  // ✅ NUOVO: Conferma animazione finita → aggiungi lettera a revealedLetters
+  socket.on("animationComplete", ({ roomCode, letter }) => {
+    try {
+      const code = String(roomCode || "").trim().toUpperCase();
+      const room = rooms[code];
+      if (!room || !room.gameState) return;
+      
+      const gs = room.gameState;
+      const upper = String(letter || "").toUpperCase().trim();
+      
+      // ✅ Aggiungi lettera a revealedLetters
+      if (upper && !gs.revealedLetters.includes(upper)) {
+        gs.revealedLetters.push(upper);
+        console.log(`✅ Lettera ${upper} aggiunta a revealedLetters dopo animazione`);
+        
+        // ✅ Manda gameState aggiornato SENZA revealQueue
+        io.to(code).emit("gameStateUpdate", { gameState: gs });
+      }
+    } catch (err) {
+      console.error("❌ Errore in animationComplete:", err);
     }
   });
 
