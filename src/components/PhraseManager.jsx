@@ -29,6 +29,8 @@ export default function PhraseManager({
   
   // Reset quando cambia la queue
   useEffect(() => {
+    console.log("🎯 ANIMAZIONE START - revealQueue.length:", revealQueue?.length);
+    
     // Clear tutti i timeout precedenti
     timeoutsRef.current.forEach(clearTimeout);
     timeoutsRef.current = [];
@@ -92,9 +94,12 @@ export default function PhraseManager({
                       200;
     
     const finalTimeout = setTimeout(() => {
+      console.log("✅ ANIMAZIONE FINITA - cleanup");
       setGlowingCells(new Set()); // ✅ PULISCI TUTTO
       setFadingCells(new Set());  // ✅ PULISCI TUTTO
-      onRevealDone && onRevealDone();
+      if (onRevealDone) {
+        onRevealDone(); // Questo chiama setRevealQueue([]) in Game.jsx
+      }
     }, totalTime);
     timeoutsRef.current.push(finalTimeout);
     
@@ -132,7 +137,13 @@ export default function PhraseManager({
                 key={cellKey}
                 className={`pm-cell ${
                   isSpace ? "space" : ""
-                } ${isGlowing ? "glowing" : ""} ${isFading ? "fading-out" : ""} ${(isVisible || isRevealed) && !isGlowing && !isFading ? "vis" : ""}`}
+                } ${
+                  isGlowing && !isFading ? "glowing" : ""
+                } ${
+                  isFading ? "fading-out" : ""
+                } ${
+                  (isVisible || isRevealed) && !isGlowing && !isFading ? "vis" : ""
+                }`}
               >
                 <span>
                   {isSpace 

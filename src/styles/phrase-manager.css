@@ -77,7 +77,7 @@
               inset 0 0 30px rgba(255, 255, 255, 0.5) !important;
   border-color: var(--round-color, #00ff55) !important;
   transform: scale(1.05);
-  /* ✅ Lettera nascosta durante glow */
+  transition: all 0.3s ease-out;
   color: transparent !important;
 }
 
@@ -85,26 +85,18 @@
   visibility: hidden !important;
 }
 
-/* ✅ FADE-OUT: quando si spegne rivela lettera */
+/* ✅ FADE-OUT: transizione morbida quando si spegne */
 .pm-cell.fading-out {
-  animation: fadeOutGlow 250ms ease-out forwards;
+  background-color: #ffffff !important;
+  box-shadow: none !important;
+  border-color: #3b4358 !important;
+  color: #111 !important;
+  transform: scale(1) !important;
+  transition: all 0.25s ease-out !important;
 }
 
-@keyframes fadeOutGlow {
-  from {
-    background-color: var(--round-color, #00ff55);
-    box-shadow: 0 0 30px var(--round-color, #00ff55), 
-                inset 0 0 30px rgba(255, 255, 255, 0.5);
-    border-color: var(--round-color, #00ff55);
-    color: transparent;
-  }
-  to {
-    background-color: #ffffff;
-    box-shadow: none;
-    border-color: #3b4358;
-    color: #111;
-    transform: scale(1);
-  }
+.pm-cell.fading-out span {
+  visibility: visible !important;
 }
 
 /* ✅ Cella rivelata (dopo fade-out) */
