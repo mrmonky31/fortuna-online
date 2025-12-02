@@ -6,10 +6,10 @@ import "../styles/phrase-manager.css";
 // ⚙️ PARAMETRI TIMING ANIMAZIONE - MODIFICA QUI
 // ============================================
 const TIMING = {
-  GLOW_DELAY: 550,           // ⏱️ Delay tra accensione caselle (ms)
+  GLOW_DELAY: 500,           // ⏱️ Delay tra accensione caselle (ms)
   PAUSE_ALL_GLOWING: 900,    // ⏱️ Pausa con tutte accese (ms)
-  
   FADEOUT_DURATION: 550,     // ⏱️ Durata fade-out singola cella (ms)
+  FADEOUT_DELAY: 500, // ad esempio
 };
 // ============================================
 
