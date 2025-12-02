@@ -29,11 +29,16 @@ export default function PhraseManager({
   
   // Reset quando cambia la queue
   useEffect(() => {
+    console.log("🎯 PhraseManager useEffect triggered");
+    console.log("📍 revealQueue:", revealQueue);
+    console.log("📍 revealQueue.length:", revealQueue?.length);
+    
     // Clear tutti i timeout precedenti
     timeoutsRef.current.forEach(clearTimeout);
     timeoutsRef.current = [];
     
     if (!revealQueue || revealQueue.length === 0) {
+      console.log("⚠️ revealQueue vuota, reset stati");
       setGlowingCells(new Set());
       setFadingCells(new Set());
       setRevealedCells(new Set());
@@ -41,6 +46,7 @@ export default function PhraseManager({
     }
     
     console.log(`🎬 Inizio animazione ${revealQueue.length} celle`);
+    console.log("📍 Coordinate ricevute:", revealQueue);
     
     // Reset stato
     setGlowingCells(new Set());
@@ -48,6 +54,7 @@ export default function PhraseManager({
     setRevealedCells(new Set());
     
     const cellKeys = revealQueue.map(coord => `${coord.x}-${coord.y}`);
+    console.log("🔑 CellKeys generati:", cellKeys);
     
     // ✅ FASE 1: ACCENDI tutte le caselle una per volta
     cellKeys.forEach((key, index) => {
