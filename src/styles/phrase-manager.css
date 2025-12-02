@@ -70,14 +70,13 @@
   border-color: #3b4358;
 }
 
-/* ✅ ANIMAZIONE GLOW - ILLUMINA TUTTA LA CASELLA INTERNAMENTE */
+/* ✅ ANIMAZIONE GLOW - ILLUMINA TUTTA LA CASELLA (OPACO) */
 .pm-cell.glowing {
   background-color: var(--round-color, #00ff55) !important;
   box-shadow: 0 0 30px var(--round-color, #00ff55), 
-              inset 0 0 30px rgba(255, 255, 255, 0.5) !important;
+              inset 0 0 30px rgba(255, 255, 255, 0.8) !important;
   border-color: var(--round-color, #00ff55) !important;
   transform: scale(1.05);
-  transition: all 0.3s ease-out;
   color: transparent !important;
 }
 
@@ -85,18 +84,31 @@
   visibility: hidden !important;
 }
 
-/* ✅ FADE-OUT: transizione morbida quando si spegne */
+/* ✅ FADE-OUT: sipario che si alza dal basso */
 .pm-cell.fading-out {
-  background-color: #ffffff !important;
-  box-shadow: none !important;
-  border-color: #3b4358 !important;
-  color: #111 !important;
-  transform: scale(1) !important;
-  transition: all 0.25s ease-out !important;
+  animation: curtainUp 0.5s ease-out forwards;
+}
+
+@keyframes curtainUp {
+  from {
+    background-color: var(--round-color, #00ff55);
+    box-shadow: 0 0 30px var(--round-color, #00ff55), 
+                inset 0 0 30px rgba(255, 255, 255, 0.8);
+    border-color: var(--round-color, #00ff55);
+    clip-path: inset(0 0 0 0);
+  }
+  to {
+    background-color: #ffffff;
+    box-shadow: none;
+    border-color: #3b4358;
+    clip-path: inset(0 0 100% 0);
+    transform: scale(1);
+  }
 }
 
 .pm-cell.fading-out span {
   visibility: visible !important;
+  color: #111 !important;
 }
 
 /* ✅ Cella rivelata (dopo fade-out) */
