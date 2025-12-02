@@ -72,9 +72,43 @@ export function buildGridWithCoordinates(text, maxCols = 14, maxRows = 4) {
     return true;
   };
   
+  // ✅ Calcola lunghezza parola considerando apostrofi e accenti
+  const getWordLength = (word) => {
+    let len = 0;
+    let i = 0;
+    while (i < word.length) {
+      const ch = word[i];
+      if (isPunct(ch)) {
+        len++;
+        i++;
+      } else if (isLetter(ch)) {
+        if (i + 1 < word.length && isApostrophe(word[i + 1])) {
+          len += 2; // lettera + apostrofo + spazio dopo
+          i += 2;
+        } else if (isAccented(ch)) {
+          len += 2; // lettera accentata + spazio dopo
+          i++;
+        } else {
+          len++;
+          i++;
+        }
+      } else {
+        len++;
+        i++;
+      }
+    }
+    return len;
+  };
+  
   // Processa parola per parola
   for (let i = 0; i < words.length; i++) {
     const word = words[i];
+    const wordLen = getWordLength(word);
+    
+    // ✅ Se la parola non entra nella riga corrente, vai a capo
+    if (currentCol > 0 && currentCol + 1 + wordLen > maxCols) {
+      flushRow();
+    }
     
     // Se non è la prima parola della riga, aggiungi spazio
     if (currentCol > 0) {

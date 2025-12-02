@@ -47,13 +47,17 @@ export default function PhraseManager({
     
     console.log(`🎬 Inizio animazione ${revealQueue.length} celle`);
     console.log("📍 Coordinate ricevute:", revealQueue);
+    console.log("📍 PRIMA COORDINATA:", JSON.stringify(revealQueue[0]));
     
     // Reset stato
     setGlowingCells(new Set());
     setFadingCells(new Set());
     setRevealedCells(new Set());
     
-    const cellKeys = revealQueue.map(coord => `${coord.x}-${coord.y}`);
+    const cellKeys = revealQueue.map((coord, idx) => {
+      console.log(`🔑 Coord ${idx}:`, coord, `x=${coord.x}, y=${coord.y}`);
+      return `${coord.x}-${coord.y}`;
+    });
     console.log("🔑 CellKeys generati:", cellKeys);
     
     // ✅ FASE 1: ACCENDI tutte le caselle una per volta
@@ -71,27 +75,26 @@ export default function PhraseManager({
     // ✅ FASE 2: FADE-OUT sequenziale (stesso ordine) rivela lettere
     cellKeys.forEach((key, index) => {
       const fadeTimeout = setTimeout(() => {
-        console.log(`🌑 Fade-out: ${key}`);
+        console.log(`🌑 Fade-out START: ${key}`);
         
-        // Rimuovi glow
+        // Rimuovi glow E aggiungi fading contemporaneamente
         setGlowingCells(prev => {
           const next = new Set(prev);
           next.delete(key);
           return next;
         });
         
-        // Aggiungi classe fading
         setFadingCells(prev => new Set([...prev, key]));
         
         // Dopo fade-out mostra lettera
         const revealTimeout = setTimeout(() => {
+          console.log(`✅ Lettera rivelata: ${key}`);
           setFadingCells(prev => {
             const next = new Set(prev);
             next.delete(key);
             return next;
           });
           setRevealedCells(prev => new Set([...prev, key]));
-          console.log(`✅ Lettera rivelata: ${key}`);
         }, TIMING.FADEOUT_DURATION);
         timeoutsRef.current.push(revealTimeout);
         
@@ -106,14 +109,19 @@ export default function PhraseManager({
                       200;
     
     const finalTimeout = setTimeout(() => {
-      console.log(`✅ Animazione completata`);
+      console.log(`✅ Animazione completata - CLEANUP FINALE`);
+      setGlowingCells(new Set()); // ✅ PULISCI TUTTO
+      setFadingCells(new Set());  // ✅ PULISCI TUTTO
       onRevealDone && onRevealDone();
     }, totalTime);
     timeoutsRef.current.push(finalTimeout);
     
     return () => {
+      console.log("🧹 Cleanup useEffect - cancello tutti i timeout");
       timeoutsRef.current.forEach(clearTimeout);
       timeoutsRef.current = [];
+      setGlowingCells(new Set());
+      setFadingCells(new Set());
     };
     
   }, [revealQueue, onRevealDone]);

@@ -271,8 +271,14 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
         
         // ✅ Aggiorna revealQueue se presente
         if (newRevealQueue && newRevealQueue.length > 0) {
-          console.log("✅ Setto revealQueue:", newRevealQueue);
-          setRevealQueue(newRevealQueue);
+          // ✅ CONVERSIONE: {r, c, ch} → {x, y, char}
+          const converted = newRevealQueue.map(coord => ({
+            x: coord.c || coord.x,
+            y: coord.r || coord.y,
+            char: coord.ch || coord.char
+          }));
+          console.log("✅ Setto revealQueue (convertita):", converted);
+          setRevealQueue(converted);
         } else {
           console.log("⚠️ revealQueue vuota o undefined");
         }
