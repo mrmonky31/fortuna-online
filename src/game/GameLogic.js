@@ -181,6 +181,8 @@ export function playConsonant(state, letter) {
   s.usedLetters = used;
 
   const phrase = String(s.phrase || "");
+  
+  // ✅ NUOVO: Conta occorrenze usando conteggio caratteri (non coordinate ancora)
   const hits = [...phrase].filter((srcCh) => isLetter(srcCh) && eqChar(srcCh, upper) && !isVowel(srcCh)).length;
 
   if (hits > 0) {
@@ -202,6 +204,11 @@ export function playConsonant(state, letter) {
     s.mustSpin = true;
     s.awaitingConsonant = false;
     s.gameMessage = { type: "success", text: `Hai trovato ${hits} ${upper}! +${gained} punti.` };
+    
+    // ✅ COORDINATE: Il server dovrà calcolare le coordinate usando GameEngine
+    // e aggiungerle a letterCoordinates per inviarle al client
+    s.letterFound = upper; // Marker per il server
+    
   } else {
     s.pendingDouble = false;
     s.awaitingConsonant = false;
@@ -253,6 +260,10 @@ export function buyVowel(state, letter) {
     s.mustSpin = true;
     s.awaitingConsonant = false;
     s.gameMessage = { type: "success", text: `Rivelate ${hits} ${upper}. (-${cost} pt)` };
+    
+    // ✅ COORDINATE: Marker per il server
+    s.letterFound = upper;
+    
   } else {
     s.mustSpin = true;
     s.awaitingConsonant = false;

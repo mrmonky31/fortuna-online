@@ -1,12 +1,21 @@
 // src/components/PhraseManager.jsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import "../styles/phrase-manager.css";
-import { parseToCells } from "../game/GameEngine";
+
+// ⏱️ ============================================
+// ⚙️ PARAMETRI TIMING ANIMAZIONE - MODIFICA QUI
+// ============================================
+const TIMING = {
+  GLOW_DELAY: 250,           // ⏱️ Delay tra illuminazione caselle (ms)
+  GLOW_DURATION: 800,        // ⏱️ Durata illuminazione su singola cella (ms)
+  GLOW_FADEOUT: 250,         // ⏱️ Durata fade-out dal basso verso alto (ms)
+  LETTER_DELAY: 300,         // ⏱️ Gap prima che appaiano le lettere (ms)
+};
+// ============================================
 
 export default function PhraseManager({
-  rows = [],
-  maskedRows = [],
-  revealQueue = [],
+  grid = null,              // ✅ Ora riceve grid invece di rows
+  revealQueue = [],         // ✅ Array di {x, y, char}
   onRevealDone = () => {},
   category = "-",
   onChangePhrase = () => {},
@@ -15,123 +24,125 @@ export default function PhraseManager({
 }) {
   const [glowingCells, setGlowingCells] = useState(new Set());
   const [revealedCells, setRevealedCells] = useState(new Set());
+  const timeoutsRef = useRef([]);
   
-  const boardData = rows.map((origRow, rowIndex) => {
-    const origCells = parseToCells(origRow);
-    const maskRow = maskedRows[rowIndex] || origRow;
-    const maskCells = parseToCells(maskRow);
-    
-    const renderCells = [];
-    const charIndexToRenderIndex = new Map();
-    
-    let charIndex = 0;
-    
-    origCells.forEach((origCell, cellIndex) => {
-      const maskCell = maskCells[cellIndex];
-      
-      for (let i = 0; i < origCell.char.length; i++) {
-        charIndexToRenderIndex.set(charIndex + i, renderCells.length);
-      }
-      
-      renderCells.push({
-        type: origCell.type,
-        char: maskCell ? maskCell.char : origCell.char,
-        originalChar: origCell.char
-      });
-      
-      charIndex += origCell.char.length;
-      
-      if (origCell.type === "letter") {
-        const hasApostrophe = origCell.char.includes("'") || origCell.char.includes("'") || 
-                             origCell.char.includes("`") || origCell.char.includes("´");
-        const isAccented = /[ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝÞ]/i.test(origCell.char);
-        
-        if (hasApostrophe || isAccented) {
-          const nextCell = origCells[cellIndex + 1];
-          if (!nextCell || nextCell.type !== "space") {
-            renderCells.push({ type: "space", char: " " });
-          }
-        }
-      }
-    });
-    
-    return { renderCells, charIndexToRenderIndex };
-  });
-
+  // Reset quando cambia la queue
   useEffect(() => {
+    // Clear tutti i timeout precedenti
+    timeoutsRef.current.forEach(clearTimeout);
+    timeoutsRef.current = [];
+    
     if (!revealQueue || revealQueue.length === 0) {
       setGlowingCells(new Set());
       setRevealedCells(new Set());
       return;
     }
-
-    const revealCellKeys = [];
-    const seenRenderIndexes = new Set();
     
-    revealQueue.forEach(({ r, c }) => {
-      const rowData = boardData[r];
-      if (rowData) {
-        const renderIndex = rowData.charIndexToRenderIndex.get(c);
-        if (renderIndex !== undefined) {
-          const cell = rowData.renderCells[renderIndex];
-          
-          if (cell && cell.type !== "space" && !seenRenderIndexes.has(`${r}-${renderIndex}`)) {
-            revealCellKeys.push(`${r}-${renderIndex}`);
-            seenRenderIndexes.add(`${r}-${renderIndex}`);
-          }
-        }
-      }
-    });
-
-    // ✅ ANIMAZIONE CORRETTA
-    const GLOW_DELAY = 400;        // Delay tra illuminazioni
-    const PAUSE_ALL_GLOWING = 500; // Pausa quando tutte accese
-    const REVEAL_DELAY = 500;      // Delay tra rivelazioni
+    // ✅ ANIMAZIONE SEQUENZIALE CON COORDINATE
+    console.log(`🎬 Inizio animazione ${revealQueue.length} celle`);
     
-    let timeoutIds = [];
-    
+    // Reset stato
     setGlowingCells(new Set());
     setRevealedCells(new Set());
     
-    // ✅ FASE 1: Illumina caselle una per volta
-    revealCellKeys.forEach((key, index) => {
+    revealQueue.forEach((coord, index) => {
+      const cellKey = `${coord.x}-${coord.y}`;
+      
+      // ✅ FASE 1: GLOW - Illumina cella
       const glowTimeout = setTimeout(() => {
-        setGlowingCells(prev => new Set([...prev, key]));
-      }, index * GLOW_DELAY);
-      timeoutIds.push(glowTimeout);
-    });
-    
-    // ✅ FASE 2: Quando tutte illuminate, aspetta un po'
-    const totalGlowTime = revealCellKeys.length * GLOW_DELAY;
-    
-    // ✅ FASE 3: Rivela caselle una per volta
-    revealCellKeys.forEach((key, index) => {
+        console.log(`💡 Glow ON: (${coord.x},${coord.y})`);
+        setGlowingCells(prev => new Set([...prev, cellKey]));
+      }, index * TIMING.GLOW_DELAY);
+      timeoutsRef.current.push(glowTimeout);
+      
+      // ✅ FASE 2: FADE OUT - Spegni glow
+      const fadeOutTimeout = setTimeout(() => {
+        console.log(`🌑 Glow OFF: (${coord.x},${coord.y})`);
+        setGlowingCells(prev => {
+          const next = new Set(prev);
+          next.delete(cellKey);
+          return next;
+        });
+      }, index * TIMING.GLOW_DELAY + TIMING.GLOW_DURATION);
+      timeoutsRef.current.push(fadeOutTimeout);
+      
+      // ✅ FASE 3: REVEAL - Mostra lettera
       const revealTimeout = setTimeout(() => {
-        setRevealedCells(prev => new Set([...prev, key]));
-      }, totalGlowTime + PAUSE_ALL_GLOWING + (index * REVEAL_DELAY));
-      timeoutIds.push(revealTimeout);
+        console.log(`✅ Lettera rivelata: (${coord.x},${coord.y}) = ${coord.char}`);
+        setRevealedCells(prev => new Set([...prev, cellKey]));
+      }, index * TIMING.GLOW_DELAY + TIMING.GLOW_DURATION + TIMING.LETTER_DELAY);
+      timeoutsRef.current.push(revealTimeout);
     });
     
-    // ✅ FASE 4: Spegni glow quando finito
+    // ✅ CLEANUP FINALE
+    const totalTime = 
+      (revealQueue.length - 1) * TIMING.GLOW_DELAY + 
+      TIMING.GLOW_DURATION + 
+      TIMING.GLOW_FADEOUT + 
+      TIMING.LETTER_DELAY + 
+      200; // buffer
+    
     const finalTimeout = setTimeout(() => {
-      setGlowingCells(new Set());
+      console.log(`✅ Animazione completata`);
       onRevealDone && onRevealDone();
-    }, totalGlowTime + PAUSE_ALL_GLOWING + (revealCellKeys.length * REVEAL_DELAY) + 200);
-    timeoutIds.push(finalTimeout);
+    }, totalTime);
+    timeoutsRef.current.push(finalTimeout);
     
     return () => {
-      timeoutIds.forEach(clearTimeout);
+      timeoutsRef.current.forEach(clearTimeout);
+      timeoutsRef.current = [];
     };
-
-  }, [revealQueue, onRevealDone, boardData]);
-
+    
+  }, [revealQueue, onRevealDone]);
+  
+  // Renderizza griglia
+  const renderGrid = () => {
+    if (!grid || !Array.isArray(grid.cells) || grid.rows === 0) {
+      return <div className="pm-empty">—</div>;
+    }
+    
+    const rows = [];
+    for (let y = 0; y < grid.rows; y++) {
+      const rowCells = grid.cells.filter(cell => cell.y === y);
+      rows.push(
+        <div key={y} className="pm-row">
+          {rowCells.map((cell) => {
+            const cellKey = `${cell.x}-${cell.y}`;
+            const isSpace = cell.type === "space";
+            const isMasked = cell.masked === "_";
+            const isGlowing = glowingCells.has(cellKey);
+            const isRevealed = revealedCells.has(cellKey);
+            const isVisible = !isMasked && !isSpace;
+            
+            return (
+              <div
+                key={cellKey}
+                className={`pm-cell ${
+                  isSpace ? "space" : (isVisible || isRevealed) ? "vis" : ""
+                } ${isGlowing ? "glowing" : ""}`}
+              >
+                <span>
+                  {isSpace 
+                    ? "\u00A0" 
+                    : (isRevealed || isVisible ? cell.masked : "\u00A0")
+                  }
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      );
+    }
+    return rows;
+  };
+  
   const flashClass =
     flash === "success"
       ? "tiles-flash-success"
       : flash === "error"
       ? "tiles-flash-error"
       : "";
-
+  
   return (
     <div 
       className={`phrase-manager ${flashClass}`}
@@ -161,38 +172,7 @@ export default function PhraseManager({
 
       <div className="pm-board-wrapper">
         <div className="pm-board">
-          {boardData.length > 0 ? (
-            boardData.map((rowData, r) => (
-              <div key={r} className="pm-row">
-                {rowData.renderCells.map((cell, cellIndex) => {
-                  const isSpace = cell.type === "space";
-                  const isMasked = cell.char === "_";
-                  const cellKey = `${r}-${cellIndex}`;
-                  const isGlowing = glowingCells.has(cellKey);
-                  const isRevealed = revealedCells.has(cellKey);
-                  const isVisible = !isMasked && !isSpace;
-                  
-                  return (
-                    <div
-                      key={cellIndex}
-                      className={`pm-cell ${
-                        isSpace ? "space" : (isVisible || isRevealed) ? "vis" : ""
-                      } ${isGlowing ? "revealing" : ""}`}
-                    >
-                      <span>
-                        {isSpace 
-                          ? "\u00A0" 
-                          : (isRevealed || isVisible ? cell.char : "\u00A0")
-                        }
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            ))
-          ) : (
-            <div className="pm-empty">—</div>
-          )}
+          {renderGrid()}
         </div>
       </div>
     </div>

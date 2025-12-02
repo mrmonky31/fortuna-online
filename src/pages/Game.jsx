@@ -11,7 +11,7 @@ import Wheel from "../components/Wheel";
 import FinalScoreboard from "../components/FinalScoreboard";
 import LetterGrid from "../components/LetterGrid";
 
-import { maskBoard, buildBoard } from "../game/GameEngine";
+import { buildGridWithCoordinates, maskGrid } from "../game/GameEngine";
 import socket from "../socket";
 
 export default function Game({ players = [], totalRounds = 3, state, onExitToLobby }) {
@@ -72,7 +72,8 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
     };
   });
 
-  const [maskedRows, setMaskedRows] = useState([]);
+  const [grid, setGrid] = useState(null);
+  const [maskedGrid, setMaskedGrid] = useState(null);
   const [revealQueue, setRevealQueue] = useState([]);
   const [turnTimer, setTurnTimer] = useState(60);
   const [timerPaused, setTimerPaused] = useState(false);
@@ -325,18 +326,31 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
     return () => clearInterval(id);
   }, [betweenRounds, roundCountdown]);
 
+  // ✅ NUOVO: Costruisci grid dalla frase
   useEffect(() => {
-    if (!gameState) return;
-    const rows = Array.isArray(gameState.rows) ? gameState.rows : [];
-    const revealed = gameState.revealedLetters || [];
+    if (!gameState || !gameState.phrase) {
+      setGrid(null);
+      setMaskedGrid(null);
+      return;
+    }
 
     try {
-      const m = maskBoard(rows, revealed);
-      setMaskedRows(Array.isArray(m) && m.length ? m : rows);
-    } catch {
-      setMaskedRows(rows);
+      // Costruisci grid con coordinate
+      const newGrid = buildGridWithCoordinates(gameState.phrase, 14, 4);
+      setGrid(newGrid);
+      
+      // Maschera grid
+      const revealed = gameState.revealedLetters || [];
+      const masked = maskGrid(newGrid, revealed);
+      setMaskedGrid(masked);
+      
+      console.log("📐 Grid costruita:", newGrid);
+    } catch (error) {
+      console.error("❌ Errore costruzione grid:", error);
+      setGrid(null);
+      setMaskedGrid(null);
     }
-  }, [gameState?.rows, gameState?.revealedLetters]);
+  }, [gameState?.phrase, gameState?.revealedLetters]);
 
   // Calcola se consonanti e vocali sono finite
   useEffect(() => {
@@ -750,8 +764,7 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
 
         <div className="game-board-area">
           <PhraseManager
-            rows={gameState.rows}
-            maskedRows={showPhrase && isPresenter ? gameState.rows : maskedRows}
+            grid={showPhrase && isPresenter ? grid : maskedGrid}
             revealQueue={revealQueue}
             onRevealDone={handleRevealDone}
             category={gameState.category || "-"}

@@ -19,6 +19,9 @@ const __dirname = dirname(__filename);
 // ✅ Carica frasi base
 import { testPhrases } from "./game/phrases.js";
 
+// ✅ NUOVO: Import funzioni coordinate
+import { buildGridWithCoordinates, findLetterCoordinates } from "./game/GameEngine.js";
+
 const app = express();
 
 app.use(
@@ -938,7 +941,8 @@ if (gs.usedLetters.includes(upper)) {
       gs.revealedLetters.push(upper);
       
       // ✅ Calcola posizioni lettere per animazione
-      const revealQueue = letterOccurrences(gs.rows, upper);
+      const grid = buildGridWithCoordinates(gs.phrase, 14, 4);
+      const revealQueue = findLetterCoordinates(grid, upper);
       io.to(code).emit("gameStateUpdate", { 
         gameState: gs,
         revealQueue: revealQueue
@@ -980,7 +984,8 @@ if (gs.usedLetters.includes(upper)) {
         gs.gameMessage = { type: "success", text: message };
         
         // ✅ Calcola posizioni lettere rivelate per animazione
-        const revealQueue = letterOccurrences(gs.rows, upper);
+        const grid = buildGridWithCoordinates(gs.phrase, 14, 4);
+        const revealQueue = findLetterCoordinates(grid, upper);
         io.to(code).emit("gameStateUpdate", { 
           gameState: gs,
           revealQueue: revealQueue  // ✅ Invia posizioni per animazione
@@ -1088,7 +1093,8 @@ if (gs.usedLetters.includes(upper)) {
         gs.gameMessage = { type: "success", text: `Rivelate ${hits} ${upper}! (-${cost} pt)` };
         
         // ✅ Calcola posizioni per animazione
-        const revealQueue = letterOccurrences(gs.rows, upper);
+        const grid = buildGridWithCoordinates(gs.phrase, 14, 4);
+        const revealQueue = findLetterCoordinates(grid, upper);
         io.to(code).emit("gameStateUpdate", { 
           gameState: gs,
           revealQueue: revealQueue

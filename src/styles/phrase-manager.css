@@ -1,64 +1,137 @@
-/* ========================================== */
-/*   STILE TABELLONE — VERSIONE GLOW VERDE    */
-/* ========================================== */
+/* phrase-manager.css - Sistema coordinate XY con animazione glow */
+
+.phrase-manager {
+  width: 100%;
+  padding: 20px;
+  position: relative;
+}
+
+.pm-header {
+  margin-bottom: 15px;
+}
+
+.pm-category {
+  font-size: 18px;
+  color: #cbd5e0;
+  font-weight: 500;
+}
+
+.pm-board-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 340px;
+}
 
 .pm-board {
-  display: inline-block;
-  padding: 8px;
-  background: #0e0e12;
-  border: 2px solid #000;
-  border-radius: 8px;
-  box-shadow: 0 0 15px rgba(0, 179, 255, 0.919);
-  min-height: 380px;
-}
-
-/* Ogni riga del tabellone */
-.pm-row {
-  display: grid;
-  grid-template-columns: repeat(14, 50px);
-  gap: 5px;
-  margin: 5px 0;
+  display: flex;
+  flex-direction: column;
   justify-content: center;
+  align-items: center;
+  gap: 10px;
 }
 
-/* Ogni singola casella */
+/* ✅ RIGHE */
+.pm-row { 
+  display: flex; 
+  gap: 6px; 
+}
+
+/* ✅ CELLE */
 .pm-cell {
-  width: 50px;
-  height: 58px;
+  min-width: 40px;
+  min-height: 48px;
+  border: 2px solid #2a2f3a;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 900;
-  font-size: 48px;
-  border-radius: 5px;
-  box-shadow: 0 3px 6px rgba(5, 169, 251, 0.6);
+  padding: 6px 8px;
+  background: #151821;
+  font-size: 1.6rem;
+  font-weight: 600;
+  line-height: 1;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.2s ease;
 }
 
-/* Caselle nere per spazi */
+/* Spazio invisibile */
 .pm-cell.space {
-  background: #000;
+  background: transparent;
+  border: none;
+  min-width: 20px;
 }
 
-/* Caselle nascoste */
-.pm-cell:not(.vis):not(.space) {
-  background: #f0f0f0;
-  color: transparent;
-}
-
-/* Caselle rivelate */
-.pm-cell.vis {
+/* Cella con lettera visibile */
+.pm-cell.vis { 
+  border-color: #3b4358;
   background: #ffffff;
   color: #111;
-  transition: filter 0.35s ease, background 0.2s ease;
 }
 
-/* Effetto glow sul reveal */
-.pm-cell.vis.glow {
-  filter: drop-shadow(0 0 6px rgba(5, 251, 70, 0.9));
-}
-.pm-cell:not(.vis) span {
+/* ✅ ANIMAZIONE GLOW - NASCONDE COMPLETAMENTE LA LETTERA */
+.pm-cell.glowing {
+  background-color: var(--round-color, #00ff55) !important;
+  box-shadow: 0 0 30px var(--round-color, #00ff55), 
+              inset 0 0 25px rgba(255, 255, 255, 0.3) !important;
+  transform: scale(1.12);
+  border-color: var(--round-color, #00ff55) !important;
+  /* ✅ NASCONDE LETTERA durante glow */
   color: transparent !important;
 }
-.pm-cell:not(.vis) span {
-  color: transparent !important;
+
+.pm-cell.glowing span {
+  /* ✅ LENZUOLO OPACO - lettera completamente nascosta */
+  visibility: hidden !important;
+}
+
+/* ✅ FADE-OUT GLOW (dal basso verso alto) */
+@keyframes glowFadeOut {
+  from {
+    opacity: 1;
+    clip-path: inset(0 0 0 0);
+  }
+  to {
+    opacity: 0;
+    clip-path: inset(100% 0 0 0);
+  }
+}
+
+/* Flash successo/errore sul tabellone intero */
+.tiles-flash-success .pm-cell { 
+  animation: flashGreen 160ms ease-in-out 5; 
+}
+
+.tiles-flash-error .pm-cell { 
+  animation: flashRed 180ms ease-in-out 1; 
+}
+
+@keyframes flashGreen {
+  0%, 100% { 
+    border-color: #3b4358; 
+    box-shadow: 0 0 0 transparent; 
+  }
+  50% { 
+    border-color: #00e676; 
+    box-shadow: 0 0 10px #00e67666; 
+  }
+}
+
+@keyframes flashRed {
+  0%, 100% { 
+    border-color: #3b4358; 
+    box-shadow: 0 0 0 transparent; 
+  }
+  50% { 
+    border-color: #ff1744; 
+    box-shadow: 0 0 10px #ff174466; 
+  }
+}
+
+/* Empty state */
+.pm-empty {
+  color: #4a5568;
+  font-size: 18px;
+  padding: 40px;
 }
