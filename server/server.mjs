@@ -19,7 +19,7 @@ const __dirname = dirname(__filename);
 // ✅ Carica frasi base
 import { testPhrases } from "./game/phrases.js";
 
-// ✅ NUOVO: Import funzioni coordinate
+// ✅ Import funzioni coordinate per animazione
 import { buildGridWithCoordinates, findLetterCoordinates } from "./game/GameEngine.js";
 
 const app = express();
@@ -147,30 +147,13 @@ function parseToCells(text) {
 
 // ✅ Trova posizioni lettere usando parseToCells
 function letterOccurrences(rows, targetLetter) {
-  const norm = normalizeText(targetLetter);
-  const hits = [];
+  // ✅ NUOVO: Usa coordinate XY invece di r,c lineari
+  const phrase = Array.isArray(rows) ? rows.join(" ") : "";
+  const grid = buildGridWithCoordinates(phrase, 14, 4);
+  const coordinates = findLetterCoordinates(grid, targetLetter);
   
-  (Array.isArray(rows) ? rows : []).forEach((row, r) => {
-    const cells = parseToCells(row);
-    let charIndex = 0;
-    
-    cells.forEach((cell) => {
-      if (cell.type === "letter") {
-        const baseLetter = cell.char.replace(/['`´']/g, "");
-        
-        if (normalizeText(baseLetter) === norm) {
-          // Aggiungi TUTTI i caratteri di questa casella (L e ')
-          for (let i = 0; i < cell.char.length; i++) {
-            hits.push({ r, c: charIndex + i, ch: cell.char[i] });
-          }
-        }
-      }
-      
-      charIndex += cell.char.length;
-    });
-  });
-  
-  return hits;
+  // ✅ Ritorna formato {x, y, char} per il client
+  return coordinates;
 }
 
 function generateWheel() {
@@ -941,8 +924,7 @@ if (gs.usedLetters.includes(upper)) {
       gs.revealedLetters.push(upper);
       
       // ✅ Calcola posizioni lettere per animazione
-      const grid = buildGridWithCoordinates(gs.phrase, 14, 4);
-      const revealQueue = findLetterCoordinates(grid, upper);
+      const revealQueue = letterOccurrences(gs.rows, upper);
       io.to(code).emit("gameStateUpdate", { 
         gameState: gs,
         revealQueue: revealQueue
@@ -984,8 +966,7 @@ if (gs.usedLetters.includes(upper)) {
         gs.gameMessage = { type: "success", text: message };
         
         // ✅ Calcola posizioni lettere rivelate per animazione
-        const grid = buildGridWithCoordinates(gs.phrase, 14, 4);
-        const revealQueue = findLetterCoordinates(grid, upper);
+        const revealQueue = letterOccurrences(gs.rows, upper);
         io.to(code).emit("gameStateUpdate", { 
           gameState: gs,
           revealQueue: revealQueue  // ✅ Invia posizioni per animazione
@@ -1093,8 +1074,7 @@ if (gs.usedLetters.includes(upper)) {
         gs.gameMessage = { type: "success", text: `Rivelate ${hits} ${upper}! (-${cost} pt)` };
         
         // ✅ Calcola posizioni per animazione
-        const grid = buildGridWithCoordinates(gs.phrase, 14, 4);
-        const revealQueue = findLetterCoordinates(grid, upper);
+        const revealQueue = letterOccurrences(gs.rows, upper);
         io.to(code).emit("gameStateUpdate", { 
           gameState: gs,
           revealQueue: revealQueue

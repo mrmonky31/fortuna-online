@@ -6,10 +6,10 @@ import "../styles/phrase-manager.css";
 // ⚙️ PARAMETRI TIMING ANIMAZIONE - MODIFICA QUI
 // ============================================
 const TIMING = {
-  GLOW_DELAY: 250,           // ⏱️ Delay tra illuminazione caselle (ms)
-  GLOW_DURATION: 800,        // ⏱️ Durata illuminazione su singola cella (ms)
-  GLOW_FADEOUT: 250,         // ⏱️ Durata fade-out dal basso verso alto (ms)
-  LETTER_DELAY: 300,         // ⏱️ Gap prima che appaiano le lettere (ms)
+  GLOW_DELAY: 250,           // ⏱️ Delay tra accensione caselle (ms)
+  PAUSE_ALL_GLOWING: 500,    // ⏱️ Pausa con tutte accese (ms)
+  FADEOUT_DELAY: 250,        // ⏱️ Delay tra fade-out (ms)
+  FADEOUT_DURATION: 250,     // ⏱️ Durata fade-out singola cella (ms)
 };
 // ============================================
 
@@ -23,6 +23,7 @@ export default function PhraseManager({
   roundColor = null,
 }) {
   const [glowingCells, setGlowingCells] = useState(new Set());
+  const [fadingCells, setFadingCells] = useState(new Set());
   const [revealedCells, setRevealedCells] = useState(new Set());
   const timeoutsRef = useRef([]);
   
@@ -34,53 +35,68 @@ export default function PhraseManager({
     
     if (!revealQueue || revealQueue.length === 0) {
       setGlowingCells(new Set());
+      setFadingCells(new Set());
       setRevealedCells(new Set());
       return;
     }
     
-    // ✅ ANIMAZIONE SEQUENZIALE CON COORDINATE
     console.log(`🎬 Inizio animazione ${revealQueue.length} celle`);
     
     // Reset stato
     setGlowingCells(new Set());
+    setFadingCells(new Set());
     setRevealedCells(new Set());
     
-    revealQueue.forEach((coord, index) => {
-      const cellKey = `${coord.x}-${coord.y}`;
-      
-      // ✅ FASE 1: GLOW - Illumina cella
+    const cellKeys = revealQueue.map(coord => `${coord.x}-${coord.y}`);
+    
+    // ✅ FASE 1: ACCENDI tutte le caselle una per volta
+    cellKeys.forEach((key, index) => {
       const glowTimeout = setTimeout(() => {
-        console.log(`💡 Glow ON: (${coord.x},${coord.y})`);
-        setGlowingCells(prev => new Set([...prev, cellKey]));
+        console.log(`💡 Glow ON: ${key}`);
+        setGlowingCells(prev => new Set([...prev, key]));
       }, index * TIMING.GLOW_DELAY);
       timeoutsRef.current.push(glowTimeout);
-      
-      // ✅ FASE 2: FADE OUT - Spegni glow
-      const fadeOutTimeout = setTimeout(() => {
-        console.log(`🌑 Glow OFF: (${coord.x},${coord.y})`);
+    });
+    
+    const totalGlowTime = (cellKeys.length - 1) * TIMING.GLOW_DELAY;
+    const fadeStartTime = totalGlowTime + TIMING.PAUSE_ALL_GLOWING;
+    
+    // ✅ FASE 2: FADE-OUT sequenziale (stesso ordine) rivela lettere
+    cellKeys.forEach((key, index) => {
+      const fadeTimeout = setTimeout(() => {
+        console.log(`🌑 Fade-out: ${key}`);
+        
+        // Rimuovi glow
         setGlowingCells(prev => {
           const next = new Set(prev);
-          next.delete(cellKey);
+          next.delete(key);
           return next;
         });
-      }, index * TIMING.GLOW_DELAY + TIMING.GLOW_DURATION);
-      timeoutsRef.current.push(fadeOutTimeout);
-      
-      // ✅ FASE 3: REVEAL - Mostra lettera
-      const revealTimeout = setTimeout(() => {
-        console.log(`✅ Lettera rivelata: (${coord.x},${coord.y}) = ${coord.char}`);
-        setRevealedCells(prev => new Set([...prev, cellKey]));
-      }, index * TIMING.GLOW_DELAY + TIMING.GLOW_DURATION + TIMING.LETTER_DELAY);
-      timeoutsRef.current.push(revealTimeout);
+        
+        // Aggiungi classe fading
+        setFadingCells(prev => new Set([...prev, key]));
+        
+        // Dopo fade-out mostra lettera
+        const revealTimeout = setTimeout(() => {
+          setFadingCells(prev => {
+            const next = new Set(prev);
+            next.delete(key);
+            return next;
+          });
+          setRevealedCells(prev => new Set([...prev, key]));
+          console.log(`✅ Lettera rivelata: ${key}`);
+        }, TIMING.FADEOUT_DURATION);
+        timeoutsRef.current.push(revealTimeout);
+        
+      }, fadeStartTime + (index * TIMING.FADEOUT_DELAY));
+      timeoutsRef.current.push(fadeTimeout);
     });
     
     // ✅ CLEANUP FINALE
-    const totalTime = 
-      (revealQueue.length - 1) * TIMING.GLOW_DELAY + 
-      TIMING.GLOW_DURATION + 
-      TIMING.GLOW_FADEOUT + 
-      TIMING.LETTER_DELAY + 
-      200; // buffer
+    const totalTime = fadeStartTime + 
+                      (cellKeys.length * TIMING.FADEOUT_DELAY) + 
+                      TIMING.FADEOUT_DURATION + 
+                      200;
     
     const finalTimeout = setTimeout(() => {
       console.log(`✅ Animazione completata`);
@@ -111,6 +127,7 @@ export default function PhraseManager({
             const isSpace = cell.type === "space";
             const isMasked = cell.masked === "_";
             const isGlowing = glowingCells.has(cellKey);
+            const isFading = fadingCells.has(cellKey);
             const isRevealed = revealedCells.has(cellKey);
             const isVisible = !isMasked && !isSpace;
             
@@ -118,8 +135,8 @@ export default function PhraseManager({
               <div
                 key={cellKey}
                 className={`pm-cell ${
-                  isSpace ? "space" : (isVisible || isRevealed) ? "vis" : ""
-                } ${isGlowing ? "glowing" : ""}`}
+                  isSpace ? "space" : ""
+                } ${isGlowing ? "glowing" : ""} ${isFading ? "fading-out" : ""} ${(isVisible || isRevealed) && !isGlowing && !isFading ? "vis" : ""}`}
               >
                 <span>
                   {isSpace 
