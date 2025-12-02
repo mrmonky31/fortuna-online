@@ -31,10 +31,12 @@ export default function PhraseManager({
   useEffect(() => {
     const queueId = JSON.stringify(revealQueue);
     
+    // ✅ Se è la stessa queue già processata, IGNORA
     if (queueId === lastQueueRef.current) {
       return;
     }
     
+    // ✅ Se sta già animando, IGNORA
     if (animatingRef.current) {
       return;
     }
@@ -42,10 +44,13 @@ export default function PhraseManager({
     timeoutsRef.current.forEach(clearTimeout);
     timeoutsRef.current = [];
     
+    // ✅ Se queue è vuota MA ci sono celle rivelate, NON resettare
     if (!revealQueue || revealQueue.length === 0) {
-      setGlowingCells(new Set());
-      setFadingCells(new Set());
-      setRevealedCells(new Set());
+      if (revealedCells.size === 0) {
+        // Solo se anche revealedCells è vuoto, allora resetta
+        setGlowingCells(new Set());
+        setFadingCells(new Set());
+      }
       animatingRef.current = false;
       lastQueueRef.current = null;
       return;
@@ -125,8 +130,8 @@ export default function PhraseManager({
             const isFading = fadingCells.has(cellKey);
             const isRevealed = revealedCells.has(cellKey);
             
-            // ✅ Mostra lettera SOLO se isRevealed (dopo animazione)
-            const shouldShowLetter = isRevealed;
+            // ✅ Mostra lettera se è stata rivelata dall'animazione O se è già nel masked
+            const shouldShowLetter = isRevealed || (cell.masked !== "_" && !isSpace);
             
             return (
               <div
