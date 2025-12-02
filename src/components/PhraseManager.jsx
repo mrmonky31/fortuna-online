@@ -76,17 +76,17 @@ export default function PhraseManager({
       setGlowingCells(new Set());
       setFadingCells(new Set(cellKeys));
       
-      // ✅ Lettere appaiono DOPO il fade-out
+      // ✅ Lettere appaiono 700ms DOPO l'inizio del fade-out
       const revealTimeout = setTimeout(() => {
         setFadingCells(new Set()); // Rimuovi classe fading
         setRevealedCells(new Set(cellKeys)); // Mostra lettere
-      }, TIMING.FADEOUT_DURATION); // ✅ DOPO che il sipario si è alzato
+      }, TIMING.FADEOUT_DURATION + 700); // ✅ +700ms DOPO fade-out
       timeoutsRef.current.push(revealTimeout);
       
     }, fadeStartTime);
     timeoutsRef.current.push(fadeTimeout);
     
-    const totalTime = fadeStartTime + TIMING.FADEOUT_DURATION + 200;
+    const totalTime = fadeStartTime + TIMING.FADEOUT_DURATION + 700 + 200; // ✅ +700ms
     
     const finalTimeout = setTimeout(() => {
       setGlowingCells(new Set());
