@@ -263,9 +263,6 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
 
   useEffect(() => {
     function handleGameStateUpdate({ gameState: serverState, revealQueue: newRevealQueue }) {
-      console.log("🔄 Update dal server:", serverState);
-      console.log("📍 revealQueue ricevuta:", newRevealQueue);
-      
       if (serverState) {
         setGameState(serverState);
         
@@ -277,10 +274,7 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
             y: coord.r || coord.y,
             char: coord.ch || coord.char
           }));
-          console.log("✅ Setto revealQueue (convertita):", converted);
           setRevealQueue(converted);
-        } else {
-          console.log("⚠️ revealQueue vuota o undefined");
         }
         
         // ⭐ NUOVO: Ferma spinning quando finisce
@@ -354,8 +348,6 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
       const revealed = gameState.revealedLetters || [];
       const masked = maskGrid(newGrid, revealed);
       setMaskedGrid(masked);
-      
-      console.log("📐 Grid costruita:", newGrid);
     } catch (error) {
       console.error("❌ Errore costruzione grid:", error);
       setGrid(null);

@@ -147,18 +147,8 @@ function parseToCells(text) {
 
 // ✅ Trova posizioni lettere usando parseToCells
 function letterOccurrences(phrase, targetLetter) {
-  console.log("🔍 letterOccurrences chiamata");
-  console.log("📝 phrase:", phrase);
-  console.log("🔤 targetLetter:", targetLetter);
-  
-  // ✅ Costruisci grid dalla frase
   const grid = buildGridWithCoordinates(phrase, 14, 4);
-  console.log("📐 Grid costruita:", grid);
-  
   const coordinates = findLetterCoordinates(grid, targetLetter);
-  console.log("📍 Coordinate trovate:", coordinates);
-  
-  // ✅ Ritorna formato {x, y, char} per il client
   return coordinates;
 }
 

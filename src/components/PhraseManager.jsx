@@ -29,41 +29,27 @@ export default function PhraseManager({
   
   // Reset quando cambia la queue
   useEffect(() => {
-    console.log("🎯 PhraseManager useEffect triggered");
-    console.log("📍 revealQueue:", revealQueue);
-    console.log("📍 revealQueue.length:", revealQueue?.length);
-    
     // Clear tutti i timeout precedenti
     timeoutsRef.current.forEach(clearTimeout);
     timeoutsRef.current = [];
     
     if (!revealQueue || revealQueue.length === 0) {
-      console.log("⚠️ revealQueue vuota, reset stati");
       setGlowingCells(new Set());
       setFadingCells(new Set());
       setRevealedCells(new Set());
       return;
     }
     
-    console.log(`🎬 Inizio animazione ${revealQueue.length} celle`);
-    console.log("📍 Coordinate ricevute:", revealQueue);
-    console.log("📍 PRIMA COORDINATA:", JSON.stringify(revealQueue[0]));
-    
     // Reset stato
     setGlowingCells(new Set());
     setFadingCells(new Set());
     setRevealedCells(new Set());
     
-    const cellKeys = revealQueue.map((coord, idx) => {
-      console.log(`🔑 Coord ${idx}:`, coord, `x=${coord.x}, y=${coord.y}`);
-      return `${coord.x}-${coord.y}`;
-    });
-    console.log("🔑 CellKeys generati:", cellKeys);
+    const cellKeys = revealQueue.map(coord => `${coord.x}-${coord.y}`);
     
     // ✅ FASE 1: ACCENDI tutte le caselle una per volta
     cellKeys.forEach((key, index) => {
       const glowTimeout = setTimeout(() => {
-        console.log(`💡 Glow ON: ${key}`);
         setGlowingCells(prev => new Set([...prev, key]));
       }, index * TIMING.GLOW_DELAY);
       timeoutsRef.current.push(glowTimeout);
@@ -75,8 +61,6 @@ export default function PhraseManager({
     // ✅ FASE 2: FADE-OUT sequenziale (stesso ordine) rivela lettere
     cellKeys.forEach((key, index) => {
       const fadeTimeout = setTimeout(() => {
-        console.log(`🌑 Fade-out START: ${key}`);
-        
         // Rimuovi glow E aggiungi fading contemporaneamente
         setGlowingCells(prev => {
           const next = new Set(prev);
@@ -88,7 +72,6 @@ export default function PhraseManager({
         
         // Dopo fade-out mostra lettera
         const revealTimeout = setTimeout(() => {
-          console.log(`✅ Lettera rivelata: ${key}`);
           setFadingCells(prev => {
             const next = new Set(prev);
             next.delete(key);
@@ -109,7 +92,6 @@ export default function PhraseManager({
                       200;
     
     const finalTimeout = setTimeout(() => {
-      console.log(`✅ Animazione completata - CLEANUP FINALE`);
       setGlowingCells(new Set()); // ✅ PULISCI TUTTO
       setFadingCells(new Set());  // ✅ PULISCI TUTTO
       onRevealDone && onRevealDone();
@@ -117,7 +99,6 @@ export default function PhraseManager({
     timeoutsRef.current.push(finalTimeout);
     
     return () => {
-      console.log("🧹 Cleanup useEffect - cancello tutti i timeout");
       timeoutsRef.current.forEach(clearTimeout);
       timeoutsRef.current = [];
       setGlowingCells(new Set());
