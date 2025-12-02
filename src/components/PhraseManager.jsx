@@ -76,10 +76,11 @@ export default function PhraseManager({
       setGlowingCells(new Set());
       setFadingCells(new Set(cellKeys));
       
+      // ✅ Lettere appaiono DOPO il fade-out
       const revealTimeout = setTimeout(() => {
-        setFadingCells(new Set());
-        setRevealedCells(new Set(cellKeys));
-      }, TIMING.FADEOUT_DURATION);
+        setFadingCells(new Set()); // Rimuovi classe fading
+        setRevealedCells(new Set(cellKeys)); // Mostra lettere
+      }, TIMING.FADEOUT_DURATION); // ✅ DOPO che il sipario si è alzato
       timeoutsRef.current.push(revealTimeout);
       
     }, fadeStartTime);

@@ -84,9 +84,10 @@
   visibility: hidden !important;
 }
 
-/* ✅ FADE-OUT: sipario che si alza dal basso */
+/* ✅ FADE-OUT: sipario che si alza dal basso - LETTERA NASCOSTA */
 .pm-cell.fading-out {
   animation: curtainUp 0.5s ease-out forwards;
+  color: transparent !important; /* ✅ Lettera nascosta durante fade-out */
 }
 
 @keyframes curtainUp {
@@ -107,8 +108,7 @@
 }
 
 .pm-cell.fading-out span {
-  visibility: visible !important;
-  color: #111 !important;
+  visibility: hidden !important; /* ✅ Lettera nascosta durante fade-out */
 }
 
 /* ✅ Cella rivelata (dopo fade-out) */
