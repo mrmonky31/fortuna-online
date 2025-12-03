@@ -85,7 +85,7 @@ export default function PhraseManager({
       const revealTimeout = setTimeout(() => {
         setFadingCells(new Set()); // Rimuovi classe fading
         setRevealedCells(new Set(cellKeys)); // Mostra lettere
-      }, TIMING.FADEOUT_DURATION + 700); // ✅ +700ms DOPO fade-out
+      }, TIMING.FADEOUT_DURATION + 200); // ✅ +700ms DOPO fade-out
       timeoutsRef.current.push(revealTimeout);
       
     }, fadeStartTime);
