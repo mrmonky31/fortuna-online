@@ -620,9 +620,10 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
 
   const handleChangePhrase = () => {
     if (!roomCode) return;
-    // ✅ Reset animazione e showPhrase prima di cambiare frase
+    // ✅ Reset animazione, showPhrase e griglia lettere prima di cambiare frase
     setRevealQueue([]);
     setShowPhrase(false);
+    setActiveLetterType(null);
     socket.emit("changePhrase", { roomCode }, (res) => {
       if (!res?.ok) alert(res?.error || "Errore cambio frase");
     });
