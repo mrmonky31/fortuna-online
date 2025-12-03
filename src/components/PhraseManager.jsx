@@ -8,7 +8,7 @@ import "../styles/phrase-manager.css";
 const TIMING = {
   GLOW_DELAY: 250,           // ⏱️ Delay tra accensione caselle (ms)
   PAUSE_ALL_GLOWING: 800,    // ⏱️ Pausa con tutte accese (ms)
-  FADEOUT_DURATION: 500,     // ⏱️ Durata fade-out (ms)
+  FADEOUT_DURATION: 400,     // ⏱️ Durata fade-out (ms)
 };
 // ============================================
 
@@ -91,7 +91,7 @@ export default function PhraseManager({
     }, fadeStartTime);
     timeoutsRef.current.push(fadeTimeout);
     
-    const totalTime = fadeStartTime + TIMING.FADEOUT_DURATION + 100 + 200; // ✅ +700ms
+    const totalTime = fadeStartTime + TIMING.FADEOUT_DURATION + 100 + 100; // ✅ +700ms
     
     const finalTimeout = setTimeout(() => {
       setGlowingCells(new Set());

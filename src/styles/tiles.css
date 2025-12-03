@@ -1,12 +1,12 @@
 /* Celle del tabellone */
-.pm-row { display: flex; gap: 6px; margin-bottom: 6px; }
+.pm-row { display: flex; gap: 3px; margin-bottom: 3px; }
 .pm-board {
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  gap: 10px;
-  min-height: 340px;
+  gap: 5px;
+  min-height: 440px;
 }
 
 .pm-cell {
@@ -19,8 +19,8 @@
   justify-content: center;
   padding: 6px 8px;
   background: #151821;
-  font-size: 1.6rem;
-  font-weight: 600;
+  font-size: 2.6rem;
+  font-weight: 900;
   line-height: 1;
   position: relative;
   overflow: hidden;

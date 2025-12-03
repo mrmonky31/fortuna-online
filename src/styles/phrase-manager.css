@@ -7,7 +7,7 @@
 }
 
 .pm-header {
-  margin-bottom: 15px;
+  margin-bottom: 5px;
 }
 
 .pm-category {
@@ -20,7 +20,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 340px;
+  min-height: 440px;
 }
 
 .pm-board {
@@ -28,13 +28,13 @@
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  gap: 10px;
+  gap: 5px;
 }
 
 /* ✅ RIGHE */
 .pm-row { 
   display: flex; 
-  gap: 6px; 
+  gap: 4px; 
 }
 
 /* ✅ CELLE - BIANCHE E INGRANDITE 25% */
@@ -42,15 +42,15 @@
   min-width: 50px;
   min-height: 60px;
   border: 2px solid #3b4358;
-  border-radius: 8px;
+  border-radius: 5px;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 8px 10px;
+  padding: 4px 5px;
   background: #ffffff;
   color: #111;
-  font-size: 2rem;
-  font-weight: 600;
+  font-size: 2.6rem;
+  font-weight: 900;
   line-height: 1;
   position: relative;
   overflow: hidden;
