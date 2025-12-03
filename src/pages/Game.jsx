@@ -94,9 +94,9 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
   // ✅ NUOVO: Colore random per round (mai bianco/nero)
   const [roundColor, setRoundColor] = useState(() => {
     const colors = [
-      '#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8',
-      '#F7DC6F', '#BB8FCE', '#85C1E2', '#F8B739', '#52B788',
-      '#E63946', '#F77F00', '#06FFA5', '#7209B7', '#3A86FF'
+      '#FF0000', '#00FF00', '#0000FF', '#FF00FF', '#00FFFF', 
+      '#FFFF00', '#FF6600', '#FF0066', '#6600FF', '#00FF66',
+      '#FF3300', '#33FF00', '#0033FF', '#FF0033', '#3300FF'
     ];
     return colors[Math.floor(Math.random() * colors.length)];
   });
@@ -310,9 +310,9 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
       
       // ✅ Genera nuovo colore per il prossimo round
       const colors = [
-        '#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8',
-        '#F7DC6F', '#BB8FCE', '#85C1E2', '#F8B739', '#52B788',
-        '#E63946', '#F77F00', '#06FFA5', '#7209B7', '#3A86FF'
+        '#FF0000', '#00FF00', '#0000FF', '#FF00FF', '#00FFFF', 
+        '#FFFF00', '#FF6600', '#FF0066', '#6600FF', '#00FF66',
+        '#FF3300', '#33FF00', '#0033FF', '#FF0033', '#3300FF'
       ];
       setRoundColor(colors[Math.floor(Math.random() * colors.length)]);
     }
