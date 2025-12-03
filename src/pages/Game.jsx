@@ -94,8 +94,8 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
   // ✅ NUOVO: Colore random per round (mai bianco/nero)
   const [roundColor, setRoundColor] = useState(() => {
     const colors = [
-      '#FF0000', '#00da24ff', '#0000FF', '#FF00FF', '#a600ffff', 
-      '#fffb00ff', '#FF6600', '#FF0066', '#6600FF', '#00FF66',
+      '#FF0000', '#00FF00', '#0000FF', '#FF00FF', '#00FFFF', 
+      '#FFFF00', '#FF6600', '#FF0066', '#6600FF', '#00FF66',
       '#FF3300', '#33FF00', '#0033FF', '#FF0033', '#3300FF'
     ];
     return colors[Math.floor(Math.random() * colors.length)];
@@ -354,6 +354,9 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
       const revealed = gameState.revealedLetters || [];
       const masked = maskGrid(newGrid, revealed);
       setMaskedGrid(masked);
+      
+      // ✅ Reset revealQueue quando cambia frase
+      setRevealQueue([]);
     } catch (error) {
       console.error("❌ Errore costruzione grid:", error);
       setGrid(null);
@@ -620,6 +623,8 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
 
   const handleChangePhrase = () => {
     if (!roomCode) return;
+    // ✅ Reset animazione prima di cambiare frase
+    setRevealQueue([]);
     socket.emit("changePhrase", { roomCode }, (res) => {
       if (!res?.ok) alert(res?.error || "Errore cambio frase");
     });
