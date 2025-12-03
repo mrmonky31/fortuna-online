@@ -59,7 +59,7 @@
   background-color: #ffffff !important;
   color: #111 !important;
   border-color: var(--round-color, #00ff00) !important;
-  transform: scale(1.05);
+
   position: relative;
 }
 
