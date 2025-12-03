@@ -130,8 +130,8 @@ export default function PhraseManager({
             const isFading = fadingCells.has(cellKey);
             const isRevealed = revealedCells.has(cellKey);
             
-            // ✅ Mostra lettera se è stata rivelata dall'animazione O se è già nel masked
-            const shouldShowLetter = isRevealed || (cell.masked !== "_" && !isSpace);
+            // ✅ Mostra lettera se sta facendo fade-out O se è rivelata O se è nel masked
+            const shouldShowLetter = isFading || isRevealed || (cell.masked !== "_" && !isSpace);
             
             return (
               <div

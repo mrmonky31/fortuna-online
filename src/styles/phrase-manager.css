@@ -72,43 +72,69 @@
 
 /* ✅ ANIMAZIONE GLOW - ILLUMINA TUTTA LA CASELLA (OPACO) */
 .pm-cell.glowing {
-  background-color: var(--round-color, #00ff55) !important;
-  box-shadow: 0 0 30px var(--round-color, #00ff55), 
-              inset 0 0 30px rgba(255, 255, 255, 0.8) !important;
+  background-color: #ffffff !important; /* Cella bianca sotto */
+  color: #111 !important; /* Lettera nera visibile */
   border-color: var(--round-color, #00ff55) !important;
   transform: scale(1.05);
-  color: transparent !important;
+  position: relative;
+}
+
+.pm-cell.glowing::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--round-color, #00ff55);
+  box-shadow: 0 0 30px var(--round-color, #00ff55), 
+              inset 0 0 30px rgba(255, 255, 255, 0.8);
+  z-index: 1;
 }
 
 .pm-cell.glowing span {
-  visibility: hidden !important;
+  position: relative;
+  z-index: 2;
+  color: transparent !important; /* Lettera nascosta dal overlay colorato */
 }
 
-/* ✅ FADE-OUT: sipario che si alza dal basso - LETTERA NASCOSTA */
+/* ✅ FADE-OUT: sipario colorato si alza dal basso rivelando lettera */
 .pm-cell.fading-out {
+  background-color: #ffffff !important;
+  color: #111 !important; /* Lettera già visibile sotto */
+  border-color: #3b4358 !important;
+  transform: scale(1);
+  position: relative;
+}
+
+.pm-cell.fading-out::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--round-color, #00ff55);
   animation: curtainUp 0.5s ease-out forwards;
-  color: transparent !important; /* ✅ Lettera nascosta durante fade-out */
+  z-index: 1;
 }
 
 @keyframes curtainUp {
   from {
-    background-color: var(--round-color, #00ff55);
-    box-shadow: 0 0 30px var(--round-color, #00ff55), 
-                inset 0 0 30px rgba(255, 255, 255, 0.8);
-    border-color: var(--round-color, #00ff55);
     clip-path: inset(0 0 0 0);
+    opacity: 1;
   }
   to {
-    background-color: #ffffff;
-    box-shadow: none;
-    border-color: #3b4358;
     clip-path: inset(0 0 100% 0);
-    transform: scale(1);
+    opacity: 0;
   }
 }
 
 .pm-cell.fading-out span {
-  visibility: hidden !important; /* ✅ Lettera nascosta durante fade-out */
+  position: relative;
+  z-index: 0;
+  color: #111 !important;
+  visibility: visible !important;
 }
 
 /* ✅ Cella rivelata (dopo fade-out) */
