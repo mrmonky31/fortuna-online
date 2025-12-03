@@ -354,9 +354,6 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
       const revealed = gameState.revealedLetters || [];
       const masked = maskGrid(newGrid, revealed);
       setMaskedGrid(masked);
-      
-      // ✅ Reset revealQueue quando cambia frase
-      setRevealQueue([]);
     } catch (error) {
       console.error("❌ Errore costruzione grid:", error);
       setGrid(null);
