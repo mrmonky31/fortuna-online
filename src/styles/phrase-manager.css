@@ -28,6 +28,11 @@
   transition: all 0.2s ease;
 }
 
+.pm-cell.space {
+  background: #000000;
+  border-color: transparent;
+}
+
 .pm-cell.vis { 
   border-color: #3b4358;
   background: #ffffff;

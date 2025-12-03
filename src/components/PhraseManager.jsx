@@ -149,7 +149,7 @@ export default function PhraseManager({
                 <span>
                   {isSpace 
                     ? "\u00A0" 
-                    : (shouldShowLetter ? cell.original : "\u00A0")
+                    : (shouldShowLetter && cell.original !== "_" ? cell.original : "\u00A0")
                   }
                 </span>
               </div>
