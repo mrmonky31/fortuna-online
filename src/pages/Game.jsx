@@ -794,6 +794,7 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
             onChangePhrase={handleChangePhrase}
             flash={flashType}
             roundColor={roundColor}
+            phrase={gameState.phrase || ""}
           />
         </div>
       </div>

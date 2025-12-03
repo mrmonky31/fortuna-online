@@ -20,6 +20,7 @@ export default function PhraseManager({
   onChangePhrase = () => {},
   flash = null,
   roundColor = null,
+  phrase = "", // ✅ NUOVO: per resettare quando cambia frase
 }) {
   const [glowingCells, setGlowingCells] = useState(new Set());
   const [fadingCells, setFadingCells] = useState(new Set());
@@ -28,13 +29,14 @@ export default function PhraseManager({
   const animatingRef = useRef(false);
   const lastQueueRef = useRef(null);
   
-  // ✅ RESET revealedCells quando cambia la frase/griglia
+  // ✅ RESET revealedCells quando cambia la frase
   useEffect(() => {
     setRevealedCells(new Set());
     setGlowingCells(new Set());
     setFadingCells(new Set());
     lastQueueRef.current = null;
-  }, [grid?.cells?.length, grid?.rows]);
+    animatingRef.current = false;
+  }, [phrase]);
   
   useEffect(() => {
     const queueId = JSON.stringify(revealQueue);
