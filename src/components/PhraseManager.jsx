@@ -83,15 +83,15 @@ export default function PhraseManager({
       
       // ✅ Lettere appaiono 700ms DOPO l'inizio del fade-out
       const revealTimeout = setTimeout(() => {
-        setFadingCells(new Set()); // Rimuovi classe fading
-        setRevealedCells(new Set(cellKeys)); // Mostra lettere
-      }, TIMING.FADEOUT_DURATION + 100); // ✅ +700ms DOPO fade-out
+        setFadingCells(new Set());
+        setRevealedCells(new Set(cellKeys));
+      }, TIMING.FADEOUT_DURATION); // ✅ NO delay extra
       timeoutsRef.current.push(revealTimeout);
       
     }, fadeStartTime);
     timeoutsRef.current.push(fadeTimeout);
     
-    const totalTime = fadeStartTime + TIMING.FADEOUT_DURATION + 100 + 100; // ✅ +700ms
+    const totalTime = fadeStartTime + TIMING.FADEOUT_DURATION + 100;
     
     const finalTimeout = setTimeout(() => {
       setGlowingCells(new Set());

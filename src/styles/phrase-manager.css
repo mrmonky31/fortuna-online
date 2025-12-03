@@ -1,80 +1,58 @@
-/* phrase-manager.css - Sistema coordinate XY con animazione glow */
-
-.phrase-manager {
-  width: 100%;
-  padding: 20px;
-  position: relative;
-}
-
-.pm-header {
-  margin-bottom: 5px;
-}
-
-.pm-category {
-  font-size: 18px;
-  color: #cbd5e0;
-  font-weight: 500;
-}
-
-.pm-board-wrapper {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 440px;
-}
-
+/* Celle del tabellone */
+.pm-row { display: flex; gap: 3px; margin-bottom: 3px; }
 .pm-board {
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
   gap: 5px;
+  min-height: 440px;
 }
 
-/* ✅ RIGHE */
-.pm-row { 
-  display: flex; 
-  gap: 4px; 
-}
-
-/* ✅ CELLE - BIANCHE E INGRANDITE 25% */
 .pm-cell {
   min-width: 50px;
   min-height: 60px;
-  border: 2px solid #3b4358;
-  border-radius: 5px;
+  border: 2px solid #2a2f3a;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 4px 5px;
-  background: #ffffff;
-  color: #111;
-  font-size: 2.6rem;
+  padding: 6px 8px;
+  background: #151821;
+  font-size: 2.8rem;
   font-weight: 900;
   line-height: 1;
   position: relative;
   overflow: hidden;
-  transition: none;
+  transition: all 0.2s ease;
 }
 
-/* Spazio invisibile */
-.pm-cell.space {
-  background: transparent;
-  border: none;
-  min-width: 25px;
-}
-
-/* Cella mascherata (underscore) */
-.pm-cell:not(.vis):not(.space) {
-  background: #ffffff;
+.pm-cell.vis { 
   border-color: #3b4358;
+  background: #ffffff;
+  color: #111;
 }
 
-/* ✅ ANIMAZIONE GLOW - ILLUMINA TUTTA LA CASELLA (OPACO) */
+
+
+/* Flash successo/errore */
+.tiles-flash-success .pm-cell { animation: flashGreen 160ms ease-in-out 5; }
+.tiles-flash-error  .pm-cell { animation: flashRed 180ms ease-in-out 1; }
+
+@keyframes flashGreen {
+  0%, 100% { border-color: #3b4358; box-shadow: 0 0 0 transparent; }
+  50% { border-color: #00e676; box-shadow: 0 0 10px #00e67666; }
+}
+@keyframes flashRed {
+  0%, 100% { border-color: #3b4358; box-shadow: 0 0 0 transparent; }
+  50% { border-color: #ff1744; box-shadow: 0 0 10px #ff174466; }
+}
+
+/* ✅ ANIMAZIONE GLOW - Cella bianca con overlay colorato SATURO */
 .pm-cell.glowing {
-  background-color: #ffffff !important; /* Cella bianca sotto */
-  color: #111 !important; /* Lettera nera visibile */
-  border-color: var(--round-color, #00ff55) !important;
+  background-color: #ffffff !important;
+  color: #111 !important;
+  border-color: var(--round-color, #00ff00) !important;
   transform: scale(1.05);
   position: relative;
 }
@@ -86,22 +64,23 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: var(--round-color, #00ff55);
-  box-shadow: 0 0 30px var(--round-color, #00ff55), 
-              inset 0 0 30px rgba(255, 255, 255, 0.8);
+  background-color: var(--round-color, #00ff00);
+  box-shadow: 0 0 30px var(--round-color, #00ff00), 
+              inset 0 0 30px rgba(255, 255, 255, 0.9);
+  filter: saturate(2); /* ✅ SATURAZIONE ALTA */
   z-index: 1;
 }
 
 .pm-cell.glowing span {
   position: relative;
   z-index: 2;
-  color: transparent !important; /* Lettera nascosta dal overlay colorato */
+  color: transparent !important;
 }
 
-/* ✅ FADE-OUT: sipario colorato si alza dal basso rivelando lettera */
+/* ✅ FADE-OUT: sipario colorato SATURO si alza rivelando lettera */
 .pm-cell.fading-out {
   background-color: #ffffff !important;
-  color: #111 !important; /* Lettera già visibile sotto */
+  color: #111 !important;
   border-color: #3b4358 !important;
   transform: scale(1);
   position: relative;
@@ -114,8 +93,9 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: var(--round-color, #00ff55);
-  animation: curtainUp 0.5s ease-out forwards;
+  background-color: var(--round-color, #00ff00);
+  filter: saturate(2); /* ✅ SATURAZIONE ALTA */
+  animation: curtainUp 0.4s ease-out forwards;
   z-index: 1;
 }
 
@@ -135,49 +115,4 @@
   z-index: 0;
   color: #111 !important;
   visibility: visible !important;
-}
-
-/* ✅ Cella rivelata (dopo fade-out) */
-.pm-cell.vis {
-  background: #ffffff;
-  color: #111;
-  border-color: #3b4358;
-}
-
-/* Flash successo/errore sul tabellone intero */
-.tiles-flash-success .pm-cell { 
-  animation: flashGreen 160ms ease-in-out 5; 
-}
-
-.tiles-flash-error .pm-cell { 
-  animation: flashRed 180ms ease-in-out 1; 
-}
-
-@keyframes flashGreen {
-  0%, 100% { 
-    border-color: #3b4358; 
-    box-shadow: 0 0 0 transparent; 
-  }
-  50% { 
-    border-color: #00e676; 
-    box-shadow: 0 0 10px #00e67666; 
-  }
-}
-
-@keyframes flashRed {
-  0%, 100% { 
-    border-color: #3b4358; 
-    box-shadow: 0 0 0 transparent; 
-  }
-  50% { 
-    border-color: #ff1744; 
-    box-shadow: 0 0 10px #ff174466; 
-  }
-}
-
-/* Empty state */
-.pm-empty {
-  color: #4a5568;
-  font-size: 18px;
-  padding: 40px;
 }

@@ -147,7 +147,7 @@ function parseToCells(text) {
 
 // ✅ Trova posizioni lettere usando parseToCells
 function letterOccurrences(phrase, targetLetter) {
-  const grid = buildGridWithCoordinates(phrase, 14, 4);
+  const grid = buildGridWithCoordinates(phrase, 16, 5);
   const coordinates = findLetterCoordinates(grid, targetLetter);
   return coordinates;
 }

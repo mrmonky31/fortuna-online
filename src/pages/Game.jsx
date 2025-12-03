@@ -347,7 +347,7 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
 
     try {
       // Costruisci grid con coordinate
-      const newGrid = buildGridWithCoordinates(gameState.phrase, 14, 4);
+      const newGrid = buildGridWithCoordinates(gameState.phrase, 16, 5); // ✅ 16 cols, 5 rows
       setGrid(newGrid);
       
       // Maschera grid
