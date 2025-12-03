@@ -28,6 +28,14 @@ export default function PhraseManager({
   const animatingRef = useRef(false);
   const lastQueueRef = useRef(null);
   
+  // ✅ RESET revealedCells quando cambia la frase/griglia
+  useEffect(() => {
+    setRevealedCells(new Set());
+    setGlowingCells(new Set());
+    setFadingCells(new Set());
+    lastQueueRef.current = null;
+  }, [grid?.cells?.length, grid?.rows]);
+  
   useEffect(() => {
     const queueId = JSON.stringify(revealQueue);
     
