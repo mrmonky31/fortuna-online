@@ -95,6 +95,8 @@ export default function LobbyOnline({ onGameStart }) {
   useEffect(() => {
     const handleGameStart = (payload) => {
       console.log("🚀 Partita avviata dal server:", payload);
+      console.log("🔍 Payload.room:", payload.room);
+      console.log("🔍 Payload.gameState:", payload.gameState);
       
       if (onGameStart) {
         // ✅ CORRETTO: Passa i dati nel formato che Game.jsx si aspetta
@@ -103,6 +105,7 @@ export default function LobbyOnline({ onGameStart }) {
           roomCode: payload.roomCode,
           phrase: payload.gameState?.phrase,
           category: payload.gameState?.category,
+          gameState: payload.gameState, // ✅ IMPORTANTE: Passa gameState completo
         });
       }
     };
@@ -224,24 +227,31 @@ export default function LobbyOnline({ onGameStart }) {
       playerId: singlePlayerId.trim(),
       pin: singlePlayerPin
     }, (res) => {
-      setSinglePlayerLoading(false);
-      
       if (!res || !res.ok) {
+        setSinglePlayerLoading(false);
         setError(res?.error || "Errore creazione giocatore");
         return;
       }
       
       console.log("✅ Giocatore singolo creato:", res.player);
       
-      // ✅ Avvia partita in modalità singlePlayer
-      if (onGameStart) {
-        onGameStart({
-          gameMode: "singlePlayer",
-          singlePlayerId: res.player.id,
-          singlePlayerLevel: res.player.level,
-          singlePlayerTotalScore: res.player.totalScore
-        });
-      }
+      // ✅ Avvia partita con room virtuale sul server
+      socket.emit("startSinglePlayerGame", {
+        playerId: res.player.id,
+        level: res.player.level,
+        totalScore: res.player.totalScore
+      }, (gameRes) => {
+        setSinglePlayerLoading(false);
+        
+        if (!gameRes || !gameRes.ok) {
+          setError(gameRes?.error || "Errore avvio partita");
+          return;
+        }
+        
+        console.log("🎮 Partita avviata:", gameRes);
+        
+        // ✅ Il server emetterà "gameStart" che verrà gestito da useEffect esistente
+      });
     });
   };
 
@@ -265,9 +275,8 @@ export default function LobbyOnline({ onGameStart }) {
       playerId: singlePlayerId.trim(),
       pin: singlePlayerPin
     }, (res) => {
-      setSinglePlayerLoading(false);
-      
       if (!res || !res.ok) {
+        setSinglePlayerLoading(false);
         setError(res?.error || "Errore autenticazione");
         return;
       }
@@ -275,14 +284,22 @@ export default function LobbyOnline({ onGameStart }) {
       console.log("✅ Giocatore autenticato:", res.player);
       
       // ✅ Avvia partita dal livello salvato
-      if (onGameStart) {
-        onGameStart({
-          gameMode: "singlePlayer",
-          singlePlayerId: res.player.id,
-          singlePlayerLevel: res.player.level,
-          singlePlayerTotalScore: res.player.totalScore
-        });
-      }
+      socket.emit("startSinglePlayerGame", {
+        playerId: res.player.id,
+        level: res.player.level,
+        totalScore: res.player.totalScore
+      }, (gameRes) => {
+        setSinglePlayerLoading(false);
+        
+        if (!gameRes || !gameRes.ok) {
+          setError(gameRes?.error || "Errore avvio partita");
+          return;
+        }
+        
+        console.log("🎮 Partita ripresa dal livello:", res.player.level);
+        
+        // ✅ Il server emetterà "gameStart" che verrà gestito da useEffect esistente
+      });
     });
   };
 
