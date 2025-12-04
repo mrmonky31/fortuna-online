@@ -986,7 +986,7 @@ export default function Game({
             className="btn-save-progress"
             style={{
               position: 'absolute',
-              top: '50%',
+              top: '65%',
               left: '10%',
               transform: 'translateY(-50%)',
               width: '60px',
