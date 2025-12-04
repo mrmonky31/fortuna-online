@@ -789,8 +789,8 @@ export default function Game({
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
-            gap: '4px',
-            padding: '15px 20px',
+            gap: '2px',
+            padding: '8px 8px',
             background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)',
             border: '3px solid #00d9ff',
             borderRadius: '10px',
@@ -809,8 +809,8 @@ export default function Game({
               alignItems: 'center',
               justifyContent: 'center',
               gap: '5px',
-              width: '200px',
-              minWidth: '200px',
+              width: '140px',
+              minWidth: '140px',
               overflow: 'hidden'
             }}>
               <div style={{ 
