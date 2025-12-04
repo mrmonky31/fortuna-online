@@ -36,6 +36,10 @@ export default function Game({
   
   // ✅ NUOVO: Stato per salvataggio giocatore singolo
   const [savingProgress, setSavingProgress] = useState(false);
+  
+  // ✅ NUOVO: Stato per TOP 10 popup
+  const [showTop10, setShowTop10] = useState(false);
+  const [top10Data, setTop10Data] = useState([]);
 
   const [gameState, setGameState] = useState(() => {
     if (!state) return null;
@@ -412,6 +416,9 @@ export default function Game({
   useEffect(() => {
     if (!gameState) return;
     if (timerPaused) return;
+    
+    // ✅ MODALITÀ SINGOLO: Timer disabilitato
+    if (isSinglePlayerMode) return;
 
     const isMyTurn = gameState.currentPlayerId === mySocketId;
     if (!isMyTurn) return;
@@ -428,7 +435,7 @@ export default function Game({
     }, 1000);
 
     return () => clearInterval(id);
-  }, [gameState, timerPaused, mySocketId]);
+  }, [gameState, timerPaused, mySocketId, isSinglePlayerMode]);
 
   const handleRevealDone = () => {
     // ✅ Manda conferma al server
@@ -712,6 +719,20 @@ export default function Game({
       }
       
       console.log("✅ Prossimo livello caricato");
+    });
+  };
+
+  // ✅ GIOCATORE SINGOLO: Apri TOP 10
+  const handleOpenTop10 = () => {
+    console.log("🏆 Caricamento TOP 10...");
+    
+    socket.emit("getLeaderboard", { limit: 10 }, (res) => {
+      if (res && res.ok) {
+        setTop10Data(res.leaderboard || []);
+        setShowTop10(true);
+      } else {
+        console.error("❌ Errore caricamento classifica:", res?.error);
+      }
     });
   };
 
@@ -1028,6 +1049,39 @@ export default function Game({
           </button>
         )}
 
+        {/* ✅ PULSANTE TOP 10 per modalità Giocatore Singolo */}
+        {isSinglePlayerMode && (
+          <button
+            onClick={handleOpenTop10}
+            className="btn-top10"
+            style={{
+              position: 'absolute',
+              top: '65%',
+              right: '10%',
+              transform: 'translateY(-50%)',
+              width: '60px',
+              height: '60px',
+              borderRadius: '50%',
+              padding: '0',
+              fontSize: '1.5rem',
+              fontWeight: 'bold',
+              background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+              color: 'white',
+              border: '3px solid rgba(245, 158, 11, 0.3)',
+              cursor: 'pointer',
+              transition: 'all 0.3s ease',
+              boxShadow: '0 4px 15px rgba(245, 158, 11, 0.4)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 500
+            }}
+            title="Visualizza TOP 10"
+          >
+            🏆
+          </button>
+        )}
+
         {/* Scritte consonanti/vocali finite */}
         {consonantsFinished && (
           <div className="consonants-finished">
@@ -1074,7 +1128,7 @@ export default function Game({
         </div>
       </div>
 
-      {isMyTurn && turnTimer <= 10 && turnTimer > 0 && !betweenRounds && (
+      {isMyTurn && turnTimer <= 10 && turnTimer > 0 && !betweenRounds && !isSinglePlayerMode && (
         <div className="turn-timer">{turnTimer}</div>
       )}
 
@@ -1227,6 +1281,138 @@ export default function Game({
                 ❌ RIFIUTA
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ✅ POPUP TOP 10 */}
+      {showTop10 && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
+          background: 'rgba(0,0,0,0.9)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999
+        }}>
+          <div style={{
+            background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)',
+            padding: '30px',
+            borderRadius: '15px',
+            border: '3px solid #ffd700',
+            boxShadow: '0 0 30px rgba(255, 215, 0, 0.5)',
+            maxWidth: '500px',
+            width: '90vw',
+            maxHeight: '80vh',
+            overflowY: 'auto'
+          }}>
+            <h2 style={{ 
+              color: '#ffd700', 
+              marginBottom: '25px', 
+              fontSize: '2rem',
+              textAlign: 'center',
+              textShadow: '0 0 15px rgba(255, 215, 0, 0.8)',
+              fontFamily: 'monospace',
+              letterSpacing: '2px'
+            }}>
+              🏆 TOP 10 🏆
+            </h2>
+            
+            {top10Data.length === 0 ? (
+              <p style={{ 
+                textAlign: 'center', 
+                color: '#888', 
+                fontSize: '1.2rem',
+                padding: '30px'
+              }}>
+                Nessun dato disponibile
+              </p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {top10Data.map((player, index) => (
+                  <div key={index} style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '15px 20px',
+                    background: index < 3 
+                      ? `linear-gradient(135deg, ${
+                          index === 0 ? '#ffd700' : 
+                          index === 1 ? '#c0c0c0' : 
+                          '#cd7f32'
+                        }, rgba(0,0,0,0.3))`
+                      : 'rgba(255,255,255,0.05)',
+                    borderRadius: '10px',
+                    border: index < 3 ? '2px solid rgba(255,255,255,0.3)' : 'none',
+                    fontFamily: 'monospace',
+                    fontSize: '1.1rem',
+                    fontWeight: 'bold'
+                  }}>
+                    <div style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: '15px',
+                      color: index < 3 ? '#000' : '#fff',
+                      flex: 1
+                    }}>
+                      <span style={{ 
+                        fontSize: '1.3rem',
+                        minWidth: '30px'
+                      }}>
+                        {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}.`}
+                      </span>
+                      <span>{player.id}</span>
+                    </div>
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '15px'
+                    }}>
+                      <span style={{ 
+                        color: index < 3 ? '#000' : '#88ccff',
+                        fontSize: '0.9rem',
+                        opacity: 0.8
+                      }}>
+                        Lv.{player.level || 1}
+                      </span>
+                      <span style={{ 
+                        color: index < 3 ? '#000' : '#00ff88',
+                        textShadow: index < 3 ? 'none' : '0 0 8px rgba(0, 255, 136, 0.6)',
+                        fontSize: '1.2rem'
+                      }}>
+                        {player.totalScore}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            
+            <button
+              onClick={() => setShowTop10(false)}
+              style={{
+                marginTop: '25px',
+                width: '100%',
+                padding: '15px',
+                fontSize: '1.2rem',
+                fontWeight: 'bold',
+                background: 'linear-gradient(135deg, #ff3333 0%, #cc0000 100%)',
+                color: 'white',
+                border: 'none',
+                borderRadius: '10px',
+                cursor: 'pointer',
+                boxShadow: '0 4px 15px rgba(255, 51, 51, 0.4)',
+                transition: 'all 0.3s ease'
+              }}
+              onMouseOver={(e) => e.target.style.transform = 'scale(1.02)'}
+              onMouseOut={(e) => e.target.style.transform = 'scale(1)'}
+            >
+              ❌ CHIUDI
+            </button>
           </div>
         </div>
       )}

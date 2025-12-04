@@ -11,7 +11,7 @@ import { Server } from "socket.io";
 import cors from "cors";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
-import { existsSync } from "fs";
+import { existsSync, readFileSync, writeFileSync } from "fs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -23,10 +23,40 @@ import { testPhrases } from "./game/phrases.js";
 import { singlePlayerPhrases } from "./phrases-singleplayer.js";
 
 // ✅ DATABASE GIOCATORE SINGOLO
+const DB_FILE = join(__dirname, "singleplayer-db.json");
+
 const singlePlayerDB = {
   players: {}, // { "PLAYER_ID": { id, pin, level, totalScore, createdAt, lastPlayedAt } }
-  leaderboard: [] // [ { id, totalScore }, ... ] ordinato
+  leaderboard: [] // [ { id, totalScore, level }, ... ] ordinato
 };
+
+// ✅ Carica database da file all'avvio
+function loadDatabase() {
+  try {
+    if (existsSync(DB_FILE)) {
+      const data = readFileSync(DB_FILE, "utf8");
+      const loaded = JSON.parse(data);
+      singlePlayerDB.players = loaded.players || {};
+      singlePlayerDB.leaderboard = loaded.leaderboard || [];
+      console.log(`✅ Database caricato: ${Object.keys(singlePlayerDB.players).length} giocatori`);
+    }
+  } catch (err) {
+    console.error("❌ Errore caricamento database:", err);
+  }
+}
+
+// ✅ Salva database su file
+function saveDatabase() {
+  try {
+    writeFileSync(DB_FILE, JSON.stringify(singlePlayerDB, null, 2), "utf8");
+    console.log("💾 Database salvato");
+  } catch (err) {
+    console.error("❌ Errore salvataggio database:", err);
+  }
+}
+
+// ✅ Carica database all'avvio
+loadDatabase();
 
 // ✅ Import funzioni coordinate per animazione
 import { buildGridWithCoordinates, findLetterCoordinates } from "./game/GameEngine.js";
@@ -365,6 +395,9 @@ function createSinglePlayer(playerId, pin) {
     lastPlayedAt: new Date().toISOString()
   };
   
+  updateLeaderboard();
+  saveDatabase(); // ✅ Salva su file
+  
   return { ok: true, player: singlePlayerDB.players[upperID] };
 }
 
@@ -382,6 +415,7 @@ function authenticateSinglePlayer(playerId, pin) {
   }
   
   player.lastPlayedAt = new Date().toISOString();
+  saveDatabase(); // ✅ Salva su file
   return { ok: true, player };
 }
 
@@ -397,6 +431,7 @@ function saveSinglePlayerProgress(playerId, level, totalScore) {
   player.lastPlayedAt = new Date().toISOString();
   
   updateLeaderboard();
+  saveDatabase(); // ✅ Salva su file
   
   return { ok: true, player };
 }
@@ -405,7 +440,7 @@ function saveSinglePlayerProgress(playerId, level, totalScore) {
 function updateLeaderboard() {
   singlePlayerDB.leaderboard = Object.values(singlePlayerDB.players)
     .sort((a, b) => b.totalScore - a.totalScore)
-    .map(p => ({ id: p.id, totalScore: p.totalScore }));
+    .map(p => ({ id: p.id, totalScore: p.totalScore, level: p.level })); // ✅ Includi livello
 }
 
 // ✅ Ottieni classifica
@@ -1803,6 +1838,17 @@ if (gs.usedLetters.includes(upper)) {
       const newLevel = (gs.singlePlayerLevel || 1) + 1;
       gs.singlePlayerLevel = newLevel;
       room.currentPhraseIndex = newLevel - 1;
+      
+      // ✅ Salva progressi nel database
+      const playerId = gs.singlePlayerId;
+      const totalScore = gs.players[0]?.totalScore || 0;
+      
+      if (playerId) {
+        const saveResult = saveSinglePlayerProgress(playerId, newLevel, totalScore);
+        if (saveResult.ok) {
+          console.log(`💾 Progressi auto-salvati: ${playerId} - Livello ${newLevel}, Punteggio ${totalScore}`);
+        }
+      }
       
       // Carica nuova frase
       const phraseIndex = (newLevel - 1) % singlePlayerPhrases.length;

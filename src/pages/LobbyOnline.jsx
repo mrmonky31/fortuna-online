@@ -18,6 +18,21 @@ export default function LobbyOnline({ onGameStart }) {
   const [singlePlayerId, setSinglePlayerId] = useState("");
   const [singlePlayerPin, setSinglePlayerPin] = useState("");
   const [singlePlayerLoading, setSinglePlayerLoading] = useState(false);
+  const [top30Data, setTop30Data] = useState([]);
+  const [loadingTop30, setLoadingTop30] = useState(false);
+
+  // ✅ Carica TOP 30 quando si entra nella schermata singlePlayer
+  useEffect(() => {
+    if (lobbyMode === "singlePlayer") {
+      setLoadingTop30(true);
+      socket.emit("getLeaderboard", { limit: 30 }, (res) => {
+        setLoadingTop30(false);
+        if (res && res.ok) {
+          setTop30Data(res.leaderboard || []);
+        }
+      });
+    }
+  }, [lobbyMode]);
 
   useEffect(() => {
     function handleRoomUpdate({ room: updatedRoom, roomCode: code }) {
@@ -364,22 +379,102 @@ export default function LobbyOnline({ onGameStart }) {
           <div style={{
             marginTop: '30px',
             width: '90%',
-            maxWidth: '500px',
+            maxWidth: '600px',
             background: 'rgba(17, 19, 26, 0.9)',
-            border: '2px solid #00ff55',
+            border: '2px solid #ffd700',
             borderRadius: '12px',
-            padding: '20px'
+            padding: '20px',
+            maxHeight: '400px',
+            overflowY: 'auto'
           }}>
-            <h3 style={{ color: '#00ff55', marginBottom: '15px', fontSize: '1.3rem' }}>
+            <h3 style={{ 
+              color: '#ffd700', 
+              marginBottom: '15px', 
+              fontSize: '1.3rem',
+              textAlign: 'center',
+              textShadow: '0 0 10px rgba(255, 215, 0, 0.5)'
+            }}>
               🏆 TOP 30
             </h3>
-            <div style={{ 
-              color: '#aaa', 
-              fontSize: '1rem',
-              fontStyle: 'italic'
-            }}>
-              Classifica in arrivo...
-            </div>
+            
+            {loadingTop30 ? (
+              <div style={{ 
+                color: '#aaa', 
+                fontSize: '1rem',
+                textAlign: 'center',
+                padding: '20px'
+              }}>
+                ⏳ Caricamento...
+              </div>
+            ) : top30Data.length === 0 ? (
+              <div style={{ 
+                color: '#aaa', 
+                fontSize: '1rem',
+                textAlign: 'center',
+                padding: '20px'
+              }}>
+                Nessun giocatore in classifica
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {top30Data.map((player, index) => (
+                  <div key={index} style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '10px 15px',
+                    background: index < 3 
+                      ? `linear-gradient(135deg, ${
+                          index === 0 ? '#ffd700' : 
+                          index === 1 ? '#c0c0c0' : 
+                          '#cd7f32'
+                        }, rgba(0,0,0,0.3))`
+                      : 'rgba(255,255,255,0.05)',
+                    borderRadius: '8px',
+                    border: index < 3 ? '2px solid rgba(255,255,255,0.2)' : 'none',
+                    fontSize: '0.95rem',
+                    fontWeight: index < 10 ? 'bold' : 'normal'
+                  }}>
+                    <div style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: '12px',
+                      color: index < 3 ? '#000' : '#fff',
+                      flex: 1
+                    }}>
+                      <span style={{ 
+                        fontSize: '1.1rem',
+                        minWidth: '30px',
+                        fontWeight: 'bold'
+                      }}>
+                        {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}.`}
+                      </span>
+                      <span>{player.id}</span>
+                    </div>
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px'
+                    }}>
+                      <span style={{ 
+                        color: index < 3 ? 'rgba(0,0,0,0.6)' : '#88ccff',
+                        fontSize: '0.85rem',
+                        opacity: 0.8
+                      }}>
+                        Lv.{player.level || 1}
+                      </span>
+                      <span style={{ 
+                        color: index < 3 ? '#000' : '#00ff88',
+                        fontWeight: 'bold',
+                        fontSize: '1rem'
+                      }}>
+                        {player.totalScore}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           <button 
