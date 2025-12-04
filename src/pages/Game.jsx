@@ -337,6 +337,9 @@ export default function Game({
   }, []);
 
   useEffect(() => {
+    // ✅ In modalità singlePlayer NON avviare countdown automatico
+    if (isSinglePlayerMode) return;
+    
     if (!betweenRounds || roundCountdown <= 0) return;
 
     const id = setInterval(() => {
@@ -350,7 +353,7 @@ export default function Game({
     }, 1000);
 
     return () => clearInterval(id);
-  }, [betweenRounds, roundCountdown]);
+  }, [betweenRounds, roundCountdown, isSinglePlayerMode]);
 
   // ✅ NUOVO: Costruisci grid dalla frase
   useEffect(() => {
@@ -691,6 +694,27 @@ export default function Game({
     });
   };
 
+  // ✅ GIOCATORE SINGOLO: Prossimo livello
+  const handleNextLevel = () => {
+    if (!isSinglePlayerMode || !roomCode) return;
+    
+    console.log("🎮 Caricamento prossimo livello...");
+    
+    // Chiudi popup
+    setBetweenRounds(false);
+    setRoundCountdown(0);
+    
+    // Richiedi prossimo livello al server
+    socket.emit("nextLevel", { roomCode }, (res) => {
+      if (!res || !res.ok) {
+        console.error("❌ Errore caricamento livello:", res?.error);
+        return;
+      }
+      
+      console.log("✅ Prossimo livello caricato");
+    });
+  };
+
   if (!gameState) {
     return (
       <div className="game-wrapper" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh' }}>
@@ -925,11 +949,56 @@ export default function Game({
       {betweenRounds && (
         <div className="round-won-overlay">
           <div className="round-won-box">
-            <div className="round-won-title">🎉 FRASE INDOVINATA! 🎉</div>
-            <div className="round-won-winner">{winnerName} ha vinto il round!</div>
-            <div className="round-won-countdown">
-              Il prossimo round inizia tra <span className="countdown-number">{roundCountdown}</span> secondi...
-            </div>
+            {isSinglePlayerMode ? (
+              <>
+                <div className="round-won-title">🎉 LIVELLO COMPLETATO! 🎉</div>
+                
+                {/* Mostra punteggio ottenuto */}
+                <div style={{
+                  fontSize: '2rem',
+                  fontWeight: 'bold',
+                  color: '#ffd700',
+                  margin: '20px 0',
+                  textShadow: '0 0 10px rgba(255, 215, 0, 0.5)'
+                }}>
+                  +{gameState?.lastRoundScore || 0} PUNTI
+                </div>
+                
+                <div className="round-won-winner">
+                  Punteggio totale: {gameState?.players?.[0]?.totalScore || 0}
+                </div>
+                
+                {/* Pulsante Prossimo Livello */}
+                <button
+                  onClick={handleNextLevel}
+                  style={{
+                    marginTop: '30px',
+                    padding: '15px 40px',
+                    fontSize: '1.3rem',
+                    fontWeight: 'bold',
+                    background: 'linear-gradient(135deg, #00ff55 0%, #00cc44 100%)',
+                    color: 'black',
+                    border: 'none',
+                    borderRadius: '10px',
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 15px rgba(0, 255, 85, 0.4)',
+                    transition: 'all 0.3s ease'
+                  }}
+                  onMouseOver={(e) => e.target.style.transform = 'scale(1.05)'}
+                  onMouseOut={(e) => e.target.style.transform = 'scale(1)'}
+                >
+                  ➡️ PROSSIMO LIVELLO
+                </button>
+              </>
+            ) : (
+              <>
+                <div className="round-won-title">🎉 FRASE INDOVINATA! 🎉</div>
+                <div className="round-won-winner">{winnerName} ha vinto il round!</div>
+                <div className="round-won-countdown">
+                  Il prossimo round inizia tra <span className="countdown-number">{roundCountdown}</span> secondi...
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

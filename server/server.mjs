@@ -1327,6 +1327,7 @@ if (gs.usedLetters.includes(upper)) {
           // Calcola punteggio basato su caselle bianche rimaste
           const whiteCellsScore = calculateWhiteCellsScore(gs.phrase, gs.revealedLetters);
           gs.players[i].totalScore += whiteCellsScore;
+          gs.lastRoundScore = whiteCellsScore; // ✅ Salva per mostrare nel popup
           
           console.log(`🎯 Punteggio caselle bianche: ${whiteCellsScore}`);
           gs.gameMessage = { type: "success", text: `✅ Frase indovinata! +${whiteCellsScore} punti!` };
@@ -1347,14 +1348,17 @@ if (gs.usedLetters.includes(upper)) {
 
         io.to(code).emit("roundWon", {
           winnerName,
-          countdown: 7
+          countdown: room.gameMode === "singlePlayer" ? 0 : 7 // ✅ No countdown per singlePlayer
         });
 
         io.to(code).emit("gameStateUpdate", { gameState: gs });
 
-        setTimeout(() => {
-          nextRound(code, room);
-        }, 7000);
+        // ✅ In singlePlayer NON avviare automaticamente prossimo round
+        if (room.gameMode !== "singlePlayer") {
+          setTimeout(() => {
+            nextRound(code, room);
+          }, 7000);
+        }
 
       } else {
         // ✅ MODALITÀ GIOCATORE SINGOLO: Penalità -200
@@ -1614,14 +1618,17 @@ if (gs.usedLetters.includes(upper)) {
 
         io.to(code).emit("roundWon", {
           winnerName,
-          countdown: 7
+          countdown: room.gameMode === "singlePlayer" ? 0 : 7 // ✅ No countdown per singlePlayer
         });
 
         io.to(code).emit("gameStateUpdate", { gameState: gs });
 
-        setTimeout(() => {
-          nextRound(code, room);
-        }, 7000);
+        // ✅ In singlePlayer NON avviare automaticamente prossimo round
+        if (room.gameMode !== "singlePlayer") {
+          setTimeout(() => {
+            nextRound(code, room);
+          }, 7000);
+        }
       } else {
         // ❌ Soluzione sbagliata
         nextPlayer(gs); // ✅ Salta presentatore
@@ -1751,6 +1758,60 @@ if (gs.usedLetters.includes(upper)) {
       });
     } catch (err) {
       console.error("Errore getSinglePlayerPhrase:", err);
+      callback({ ok: false, error: "Errore server" });
+    }
+  });
+
+  // ✅ PROSSIMO LIVELLO (modalità singlePlayer)
+  socket.on("nextLevel", ({ roomCode }, callback) => {
+    try {
+      const code = String(roomCode || "").trim().toUpperCase();
+      const room = rooms[code];
+      
+      if (!room || room.gameMode !== "singlePlayer") {
+        return callback({ ok: false, error: "Room non trovata" });
+      }
+      
+      const gs = room.gameState;
+      if (!gs) {
+        return callback({ ok: false, error: "GameState non trovato" });
+      }
+      
+      // Incrementa livello
+      const newLevel = (gs.singlePlayerLevel || 1) + 1;
+      gs.singlePlayerLevel = newLevel;
+      room.currentPhraseIndex = newLevel - 1;
+      
+      // Carica nuova frase
+      const phraseIndex = (newLevel - 1) % singlePlayerPhrases.length;
+      const selectedPhrase = singlePlayerPhrases[phraseIndex];
+      
+      if (!selectedPhrase) {
+        return callback({ ok: false, error: "Frase non trovata" });
+      }
+      
+      // Reset gameState per nuovo livello
+      gs.phrase = selectedPhrase.text;
+      gs.rows = buildBoard(selectedPhrase.text, 14, 4);
+      gs.category = selectedPhrase.category;
+      gs.revealedLetters = [];
+      gs.usedLetters = [];
+      gs.players[0].roundScore = 0; // Reset round score
+      gs.wheel = generateWheel();
+      gs.mustSpin = true;
+      gs.awaitingConsonant = false;
+      gs.pendingDouble = false;
+      gs.lastSpinTarget = 0;
+      gs.spinning = false;
+      gs.gameMessage = { type: "info", text: `🎮 Livello ${newLevel} - ${selectedPhrase.category}` };
+      
+      console.log(`➡️ Livello ${newLevel} caricato: "${selectedPhrase.text}"`);
+      
+      io.to(code).emit("gameStateUpdate", { gameState: gs });
+      
+      callback({ ok: true, level: newLevel });
+    } catch (err) {
+      console.error("Errore nextLevel:", err);
       callback({ ok: false, error: "Errore server" });
     }
   });
