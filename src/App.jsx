@@ -19,6 +19,20 @@ function App() {
 
   // Online – chiamato da LobbyOnline quando il server emette "gameStart"
   const handleOnlineGameStart = (payload) => {
+    // ✅ MODALITÀ GIOCATORE SINGOLO
+    if (payload.gameMode === "singlePlayer") {
+      console.log("🎮 Avvio modalità Giocatore Singolo:", payload);
+      setPlayers([{ name: payload.singlePlayerId }]);
+      setRounds(1); // Modalità singolo usa frasi sequenziali
+      setGameState({
+        ...payload,
+        isSinglePlayer: true
+      });
+      setScreen("game");
+      return;
+    }
+    
+    // ✅ MODALITÀ MULTIPLAYER (classica/presentatore)
     if (payload && payload.room) {
       const room = payload.room;
       if (Array.isArray(room.players) && room.players.length) {
@@ -60,6 +74,9 @@ function App() {
           totalRounds={rounds} 
           state={gameState}
           onExitToLobby={handleExitToLobby}
+          isSinglePlayer={gameState?.isSinglePlayer || false}
+          singlePlayerId={gameState?.singlePlayerId || null}
+          singlePlayerLevel={gameState?.singlePlayerLevel || 1}
         />
       )}
     </div>

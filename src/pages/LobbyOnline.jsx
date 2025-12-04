@@ -233,8 +233,15 @@ export default function LobbyOnline({ onGameStart }) {
       
       console.log("✅ Giocatore singolo creato:", res.player);
       
-      // TODO: Avvia partita (Step successivo)
-      setError("✅ Giocatore creato! (Partita in arrivo...)");
+      // ✅ Avvia partita in modalità singlePlayer
+      if (onGameStart) {
+        onGameStart({
+          gameMode: "singlePlayer",
+          singlePlayerId: res.player.id,
+          singlePlayerLevel: res.player.level,
+          singlePlayerTotalScore: res.player.totalScore
+        });
+      }
     });
   };
 
@@ -267,8 +274,15 @@ export default function LobbyOnline({ onGameStart }) {
       
       console.log("✅ Giocatore autenticato:", res.player);
       
-      // TODO: Avvia partita dal livello salvato (Step successivo)
-      setError(`✅ Bentornato! Livello ${res.player.level} (Partita in arrivo...)`);
+      // ✅ Avvia partita dal livello salvato
+      if (onGameStart) {
+        onGameStart({
+          gameMode: "singlePlayer",
+          singlePlayerId: res.player.id,
+          singlePlayerLevel: res.player.level,
+          singlePlayerTotalScore: res.player.totalScore
+        });
+      }
     });
   };
 
