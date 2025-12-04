@@ -435,18 +435,18 @@ export default function LobbyOnline({ onGameStart }) {
             width: '90%',
             maxWidth: '600px',
             background: 'rgba(17, 19, 26, 0.9)',
-            border: '2px solid #ffd700',
+            border: '2px solid #00ff55',
             borderRadius: '12px',
             padding: '20px',
             maxHeight: '400px',
             overflowY: 'auto'
           }}>
             <h3 style={{ 
-              color: '#ffd700', 
+              color: '#00ff55', 
               marginBottom: '15px', 
               fontSize: '1.3rem',
               textAlign: 'center',
-              textShadow: '0 0 10px rgba(255, 215, 0, 0.5)'
+              textShadow: '0 0 10px rgba(0, 255, 85, 0.5)'
             }}>
               🏆 TOP 30
             </h3>
@@ -478,7 +478,7 @@ export default function LobbyOnline({ onGameStart }) {
                     justifyContent: 'space-between',
                     padding: '10px 15px',
                     background: index < 3 
-                      ? `linear-gradient(135deg, ${
+                      ? `linear-gradient(315deg, ${
                           index === 0 ? '#ffd700' : 
                           index === 1 ? '#c0c0c0' : 
                           '#cd7f32'
