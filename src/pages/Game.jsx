@@ -799,8 +799,21 @@ export default function Game({
                   {p.name}
                   {p.id === mySocketId && " (Tu)"}
                 </div>
-                <div className="player-round">{p.roundScore} pt</div>
-                <div className="player-total">Tot: {p.totalScore}</div>
+                
+                {/* ✅ MODALITÀ SINGOLO: Mostra livello invece di round score */}
+                {isSinglePlayerMode ? (
+                  <>
+                    <div className="player-round" style={{ color: '#88ccff' }}>
+                      Livello {gameState.singlePlayerLevel || 1}
+                    </div>
+                    <div className="player-total">Tot: {p.totalScore}</div>
+                  </>
+                ) : (
+                  <>
+                    <div className="player-round">{p.roundScore} pt</div>
+                    <div className="player-total">Tot: {p.totalScore}</div>
+                  </>
+                )}
               </div>
             );
           })}
@@ -808,7 +821,10 @@ export default function Game({
 
       <div>
         <div className="game-round-info">
-          ROUND {gameState.currentRound} / {gameState.totalRounds}
+          {isSinglePlayerMode 
+            ? `🎮 LIVELLO ${gameState.singlePlayerLevel || 1}` 
+            : `ROUND ${gameState.currentRound} / ${gameState.totalRounds}`
+          }
         </div>
 
         {/* ✅ NUOVO: Info box nome stanza */}
@@ -952,6 +968,38 @@ export default function Game({
             {isSinglePlayerMode ? (
               <>
                 <div className="round-won-title">🎉 LIVELLO COMPLETATO! 🎉</div>
+                
+                {/* Resoconto caselle */}
+                {gameState?.lastRoundDetails && (
+                  <div style={{
+                    fontSize: '1.1rem',
+                    color: '#ffffff',
+                    margin: '15px 0',
+                    textAlign: 'center',
+                    lineHeight: '1.8'
+                  }}>
+                    <div style={{ marginBottom: '8px' }}>
+                      <span style={{ color: '#88ccff' }}>
+                        {gameState.lastRoundDetails.singleCells} caselle × 10pt
+                      </span>
+                      {gameState.lastRoundDetails.singleCells > 0 && (
+                        <span style={{ color: '#aaa', fontSize: '0.9rem', marginLeft: '8px' }}>
+                          = {gameState.lastRoundDetails.singleCells * 10}pt
+                        </span>
+                      )}
+                    </div>
+                    <div>
+                      <span style={{ color: '#ffaa44' }}>
+                        {gameState.lastRoundDetails.doubleCells} caselle × 20pt
+                      </span>
+                      {gameState.lastRoundDetails.doubleCells > 0 && (
+                        <span style={{ color: '#aaa', fontSize: '0.9rem', marginLeft: '8px' }}>
+                          = {gameState.lastRoundDetails.doubleCells * 20}pt
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
                 
                 {/* Mostra punteggio ottenuto */}
                 <div style={{
