@@ -40,6 +40,44 @@ export default function Game({
   const [gameState, setGameState] = useState(() => {
     if (!state) return null;
     
+    // ✅ MODALITÀ GIOCATORE SINGOLO - Controlla state.isSinglePlayer
+    if (state.isSinglePlayer) {
+      console.log("🎮 Creando gameState per Giocatore Singolo", state);
+      return {
+        players: [{
+          name: state.singlePlayerId || "GIOCATORE",
+          id: "single-player",
+          totalScore: state.singlePlayerTotalScore || 0,
+          roundScore: 0
+        }],
+        totalRounds: 1,
+        currentRound: 1,
+        currentPlayerIndex: 0,
+        currentPlayerId: "single-player",
+        
+        phrase: "", // Verrà caricata da socket
+        rows: [],
+        category: "",
+        
+        revealedLetters: [],
+        usedLetters: [],
+        
+        wheel: [],
+        spinning: false,
+        mustSpin: true,
+        awaitingConsonant: false,
+        pendingDouble: false,
+        lastSpinTarget: 0,
+        
+        gameMessage: { type: "info", text: `🎮 Livello ${state.singlePlayerLevel || 1}` },
+        gameOver: false,
+        
+        isSinglePlayer: true,
+        singlePlayerId: state.singlePlayerId,
+        singlePlayerLevel: state.singlePlayerLevel
+      };
+    }
+    
     // ✅ Se il server ha già un gameState (partita in corso), usalo!
     if (state.gameState) {
       console.log("🎮 Usando gameState dal server (partita in corso)");
@@ -116,6 +154,32 @@ export default function Game({
   // ✅ Calcola dinamicamente se sei presentatore dal gameState
   const isPresenter = state?.room?.gameMode === "presenter" && 
                       gameState?.players?.find(p => p.id === mySocketId)?.isHost;
+
+  // ✅ CARICA FRASE per modalità Giocatore Singolo all'avvio
+  useEffect(() => {
+    if (!gameState?.isSinglePlayer) return;
+    
+    const currentLevel = gameState.singlePlayerLevel || 1;
+    
+    console.log(`📖 Carico frase livello ${currentLevel}`);
+    
+    socket.emit("getSinglePlayerPhrase", { level: currentLevel }, (res) => {
+      if (!res || !res.ok) {
+        console.error("❌ Errore caricamento frase:", res?.error);
+        return;
+      }
+      
+      console.log(`✅ Frase caricata: "${res.phrase}"`);
+      
+      setGameState(prev => ({
+        ...prev,
+        phrase: res.phrase,
+        rows: [], // Verrà calcolata da buildGridWithCoordinates
+        category: res.category,
+        gameMessage: { type: "info", text: `🎮 Livello ${res.level} - ${res.category}` }
+      }));
+    });
+  }, [gameState?.isSinglePlayer]); // Trigger quando gameState è pronto
 
   // Funzione toggle fullscreen
   const toggleFullscreen = async () => {
@@ -819,29 +883,41 @@ export default function Game({
             awaitingSolutionCheck={awaitingSolutionCheck}
             activeLetterType={activeLetterType}
           />
-          
-          {/* ✅ PULSANTE SALVA per modalità Giocatore Singolo */}
-          {isSinglePlayer && (
-            <button
-              onClick={handleSaveProgress}
-              disabled={savingProgress}
-              style={{
-                marginTop: '10px',
-                padding: '8px 16px',
-                fontSize: '0.9rem',
-                fontWeight: 'bold',
-                background: savingProgress ? '#718096' : '#4299e1',
-                color: 'white',
-                border: 'none',
-                borderRadius: '6px',
-                cursor: savingProgress ? 'not-allowed' : 'pointer',
-                transition: 'all 0.3s ease'
-              }}
-            >
-              {savingProgress ? '⏳ Salvataggio...' : '💾 SALVA PROGRESSI'}
-            </button>
-          )}
         </div>
+        
+        {/* ✅ PULSANTE SALVA per modalità Giocatore Singolo - LIBERO */}
+        {isSinglePlayer && (
+          <button
+            onClick={handleSaveProgress}
+            disabled={savingProgress}
+            className="btn-save-progress"
+            style={{
+              position: 'absolute',
+              top: '50%',
+              left: '10%',
+              transform: 'translateY(-50%)',
+              width: '60px',
+              height: '60px',
+              borderRadius: '50%',
+              padding: '0',
+              fontSize: '1.5rem',
+              fontWeight: 'bold',
+              background: savingProgress ? '#718096' : 'linear-gradient(135deg, #4299e1 0%, #3182ce 100%)',
+              color: 'white',
+              border: '3px solid rgba(66, 153, 225, 0.3)',
+              cursor: savingProgress ? 'not-allowed' : 'pointer',
+              transition: 'all 0.3s ease',
+              boxShadow: savingProgress ? 'none' : '0 4px 15px rgba(66, 153, 225, 0.4)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 500
+            }}
+            title={savingProgress ? 'Salvataggio in corso...' : 'Salva progressi'}
+          >
+            {savingProgress ? '⏳' : '💾'}
+          </button>
+        )}
 
         {/* Scritte consonanti/vocali finite */}
         {consonantsFinished && (
