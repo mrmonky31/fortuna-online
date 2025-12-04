@@ -6,7 +6,7 @@ import OnlinePlayers from "../components/OnlinePlayers";
 import "../styles/lobby.css";
 
 export default function LobbyOnline({ onGameStart }) {
-  const [lobbyMode, setLobbyMode] = useState("home"); // "home" | "singlePlayer" | "multiPlayer"
+  const [lobbyMode, setLobbyMode] = useState("home"); // "home" | "singlePlayer" | "multiPlayer" | "singleNew" | "singleContinue"
   const [room, setRoom] = useState(null);
   const [playerName, setPlayerName] = useState("");
   const [role, setRole] = useState(null);
@@ -242,24 +242,130 @@ export default function LobbyOnline({ onGameStart }) {
         </>
       )}
 
-      {/* MODALITÀ GIOCATORE SINGOLO - PLACEHOLDER (Step 1.2) */}
+      {/* MODALITÀ GIOCATORE SINGOLO - MENU PRINCIPALE */}
       {lobbyMode === "singlePlayer" && (
         <div className="lobby-form-minimal">
           <h1>🎮 GIOCATORE SINGOLO</h1>
-          <p style={{ color: '#00ff55', fontSize: '1.2rem' }}>
-            Modalità in costruzione...
-          </p>
+          
+          <div className="inputs-row">
+            <button onClick={() => setLobbyMode("singleNew")}>
+              ✨ NUOVA PARTITA
+            </button>
+            <button onClick={() => setLobbyMode("singleContinue")}>
+              ▶️ CONTINUA PARTITA
+            </button>
+          </div>
+
+          {/* TOP 30 CLASSIFICA */}
+          <div style={{
+            marginTop: '30px',
+            width: '90%',
+            maxWidth: '500px',
+            background: 'rgba(17, 19, 26, 0.9)',
+            border: '2px solid #00ff55',
+            borderRadius: '12px',
+            padding: '20px'
+          }}>
+            <h3 style={{ color: '#00ff55', marginBottom: '15px', fontSize: '1.3rem' }}>
+              🏆 TOP 30
+            </h3>
+            <div style={{ 
+              color: '#aaa', 
+              fontSize: '1rem',
+              fontStyle: 'italic'
+            }}>
+              Classifica in arrivo...
+            </div>
+          </div>
+
           <button 
             onClick={() => setLobbyMode("home")} 
             className="btn-secondary"
             style={{ 
               fontSize: '1rem', 
               padding: '10px 20px',
-              minWidth: '150px'
+              minWidth: '150px',
+              marginTop: '20px'
             }}
           >
             ⬅️ INDIETRO
           </button>
+        </div>
+      )}
+
+      {/* NUOVA PARTITA - FORM */}
+      {lobbyMode === "singleNew" && (
+        <div className="lobby-form-minimal">
+          <h1>✨ NUOVA PARTITA</h1>
+          
+          <div className="inputs-row">
+            <label className="form-label">Crea ID</label>
+            <input
+              type="text"
+              placeholder="es. MARCO2024"
+              autoComplete="off"
+              autoCapitalize="characters"
+            />
+            
+            <label className="form-label">Crea PIN (4 cifre)</label>
+            <input
+              type="text"
+              placeholder="es. 1234"
+              maxLength={4}
+              autoComplete="off"
+              inputMode="numeric"
+            />
+            
+            <button>
+              🚀 INIZIA PARTITA
+            </button>
+            
+            <button 
+              onClick={() => setLobbyMode("singlePlayer")} 
+              className="btn-secondary"
+              style={{ fontSize: '1rem', padding: '10px 20px', minWidth: '150px' }}
+            >
+              ⬅️ INDIETRO
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* CONTINUA PARTITA - FORM */}
+      {lobbyMode === "singleContinue" && (
+        <div className="lobby-form-minimal">
+          <h1>▶️ CONTINUA PARTITA</h1>
+          
+          <div className="inputs-row">
+            <label className="form-label">Inserisci ID</label>
+            <input
+              type="text"
+              placeholder="Il tuo ID"
+              autoComplete="off"
+              autoCapitalize="characters"
+            />
+            
+            <label className="form-label">Inserisci PIN</label>
+            <input
+              type="text"
+              placeholder="Il tuo PIN (4 cifre)"
+              maxLength={4}
+              autoComplete="off"
+              inputMode="numeric"
+            />
+            
+            <button>
+              ✅ ACCEDI
+            </button>
+            
+            <button 
+              onClick={() => setLobbyMode("singlePlayer")} 
+              className="btn-secondary"
+              style={{ fontSize: '1rem', padding: '10px 20px', minWidth: '150px' }}
+            >
+              ⬅️ INDIETRO
+            </button>
+          </div>
         </div>
       )}
 
