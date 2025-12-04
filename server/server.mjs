@@ -19,18 +19,14 @@ const __dirname = dirname(__filename);
 // ✅ Carica frasi base
 import { testPhrases } from "./game/phrases.js";
 
+// ✅ Carica frasi modalità giocatore singolo
+import { singlePlayerPhrases } from "./phrases-singleplayer.js";
+
 // ✅ DATABASE GIOCATORE SINGOLO
 const singlePlayerDB = {
   players: {}, // { "PLAYER_ID": { id, pin, level, totalScore, createdAt, lastPlayedAt } }
   leaderboard: [] // [ { id, totalScore }, ... ] ordinato
 };
-
-// ✅ FRASI MODALITÀ GIOCATORE SINGOLO (sequenziali)
-const singlePlayerPhrases = [
-  { text: "LA RUOTA DELLA FORTUNA", category: "GIOCHI" },
-  { text: "PROVA DI TEST", category: "GENERALE" },
-  // Marco aggiungerà le sue 600+ frasi qui
-];
 
 // ✅ Import funzioni coordinate per animazione
 import { buildGridWithCoordinates, findLetterCoordinates } from "./game/GameEngine.js";
@@ -1627,6 +1623,29 @@ if (gs.usedLetters.includes(upper)) {
       callback({ ok: true, leaderboard });
     } catch (err) {
       console.error("Errore getLeaderboard:", err);
+      callback({ ok: false, error: "Errore server" });
+    }
+  });
+
+  // ✅ OTTIENI FRASE GIOCATORE SINGOLO (sequenziale)
+  socket.on("getSinglePlayerPhrase", ({ level }, callback) => {
+    try {
+      const index = (level - 1) % singlePlayerPhrases.length;
+      const phrase = singlePlayerPhrases[index];
+      
+      if (!phrase) {
+        return callback({ ok: false, error: "Frase non trovata" });
+      }
+      
+      console.log(`📖 Frase livello ${level}: "${phrase.text}"`);
+      callback({ 
+        ok: true, 
+        phrase: phrase.text,
+        category: phrase.category,
+        level: level
+      });
+    } catch (err) {
+      console.error("Errore getSinglePlayerPhrase:", err);
       callback({ ok: false, error: "Errore server" });
     }
   });
