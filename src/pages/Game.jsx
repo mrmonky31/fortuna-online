@@ -789,18 +789,17 @@ export default function Game({
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
-            gap: '30px',
-            padding: '15px 30px',
+            gap: '20px',
+            padding: '15px 20px',
             background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)',
             border: '3px solid #00d9ff',
             borderRadius: '15px',
             boxShadow: '0 0 20px rgba(0, 217, 255, 0.4), inset 0 0 20px rgba(0, 217, 255, 0.1)',
             fontFamily: 'monospace',
-            fontSize: '1.2rem',
             fontWeight: 'bold',
-            color: '#00ff88',
             textShadow: '0 0 8px rgba(0, 255, 136, 0.6)',
-            maxWidth: '800px',
+            width: '650px',
+            maxWidth: '90vw',
             margin: '0 auto'
           }}>
             {/* ID Giocatore */}
@@ -808,10 +807,14 @@ export default function Game({
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
-              gap: '5px'
+              justifyContent: 'center',
+              gap: '5px',
+              width: '200px',
+              minWidth: '200px',
+              overflow: 'hidden'
             }}>
               <div style={{ 
-                fontSize: '0.85rem', 
+                fontSize: '0.75rem', 
                 color: '#88ccff',
                 textShadow: '0 0 5px rgba(136, 204, 255, 0.6)',
                 letterSpacing: '1px'
@@ -819,10 +822,15 @@ export default function Game({
                 PLAYER
               </div>
               <div style={{ 
-                fontSize: '1.4rem',
+                fontSize: 'clamp(1rem, 2vw, 1.3rem)',
                 color: '#ffff00',
                 textShadow: '0 0 10px rgba(255, 255, 0, 0.8)',
-                letterSpacing: '2px'
+                letterSpacing: '1px',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                width: '100%',
+                textAlign: 'center'
               }}>
                 {gameState.players[0].name}
               </div>
@@ -830,10 +838,11 @@ export default function Game({
 
             {/* Separatore */}
             <div style={{
-              width: '3px',
+              width: '2px',
               height: '50px',
               background: 'linear-gradient(180deg, transparent, #00d9ff, transparent)',
-              boxShadow: '0 0 10px rgba(0, 217, 255, 0.6)'
+              boxShadow: '0 0 10px rgba(0, 217, 255, 0.6)',
+              flexShrink: 0
             }}></div>
 
             {/* Round Score */}
@@ -841,10 +850,13 @@ export default function Game({
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
-              gap: '5px'
+              justifyContent: 'center',
+              gap: '5px',
+              width: '140px',
+              minWidth: '140px'
             }}>
               <div style={{ 
-                fontSize: '0.85rem', 
+                fontSize: '0.75rem', 
                 color: '#88ccff',
                 textShadow: '0 0 5px rgba(136, 204, 255, 0.6)',
                 letterSpacing: '1px'
@@ -852,10 +864,10 @@ export default function Game({
                 ROUND
               </div>
               <div style={{ 
-                fontSize: '1.4rem',
+                fontSize: 'clamp(1.1rem, 2.5vw, 1.4rem)',
                 color: '#00ff88',
                 textShadow: '0 0 10px rgba(0, 255, 136, 0.8)',
-                letterSpacing: '2px'
+                letterSpacing: '1px'
               }}>
                 {gameState.players[0].roundScore}
               </div>
@@ -863,10 +875,11 @@ export default function Game({
 
             {/* Separatore */}
             <div style={{
-              width: '3px',
+              width: '2px',
               height: '50px',
               background: 'linear-gradient(180deg, transparent, #00d9ff, transparent)',
-              boxShadow: '0 0 10px rgba(0, 217, 255, 0.6)'
+              boxShadow: '0 0 10px rgba(0, 217, 255, 0.6)',
+              flexShrink: 0
             }}></div>
 
             {/* Total Score */}
@@ -874,10 +887,13 @@ export default function Game({
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
-              gap: '5px'
+              justifyContent: 'center',
+              gap: '5px',
+              width: '140px',
+              minWidth: '140px'
             }}>
               <div style={{ 
-                fontSize: '0.85rem', 
+                fontSize: '0.75rem', 
                 color: '#88ccff',
                 textShadow: '0 0 5px rgba(136, 204, 255, 0.6)',
                 letterSpacing: '1px'
@@ -885,10 +901,10 @@ export default function Game({
                 TOTAL
               </div>
               <div style={{ 
-                fontSize: '1.4rem',
+                fontSize: 'clamp(1.1rem, 2.5vw, 1.4rem)',
                 color: '#ff00ff',
                 textShadow: '0 0 10px rgba(255, 0, 255, 0.8)',
-                letterSpacing: '2px'
+                letterSpacing: '1px'
               }}>
                 {gameState.players[0].totalScore}
               </div>
@@ -986,7 +1002,7 @@ export default function Game({
             className="btn-save-progress"
             style={{
               position: 'absolute',
-              top: '65%',
+              top: '50%',
               left: '10%',
               transform: 'translateY(-50%)',
               width: '60px',
