@@ -6,6 +6,7 @@ import OnlinePlayers from "../components/OnlinePlayers";
 import "../styles/lobby.css";
 
 export default function LobbyOnline({ onGameStart }) {
+  const [lobbyMode, setLobbyMode] = useState("home"); // "home" | "singlePlayer" | "multiPlayer"
   const [room, setRoom] = useState(null);
   const [playerName, setPlayerName] = useState("");
   const [role, setRole] = useState(null);
@@ -200,7 +201,25 @@ export default function LobbyOnline({ onGameStart }) {
 
   return (
     <div className="lobby-container">
-      {!room && (
+      {/* SCHERMATA HOME - SELEZIONE MODALITÀ */}
+      {lobbyMode === "home" && (
+        <div className="lobby-form-minimal">
+          <h1>🎡 RUOTA DELLA FORTUNA</h1>
+          <h2>ONLINE</h2>
+          
+          <div className="inputs-row">
+            <button onClick={() => setLobbyMode("singlePlayer")}>
+              🎮 GIOCATORE SINGOLO
+            </button>
+            <button onClick={() => setLobbyMode("multiPlayer")}>
+              👥 MULTI GIOCATORE
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* MODALITÀ MULTI GIOCATORE - FORM ESISTENTE */}
+      {lobbyMode === "multiPlayer" && !room && (
         <LobbyFormMinimal
           onCreate={handleCreate}
           onJoin={handleJoin}
@@ -209,7 +228,20 @@ export default function LobbyOnline({ onGameStart }) {
         />
       )}
 
-      {room && (
+      {/* MODALITÀ GIOCATORE SINGOLO - PLACEHOLDER (Step 1.2) */}
+      {lobbyMode === "singlePlayer" && (
+        <div className="lobby-form-minimal">
+          <h1>🎮 GIOCATORE SINGOLO</h1>
+          <p style={{ color: '#00ff55', fontSize: '1.2rem' }}>
+            Modalità in costruzione...
+          </p>
+          <button onClick={() => setLobbyMode("home")} className="btn-secondary">
+            ⬅️ INDIETRO
+          </button>
+        </div>
+      )}
+
+      {lobbyMode === "multiPlayer" && room && (
         <div className="lobby-room">
           <OnlinePlayers
             room={room}
