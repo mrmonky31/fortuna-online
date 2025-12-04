@@ -789,7 +789,7 @@ export default function Game({
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
-            gap: '8px',
+            gap: '4px',
             padding: '15px 20px',
             background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)',
             border: '3px solid #00d9ff',
@@ -798,7 +798,7 @@ export default function Game({
             fontFamily: 'monospace',
             fontWeight: 'bold',
             textShadow: '0 0 8px rgba(0, 255, 136, 0.6)',
-            width: '650px',
+            width: '690px',
             maxWidth: '90vw',
             margin: '0 auto'
           }}>
@@ -1002,7 +1002,7 @@ export default function Game({
             className="btn-save-progress"
             style={{
               position: 'absolute',
-              top: '50%',
+              top: '65%',
               left: '10%',
               transform: 'translateY(-50%)',
               width: '60px',
