@@ -21,6 +21,7 @@ export default function PhraseManager({
   flash = null,
   roundColor = null,
   phrase = "", // ✅ NUOVO: per resettare quando cambia frase
+  isSinglePlayer = false, // ✅ NUOVO: flag modalità giocatore singolo
 }) {
   const [glowingCells, setGlowingCells] = useState(new Set());
   const [fadingCells, setFadingCells] = useState(new Set());
@@ -196,9 +197,12 @@ export default function PhraseManager({
           marginBottom: 8,
         }}
       >
-        <button className="btn-secondary" onClick={() => onChangePhrase()}>
-          Cambia frase
-        </button>
+        {/* ✅ Pulsante Cambia Frase DISATTIVATO in modalità Giocatore Singolo */}
+        {!isSinglePlayer && (
+          <button className="btn-secondary" onClick={() => onChangePhrase()}>
+            Cambia frase
+          </button>
+        )}
 
         <div className="pm-category">
           Categoria: <strong>{category || "-"}</strong>

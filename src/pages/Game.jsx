@@ -40,44 +40,6 @@ export default function Game({
   const [gameState, setGameState] = useState(() => {
     if (!state) return null;
     
-    // ✅ MODALITÀ GIOCATORE SINGOLO - Controlla state.isSinglePlayer
-    if (state.isSinglePlayer) {
-      console.log("🎮 Creando gameState per Giocatore Singolo", state);
-      return {
-        players: [{
-          name: state.singlePlayerId || "GIOCATORE",
-          id: "single-player",
-          totalScore: state.singlePlayerTotalScore || 0,
-          roundScore: 0
-        }],
-        totalRounds: 1,
-        currentRound: 1,
-        currentPlayerIndex: 0,
-        currentPlayerId: "single-player",
-        
-        phrase: "", // Verrà caricata da socket
-        rows: [],
-        category: "",
-        
-        revealedLetters: [],
-        usedLetters: [],
-        
-        wheel: [],
-        spinning: false,
-        mustSpin: true,
-        awaitingConsonant: false,
-        pendingDouble: false,
-        lastSpinTarget: 0,
-        
-        gameMessage: { type: "info", text: `🎮 Livello ${state.singlePlayerLevel || 1}` },
-        gameOver: false,
-        
-        isSinglePlayer: true,
-        singlePlayerId: state.singlePlayerId,
-        singlePlayerLevel: state.singlePlayerLevel
-      };
-    }
-    
     // ✅ Se il server ha già un gameState (partita in corso), usalo!
     if (state.gameState) {
       console.log("🎮 Usando gameState dal server (partita in corso)");
@@ -154,32 +116,9 @@ export default function Game({
   // ✅ Calcola dinamicamente se sei presentatore dal gameState
   const isPresenter = state?.room?.gameMode === "presenter" && 
                       gameState?.players?.find(p => p.id === mySocketId)?.isHost;
-
-  // ✅ CARICA FRASE per modalità Giocatore Singolo all'avvio
-  useEffect(() => {
-    if (!gameState?.isSinglePlayer) return;
-    
-    const currentLevel = gameState.singlePlayerLevel || 1;
-    
-    console.log(`📖 Carico frase livello ${currentLevel}`);
-    
-    socket.emit("getSinglePlayerPhrase", { level: currentLevel }, (res) => {
-      if (!res || !res.ok) {
-        console.error("❌ Errore caricamento frase:", res?.error);
-        return;
-      }
-      
-      console.log(`✅ Frase caricata: "${res.phrase}"`);
-      
-      setGameState(prev => ({
-        ...prev,
-        phrase: res.phrase,
-        rows: [], // Verrà calcolata da buildGridWithCoordinates
-        category: res.category,
-        gameMessage: { type: "info", text: `🎮 Livello ${res.level} - ${res.category}` }
-      }));
-    });
-  }, [gameState?.isSinglePlayer]); // Trigger quando gameState è pronto
+  
+  // ✅ Calcola se modalità giocatore singolo
+  const isSinglePlayerMode = state?.room?.gameMode === "singlePlayer" || isSinglePlayer;
 
   // Funzione toggle fullscreen
   const toggleFullscreen = async () => {
@@ -714,15 +653,18 @@ export default function Game({
 
   // ✅ GIOCATORE SINGOLO: Salva progressi
   const handleSaveProgress = () => {
-    if (!isSinglePlayer || !singlePlayerId) return;
+    if (!isSinglePlayerMode) return;
+    
+    const playerId = gameState?.singlePlayerId || state?.room?.players?.[0]?.name;
+    if (!playerId) return;
     
     setSavingProgress(true);
     
-    const currentLevel = singlePlayerLevel;
+    const currentLevel = gameState?.singlePlayerLevel || 1;
     const currentScore = gameState.players[0]?.totalScore || 0;
     
     socket.emit("singlePlayerSave", {
-      playerId: singlePlayerId,
+      playerId: playerId,
       level: currentLevel,
       totalScore: currentScore
     }, (res) => {
@@ -886,7 +828,7 @@ export default function Game({
         </div>
         
         {/* ✅ PULSANTE SALVA per modalità Giocatore Singolo - LIBERO */}
-        {isSinglePlayer && (
+        {isSinglePlayerMode && (
           <button
             onClick={handleSaveProgress}
             disabled={savingProgress}
@@ -942,6 +884,7 @@ export default function Game({
             flash={flashType}
             roundColor={roundColor}
             phrase={gameState.phrase || ""}
+            isSinglePlayer={isSinglePlayerMode}
           />
         </div>
       </div>

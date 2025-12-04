@@ -884,18 +884,36 @@ io.on("connection", (socket) => {
     });
   }
         } else if (outcome.type === "pass") {
+          // ✅ MODALITÀ GIOCATORE SINGOLO: Penalità -200
+          if (room.gameMode === "singlePlayer") {
+            const i = gs.currentPlayerIndex;
+            gs.players[i].roundScore = Math.max(0, gs.players[i].roundScore - 200);
+            gs.gameMessage = { type: "warning", text: "PASSA: -200 punti. Turno al prossimo." };
+          } else {
+            gs.gameMessage = { type: "warning", text: "PASSA: turno al prossimo." };
+          }
+          
           nextPlayer(gs); // ✅ Salta presentatore
           gs.mustSpin = true;
           gs.lastSpinTarget = 0;
-          gs.gameMessage = { type: "warning", text: "PASSA: turno al prossimo." };
         } else if (outcome.type === "bankrupt") {
           const i = gs.currentPlayerIndex;
           gs.players[i].roundScore = 0;
-          gs.players[i].totalScore = 0;
+          
+          // ✅ MODALITÀ GIOCATORE SINGOLO: NON azzera total score
+          if (room.gameMode !== "singlePlayer") {
+            gs.players[i].totalScore = 0;
+          }
+          
           nextPlayer(gs); // ✅ Salta presentatore
           gs.mustSpin = true;
           gs.lastSpinTarget = 0;
-          gs.gameMessage = { type: "error", text: "BANCAROTTA: punteggi azzerati!" };
+          gs.gameMessage = { 
+            type: "error", 
+            text: room.gameMode === "singlePlayer" 
+              ? "BANCAROTTA: round score azzerato!" 
+              : "BANCAROTTA: punteggi azzerati!" 
+          };
         }
 
         io.to(code).emit("gameStateUpdate", { gameState: gs });
@@ -955,13 +973,17 @@ if (gs.usedLetters.includes(upper)) {
   gs.awaitingConsonant = false;
   gs.mustSpin = true;
 
+  // ✅ MODALITÀ GIOCATORE SINGOLO: Penalità -200
+  if (room.gameMode === "singlePlayer") {
+    const i = gs.currentPlayerIndex;
+    gs.players[i].roundScore = Math.max(0, gs.players[i].roundScore - 200);
+    gs.gameMessage = { type: "error", text: `❌ ${upper} già usata. -200 punti.` };
+  } else {
+    gs.gameMessage = { type: "error", text: `❌ ${upper} già usata. Turno al prossimo.` };
+  }
+
   // passa al prossimo giocatore
   nextPlayer(gs); // ✅ Salta presentatore
-
-  gs.gameMessage = {
-    type: "error",
-    text: `❌ ${upper} già usata. Turno al prossimo.`
-  };
 
   io.to(code).emit("gameStateUpdate", { gameState: gs });
   if (callback) callback({ ok: true });
@@ -1061,12 +1083,20 @@ if (gs.usedLetters.includes(upper)) {
         if (callback) callback({ ok: true });
         return;
       } else {
+        // ✅ MODALITÀ GIOCATORE SINGOLO: Penalità -200
+        if (room.gameMode === "singlePlayer") {
+          const i = gs.currentPlayerIndex;
+          gs.players[i].roundScore = Math.max(0, gs.players[i].roundScore - 200);
+          gs.gameMessage = { type: "error", text: `Nessuna ${upper}. -200 punti.` };
+        } else {
+          gs.gameMessage = { type: "error", text: `Nessuna ${upper}. Turno al prossimo.` };
+        }
+        
         nextPlayer(gs); // ✅ Salta presentatore
         gs.mustSpin = true;
         gs.awaitingConsonant = false;
         gs.pendingDouble = false;
         gs.lastSpinTarget = 0;
-        gs.gameMessage = { type: "error", text: `Nessuna ${upper}. Turno al prossimo.` };
         
         io.to(code).emit("gameStateUpdate", { gameState: gs });
         if (callback) callback({ ok: true });
@@ -1125,13 +1155,17 @@ if (gs.usedLetters.includes(upper)) {
   gs.awaitingConsonant = false;
   gs.mustSpin = true;
 
+  // ✅ MODALITÀ GIOCATORE SINGOLO: Penalità -200
+  if (room.gameMode === "singlePlayer") {
+    const i = gs.currentPlayerIndex;
+    gs.players[i].roundScore = Math.max(0, gs.players[i].roundScore - 200);
+    gs.gameMessage = { type: "error", text: `❌ ${upper} già usata. -200 punti.` };
+  } else {
+    gs.gameMessage = { type: "error", text: `❌ ${upper} già usata. Turno al prossimo.` };
+  }
+
   // Passa turno
   nextPlayer(gs); // ✅ Salta presentatore
-
-  gs.gameMessage = {
-    type: "error",
-    text: `❌ ${upper} già usata. Turno al prossimo.`
-  };
 
   io.to(code).emit("gameStateUpdate", { gameState: gs });
   if (callback) callback({ ok: true });
@@ -1170,7 +1204,15 @@ if (gs.usedLetters.includes(upper)) {
       } else {
         gs.mustSpin = true;
         gs.awaitingConsonant = false;
-        gs.gameMessage = { type: "error", text: `Nessuna ${upper}. (-${cost} pt)` };
+        
+        // ✅ MODALITÀ GIOCATORE SINGOLO: Penalità -200 EXTRA (oltre al costo vocale)
+        if (room.gameMode === "singlePlayer") {
+          const i = gs.currentPlayerIndex;
+          gs.players[i].roundScore = Math.max(0, gs.players[i].roundScore - 200);
+          gs.gameMessage = { type: "error", text: `Nessuna ${upper}. (-${cost + 200} pt totali)` };
+        } else {
+          gs.gameMessage = { type: "error", text: `Nessuna ${upper}. (-${cost} pt)` };
+        }
         
         io.to(code).emit("gameStateUpdate", { gameState: gs });
       }
@@ -1260,11 +1302,19 @@ if (gs.usedLetters.includes(upper)) {
         }, 7000);
 
       } else {
+        // ✅ MODALITÀ GIOCATORE SINGOLO: Penalità -200
+        if (room.gameMode === "singlePlayer") {
+          const i = gs.currentPlayerIndex;
+          gs.players[i].roundScore = Math.max(0, gs.players[i].roundScore - 200);
+          gs.gameMessage = { type: "error", text: "Soluzione non corretta. -200 punti." };
+        } else {
+          gs.gameMessage = { type: "error", text: "Soluzione non corretta. Turno al prossimo." };
+        }
+        
         nextPlayer(gs); // ✅ Salta presentatore
         gs.mustSpin = true;
         gs.awaitingConsonant = false;
         gs.pendingDouble = false;
-        gs.gameMessage = { type: "error", text: "Soluzione non corretta. Turno al prossimo." };
 
         io.to(code).emit("gameStateUpdate", { gameState: gs });
       }
@@ -1646,6 +1696,75 @@ if (gs.usedLetters.includes(upper)) {
       });
     } catch (err) {
       console.error("Errore getSinglePlayerPhrase:", err);
+      callback({ ok: false, error: "Errore server" });
+    }
+  });
+
+  // ✅ AVVIA PARTITA GIOCATORE SINGOLO (crea room virtuale)
+  socket.on("startSinglePlayerGame", ({ playerId, level, totalScore }, callback) => {
+    try {
+      const roomCode = `SP-${playerId}`; // Room virtuale unica per giocatore
+      
+      // ✅ Crea room virtuale
+      rooms[roomCode] = {
+        roomName: roomCode,
+        gameMode: "singlePlayer",
+        players: [{
+          id: socket.id,
+          name: playerId,
+          isHost: true
+        }],
+        spectators: [],
+        totalRounds: 1,
+        currentPhraseIndex: level - 1, // Indice frase corrente
+        phraseSet: {
+          phrases: singlePlayerPhrases,
+          mode: "sequential"
+        }
+      };
+      
+      // ✅ Carica frase per livello corrente
+      const phraseIndex = (level - 1) % singlePlayerPhrases.length;
+      const selectedPhrase = singlePlayerPhrases[phraseIndex];
+      
+      if (!selectedPhrase) {
+        return callback({ ok: false, error: "Frase non trovata" });
+      }
+      
+      // ✅ Inizializza gameState
+      const gs = initGameState(
+        [{ id: socket.id, name: playerId, isHost: false }],
+        1,
+        selectedPhrase.text,
+        selectedPhrase.category
+      );
+      
+      // ✅ Imposta total score salvato
+      gs.players[0].totalScore = totalScore || 0;
+      gs.singlePlayerLevel = level;
+      gs.singlePlayerId = playerId;
+      
+      rooms[roomCode].gameState = gs;
+      
+      socket.join(roomCode);
+      
+      console.log(`🎮 Partita singolo avviata: ${playerId} - Livello ${level}`);
+      
+      callback({
+        ok: true,
+        roomCode: roomCode,
+        gameState: gs
+      });
+      
+      // ✅ Emetti gameStart
+      io.to(roomCode).emit("gameStart", {
+        room: rooms[roomCode],
+        roomCode: roomCode,
+        gameState: gs
+      });
+      
+    } catch (err) {
+      console.error("Errore startSinglePlayerGame:", err);
       callback({ ok: false, error: "Errore server" });
     }
   });
