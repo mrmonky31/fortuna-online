@@ -783,40 +783,140 @@ export default function Game({
       </button>
 
       <div className="game-players">
-        {gameState.players
-          .filter(p => !p.isHost || state?.room?.gameMode !== "presenter") // ✅ Nascondi presentatore per TUTTI
-          .map((p, i) => {
-            // ✅ Ricalcola indice corretto per active
-            const actualIndex = gameState.players.findIndex(player => player.id === p.id);
-            return (
-              <div
-                key={i}
-                className={`player-box ${
-                  actualIndex === gameState.currentPlayerIndex ? "player-active" : ""
-                }`}
-              >
-                <div className="player-name">
-                  {p.name}
-                  {p.id === mySocketId && " (Tu)"}
-                </div>
-                
-                {/* ✅ MODALITÀ SINGOLO: Mostra livello invece di round score */}
-                {isSinglePlayerMode ? (
-                  <>
-                    <div className="player-round" style={{ color: '#88ccff' }}>
-                      Livello {gameState.singlePlayerLevel || 1}
-                    </div>
-                    <div className="player-total">Tot: {p.totalScore}</div>
-                  </>
-                ) : (
-                  <>
-                    <div className="player-round">{p.roundScore} pt</div>
-                    <div className="player-total">Tot: {p.totalScore}</div>
-                  </>
-                )}
+        {isSinglePlayerMode ? (
+          // ✅ MODALITÀ SINGOLO: Box orizzontale arcade style
+          <div style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            gap: '30px',
+            padding: '15px 30px',
+            background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)',
+            border: '3px solid #00d9ff',
+            borderRadius: '15px',
+            boxShadow: '0 0 20px rgba(0, 217, 255, 0.4), inset 0 0 20px rgba(0, 217, 255, 0.1)',
+            fontFamily: 'monospace',
+            fontSize: '1.2rem',
+            fontWeight: 'bold',
+            color: '#00ff88',
+            textShadow: '0 0 8px rgba(0, 255, 136, 0.6)',
+            maxWidth: '800px',
+            margin: '0 auto'
+          }}>
+            {/* ID Giocatore */}
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '5px'
+            }}>
+              <div style={{ 
+                fontSize: '0.85rem', 
+                color: '#88ccff',
+                textShadow: '0 0 5px rgba(136, 204, 255, 0.6)',
+                letterSpacing: '1px'
+              }}>
+                PLAYER
               </div>
-            );
-          })}
+              <div style={{ 
+                fontSize: '1.4rem',
+                color: '#ffff00',
+                textShadow: '0 0 10px rgba(255, 255, 0, 0.8)',
+                letterSpacing: '2px'
+              }}>
+                {gameState.players[0].name}
+              </div>
+            </div>
+
+            {/* Separatore */}
+            <div style={{
+              width: '3px',
+              height: '50px',
+              background: 'linear-gradient(180deg, transparent, #00d9ff, transparent)',
+              boxShadow: '0 0 10px rgba(0, 217, 255, 0.6)'
+            }}></div>
+
+            {/* Round Score */}
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '5px'
+            }}>
+              <div style={{ 
+                fontSize: '0.85rem', 
+                color: '#88ccff',
+                textShadow: '0 0 5px rgba(136, 204, 255, 0.6)',
+                letterSpacing: '1px'
+              }}>
+                ROUND
+              </div>
+              <div style={{ 
+                fontSize: '1.4rem',
+                color: '#00ff88',
+                textShadow: '0 0 10px rgba(0, 255, 136, 0.8)',
+                letterSpacing: '2px'
+              }}>
+                {gameState.players[0].roundScore}
+              </div>
+            </div>
+
+            {/* Separatore */}
+            <div style={{
+              width: '3px',
+              height: '50px',
+              background: 'linear-gradient(180deg, transparent, #00d9ff, transparent)',
+              boxShadow: '0 0 10px rgba(0, 217, 255, 0.6)'
+            }}></div>
+
+            {/* Total Score */}
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '5px'
+            }}>
+              <div style={{ 
+                fontSize: '0.85rem', 
+                color: '#88ccff',
+                textShadow: '0 0 5px rgba(136, 204, 255, 0.6)',
+                letterSpacing: '1px'
+              }}>
+                TOTAL
+              </div>
+              <div style={{ 
+                fontSize: '1.4rem',
+                color: '#ff00ff',
+                textShadow: '0 0 10px rgba(255, 0, 255, 0.8)',
+                letterSpacing: '2px'
+              }}>
+                {gameState.players[0].totalScore}
+              </div>
+            </div>
+          </div>
+        ) : (
+          // ✅ MODALITÀ MULTIPLAYER: Box verticali originali
+          gameState.players
+            .filter(p => !p.isHost || state?.room?.gameMode !== "presenter")
+            .map((p, i) => {
+              const actualIndex = gameState.players.findIndex(player => player.id === p.id);
+              return (
+                <div
+                  key={i}
+                  className={`player-box ${
+                    actualIndex === gameState.currentPlayerIndex ? "player-active" : ""
+                  }`}
+                >
+                  <div className="player-name">
+                    {p.name}
+                    {p.id === mySocketId && " (Tu)"}
+                  </div>
+                  <div className="player-round">{p.roundScore} pt</div>
+                  <div className="player-total">Tot: {p.totalScore}</div>
+                </div>
+              );
+            })
+        )}
       </div>
 
       <div>
