@@ -713,6 +713,17 @@ export default function Game({
   }
 
   const isMyTurn = gameState.currentPlayerId === mySocketId;
+  
+  // ✅ DEBUG modalità singlePlayer
+  if (isSinglePlayerMode && !isMyTurn) {
+    console.log("⚠️ DEBUG isMyTurn:", {
+      currentPlayerId: gameState.currentPlayerId,
+      mySocketId: mySocketId,
+      match: gameState.currentPlayerId === mySocketId,
+      isSinglePlayerMode: isSinglePlayerMode
+    });
+  }
+  
   const flashType = betweenRounds ? "success" : 
     gameState.gameMessage?.type === "error" &&
     gameState.gameMessage?.text === "Soluzione non corretta."
