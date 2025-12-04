@@ -278,6 +278,50 @@ const disconnectionTimeouts = {};
 
 // ==================== DATABASE GIOCATORE SINGOLO ====================
 
+// ✅ Calcola punteggio caselle bianche consecutive (modalità singlePlayer)
+function calculateWhiteCellsScore(phrase, revealedLetters) {
+  const normalized = normalizeText(phrase);
+  const revealedSet = new Set(revealedLetters.map(l => normalizeText(l)));
+  
+  // Trova tutte le lettere della frase
+  const cells = [...normalized].map(ch => {
+    if (!/[A-Z]/.test(ch)) return { type: 'other' }; // Non lettera
+    return { 
+      type: 'letter',
+      revealed: revealedSet.has(ch)
+    };
+  });
+  
+  // Conta gruppi di caselle bianche consecutive
+  let totalScore = 0;
+  let consecutiveWhite = 0;
+  
+  for (const cell of cells) {
+    if (cell.type === 'letter' && !cell.revealed) {
+      // Casella bianca
+      consecutiveWhite++;
+    } else {
+      // Fine gruppo consecutivo
+      if (consecutiveWhite > 0) {
+        // Prime 2 = 10pt, dalla 3ª in poi = 20pt
+        for (let i = 0; i < consecutiveWhite; i++) {
+          totalScore += (i < 2) ? 10 : 20;
+        }
+        consecutiveWhite = 0;
+      }
+    }
+  }
+  
+  // Ultimo gruppo se presente
+  if (consecutiveWhite > 0) {
+    for (let i = 0; i < consecutiveWhite; i++) {
+      totalScore += (i < 2) ? 10 : 20;
+    }
+  }
+  
+  return totalScore;
+}
+
 // ✅ Crea nuovo giocatore
 function createSinglePlayer(playerId, pin) {
   const upperID = String(playerId).toUpperCase().trim();
@@ -1278,14 +1322,25 @@ if (gs.usedLetters.includes(upper)) {
         const i = gs.currentPlayerIndex;
         const winnerName = gs.players[i].name;
         
-        gs.players[i].totalScore += gs.players[i].roundScore;
-        const bonus = 1000;
-        gs.players[i].totalScore += bonus;
+        // ✅ MODALITÀ GIOCATORE SINGOLO: Calcolo speciale punteggio
+        if (room.gameMode === "singlePlayer") {
+          // Calcola punteggio basato su caselle bianche rimaste
+          const whiteCellsScore = calculateWhiteCellsScore(gs.phrase, gs.revealedLetters);
+          gs.players[i].totalScore += whiteCellsScore;
+          
+          console.log(`🎯 Punteggio caselle bianche: ${whiteCellsScore}`);
+          gs.gameMessage = { type: "success", text: `✅ Frase indovinata! +${whiteCellsScore} punti!` };
+        } else {
+          // Modalità multiplayer: round score + bonus
+          gs.players[i].totalScore += gs.players[i].roundScore;
+          const bonus = 1000;
+          gs.players[i].totalScore += bonus;
+          gs.gameMessage = { type: "success", text: `✅ ${winnerName} ha indovinato! +${bonus} BONUS!` };
+        }
 
         const allLetters = [...normalizeText(gs.phrase)].filter(ch => /[A-Z]/.test(ch));
         gs.revealedLetters = [...new Set(allLetters)];
 
-        gs.gameMessage = { type: "success", text: `✅ ${winnerName} ha indovinato! +${bonus} BONUS!` };
         gs.mustSpin = false;
         gs.awaitingConsonant = false;
         gs.pendingDouble = false;
