@@ -20,6 +20,10 @@ export default function LobbyOnline({ onGameStart }) {
   const [singlePlayerLoading, setSinglePlayerLoading] = useState(false);
   const [top30Data, setTop30Data] = useState([]);
   const [loadingTop30, setLoadingTop30] = useState(false);
+  
+  // ✅ PWA Install
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [showInstallButton, setShowInstallButton] = useState(false);
 
   // ✅ Carica TOP 30 quando si entra nella schermata singlePlayer
   useEffect(() => {
@@ -33,6 +37,32 @@ export default function LobbyOnline({ onGameStart }) {
       });
     }
   }, [lobbyMode]);
+  
+  // ✅ Listener per PWA install prompt
+  useEffect(() => {
+    const handler = (e) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setShowInstallButton(true);
+    };
+    
+    window.addEventListener('beforeinstallprompt', handler);
+    
+    return () => window.removeEventListener('beforeinstallprompt', handler);
+  }, []);
+  
+  // ✅ Handler per installare PWA
+  const handleInstallClick = async () => {
+    if (!deferredPrompt) return;
+    
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    
+    console.log(`User response to install prompt: ${outcome}`);
+    
+    setDeferredPrompt(null);
+    setShowInstallButton(false);
+  };
 
   useEffect(() => {
     function handleRoomUpdate({ room: updatedRoom, roomCode: code }) {
@@ -334,6 +364,30 @@ export default function LobbyOnline({ onGameStart }) {
               👥 MULTI GIOCATORE
             </button>
           </div>
+          
+          {/* ✅ PULSANTE INSTALLA PWA */}
+          {showInstallButton && (
+            <button 
+              onClick={handleInstallClick}
+              style={{
+                marginTop: '30px',
+                padding: '15px 30px',
+                fontSize: '1.1rem',
+                fontWeight: 'bold',
+                background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                color: 'white',
+                border: '2px solid #34d399',
+                borderRadius: '12px',
+                cursor: 'pointer',
+                boxShadow: '0 4px 15px rgba(16, 185, 129, 0.4)',
+                transition: 'all 0.3s ease'
+              }}
+              onMouseOver={(e) => e.target.style.transform = 'scale(1.05)'}
+              onMouseOut={(e) => e.target.style.transform = 'scale(1)'}
+            >
+              📲 INSTALLA APP
+            </button>
+          )}
         </div>
       )}
 
