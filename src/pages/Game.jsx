@@ -14,7 +14,16 @@ import LetterGrid from "../components/LetterGrid";
 import { buildGridWithCoordinates, maskGrid } from "../game/GameEngine";
 import socket from "../socket";
 
-export default function Game({ players = [], totalRounds = 3, state, onExitToLobby }) {
+export default function Game({ 
+  players = [], 
+  totalRounds = 3, 
+  state, 
+  onExitToLobby,
+  // ✅ NUOVI: Props per modalità giocatore singolo
+  isSinglePlayer = false,
+  singlePlayerId = null,
+  singlePlayerLevel = 1,
+}) {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [mySocketId, setMySocketId] = useState(socket.id);
   const [roomCode, setRoomCode] = useState(state?.roomCode || null);
@@ -24,6 +33,9 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
   const [showPhrase, setShowPhrase] = useState(false);
   const [awaitingSolutionCheck, setAwaitingSolutionCheck] = useState(false);
   const [activeLetterType, setActiveLetterType] = useState(null); // "consonant" | "vowel" | null
+  
+  // ✅ NUOVO: Stato per salvataggio giocatore singolo
+  const [savingProgress, setSavingProgress] = useState(false);
 
   const [gameState, setGameState] = useState(() => {
     if (!state) return null;
@@ -636,6 +648,43 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
     });
   };
 
+  // ✅ GIOCATORE SINGOLO: Salva progressi
+  const handleSaveProgress = () => {
+    if (!isSinglePlayer || !singlePlayerId) return;
+    
+    setSavingProgress(true);
+    
+    const currentLevel = singlePlayerLevel;
+    const currentScore = gameState.players[0]?.totalScore || 0;
+    
+    socket.emit("singlePlayerSave", {
+      playerId: singlePlayerId,
+      level: currentLevel,
+      totalScore: currentScore
+    }, (res) => {
+      setSavingProgress(false);
+      
+      if (res && res.ok) {
+        console.log("✅ Progressi salvati");
+        // Mostra messaggio temporaneo
+        const prevMsg = gameState.gameMessage;
+        setGameState(prev => ({
+          ...prev,
+          gameMessage: { type: "success", text: "💾 Progressi salvati!" }
+        }));
+        
+        setTimeout(() => {
+          setGameState(prev => ({
+            ...prev,
+            gameMessage: prevMsg
+          }));
+        }, 2000);
+      } else {
+        console.error("❌ Errore salvataggio:", res?.error);
+      }
+    });
+  };
+
   if (!gameState) {
     return (
       <div className="game-wrapper" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh' }}>
@@ -770,6 +819,28 @@ export default function Game({ players = [], totalRounds = 3, state, onExitToLob
             awaitingSolutionCheck={awaitingSolutionCheck}
             activeLetterType={activeLetterType}
           />
+          
+          {/* ✅ PULSANTE SALVA per modalità Giocatore Singolo */}
+          {isSinglePlayer && (
+            <button
+              onClick={handleSaveProgress}
+              disabled={savingProgress}
+              style={{
+                marginTop: '10px',
+                padding: '8px 16px',
+                fontSize: '0.9rem',
+                fontWeight: 'bold',
+                background: savingProgress ? '#718096' : '#4299e1',
+                color: 'white',
+                border: 'none',
+                borderRadius: '6px',
+                cursor: savingProgress ? 'not-allowed' : 'pointer',
+                transition: 'all 0.3s ease'
+              }}
+            >
+              {savingProgress ? '⏳ Salvataggio...' : '💾 SALVA PROGRESSI'}
+            </button>
+          )}
         </div>
 
         {/* Scritte consonanti/vocali finite */}

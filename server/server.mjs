@@ -19,6 +19,19 @@ const __dirname = dirname(__filename);
 // ✅ Carica frasi base
 import { testPhrases } from "./game/phrases.js";
 
+// ✅ DATABASE GIOCATORE SINGOLO
+const singlePlayerDB = {
+  players: {}, // { "PLAYER_ID": { id, pin, level, totalScore, createdAt, lastPlayedAt } }
+  leaderboard: [] // [ { id, totalScore }, ... ] ordinato
+};
+
+// ✅ FRASI MODALITÀ GIOCATORE SINGOLO (sequenziali)
+const singlePlayerPhrases = [
+  { text: "LA RUOTA DELLA FORTUNA", category: "GIOCHI" },
+  { text: "PROVA DI TEST", category: "GENERALE" },
+  // Marco aggiungerà le sue 600+ frasi qui
+];
+
 // ✅ Import funzioni coordinate per animazione
 import { buildGridWithCoordinates, findLetterCoordinates } from "./game/GameEngine.js";
 
@@ -266,6 +279,83 @@ function initGameState(players, totalRounds, phrase, category) {
 
 const rooms = {};
 const disconnectionTimeouts = {};
+
+// ==================== DATABASE GIOCATORE SINGOLO ====================
+
+// ✅ Crea nuovo giocatore
+function createSinglePlayer(playerId, pin) {
+  const upperID = String(playerId).toUpperCase().trim();
+  
+  if (!upperID || upperID.length < 3) {
+    return { ok: false, error: "ID deve essere almeno 3 caratteri" };
+  }
+  
+  if (String(pin).length !== 4 || !/^\d{4}$/.test(pin)) {
+    return { ok: false, error: "PIN deve essere 4 cifre" };
+  }
+  
+  if (singlePlayerDB.players[upperID]) {
+    return { ok: false, error: "ID già usato" };
+  }
+  
+  singlePlayerDB.players[upperID] = {
+    id: upperID,
+    pin: String(pin),
+    level: 1, // Inizia dalla frase 1
+    totalScore: 0,
+    createdAt: new Date().toISOString(),
+    lastPlayedAt: new Date().toISOString()
+  };
+  
+  return { ok: true, player: singlePlayerDB.players[upperID] };
+}
+
+// ✅ Autentica giocatore
+function authenticateSinglePlayer(playerId, pin) {
+  const upperID = String(playerId).toUpperCase().trim();
+  const player = singlePlayerDB.players[upperID];
+  
+  if (!player) {
+    return { ok: false, error: "ID non trovato" };
+  }
+  
+  if (player.pin !== String(pin)) {
+    return { ok: false, error: "PIN errato" };
+  }
+  
+  player.lastPlayedAt = new Date().toISOString();
+  return { ok: true, player };
+}
+
+// ✅ Salva progressi giocatore
+function saveSinglePlayerProgress(playerId, level, totalScore) {
+  const upperID = String(playerId).toUpperCase().trim();
+  const player = singlePlayerDB.players[upperID];
+  
+  if (!player) return { ok: false, error: "Giocatore non trovato" };
+  
+  player.level = level;
+  player.totalScore = totalScore;
+  player.lastPlayedAt = new Date().toISOString();
+  
+  updateLeaderboard();
+  
+  return { ok: true, player };
+}
+
+// ✅ Aggiorna classifica
+function updateLeaderboard() {
+  singlePlayerDB.leaderboard = Object.values(singlePlayerDB.players)
+    .sort((a, b) => b.totalScore - a.totalScore)
+    .map(p => ({ id: p.id, totalScore: p.totalScore }));
+}
+
+// ✅ Ottieni classifica
+function getLeaderboard(limit = 30) {
+  return singlePlayerDB.leaderboard.slice(0, limit);
+}
+
+// ==================== STANZE ====================
 
 // ✅ Funzione per caricare frasi (personalizzate o random)
 async function loadPhrases(roomName) {
@@ -1460,6 +1550,84 @@ if (gs.usedLetters.includes(upper)) {
       }
     } catch (err) {
       console.error("Errore requestGameState:", err);
+    }
+  });
+
+  // ==================== GIOCATORE SINGOLO ====================
+
+  // ✅ CREA NUOVO GIOCATORE SINGOLO
+  socket.on("singlePlayerCreate", ({ playerId, pin }, callback) => {
+    try {
+      const result = createSinglePlayer(playerId, pin);
+      
+      if (!result.ok) {
+        return callback({ ok: false, error: result.error });
+      }
+      
+      console.log(`✨ Nuovo giocatore singolo: ${result.player.id}`);
+      callback({ 
+        ok: true, 
+        player: {
+          id: result.player.id,
+          level: result.player.level,
+          totalScore: result.player.totalScore
+        }
+      });
+    } catch (err) {
+      console.error("Errore singlePlayerCreate:", err);
+      callback({ ok: false, error: "Errore server" });
+    }
+  });
+
+  // ✅ AUTENTICA GIOCATORE SINGOLO
+  socket.on("singlePlayerAuth", ({ playerId, pin }, callback) => {
+    try {
+      const result = authenticateSinglePlayer(playerId, pin);
+      
+      if (!result.ok) {
+        return callback({ ok: false, error: result.error });
+      }
+      
+      console.log(`🔐 Giocatore autenticato: ${result.player.id} (livello ${result.player.level})`);
+      callback({ 
+        ok: true, 
+        player: {
+          id: result.player.id,
+          level: result.player.level,
+          totalScore: result.player.totalScore
+        }
+      });
+    } catch (err) {
+      console.error("Errore singlePlayerAuth:", err);
+      callback({ ok: false, error: "Errore server" });
+    }
+  });
+
+  // ✅ SALVA PROGRESSI GIOCATORE SINGOLO
+  socket.on("singlePlayerSave", ({ playerId, level, totalScore }, callback) => {
+    try {
+      const result = saveSinglePlayerProgress(playerId, level, totalScore);
+      
+      if (!result.ok) {
+        return callback({ ok: false, error: result.error });
+      }
+      
+      console.log(`💾 Progressi salvati: ${playerId} - Livello ${level}, Punteggio ${totalScore}`);
+      callback({ ok: true });
+    } catch (err) {
+      console.error("Errore singlePlayerSave:", err);
+      callback({ ok: false, error: "Errore server" });
+    }
+  });
+
+  // ✅ OTTIENI CLASSIFICA
+  socket.on("getLeaderboard", ({ limit }, callback) => {
+    try {
+      const leaderboard = getLeaderboard(limit || 30);
+      callback({ ok: true, leaderboard });
+    } catch (err) {
+      console.error("Errore getLeaderboard:", err);
+      callback({ ok: false, error: "Errore server" });
     }
   });
 

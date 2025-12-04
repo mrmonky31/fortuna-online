@@ -13,6 +13,11 @@ export default function LobbyOnline({ onGameStart }) {
   const [roomCode, setRoomCode] = useState("");
   const [error, setError] = useState("");
   const [joinRequest, setJoinRequest] = useState(null);
+  
+  // ✅ NUOVI: Stati per Giocatore Singolo
+  const [singlePlayerId, setSinglePlayerId] = useState("");
+  const [singlePlayerPin, setSinglePlayerPin] = useState("");
+  const [singlePlayerLoading, setSinglePlayerLoading] = useState(false);
 
   useEffect(() => {
     function handleRoomUpdate({ room: updatedRoom, roomCode: code }) {
@@ -199,6 +204,74 @@ export default function LobbyOnline({ onGameStart }) {
     setJoinRequest(null);
   };
 
+  // ✅ GIOCATORE SINGOLO: NUOVA PARTITA
+  const handleSinglePlayerCreate = () => {
+    setError("");
+    
+    if (!singlePlayerId.trim() || singlePlayerId.trim().length < 3) {
+      setError("ID deve essere almeno 3 caratteri");
+      return;
+    }
+    
+    if (singlePlayerPin.length !== 4 || !/^\d{4}$/.test(singlePlayerPin)) {
+      setError("PIN deve essere 4 cifre");
+      return;
+    }
+    
+    setSinglePlayerLoading(true);
+    
+    socket.emit("singlePlayerCreate", {
+      playerId: singlePlayerId.trim(),
+      pin: singlePlayerPin
+    }, (res) => {
+      setSinglePlayerLoading(false);
+      
+      if (!res || !res.ok) {
+        setError(res?.error || "Errore creazione giocatore");
+        return;
+      }
+      
+      console.log("✅ Giocatore singolo creato:", res.player);
+      
+      // TODO: Avvia partita (Step successivo)
+      setError("✅ Giocatore creato! (Partita in arrivo...)");
+    });
+  };
+
+  // ✅ GIOCATORE SINGOLO: CONTINUA PARTITA
+  const handleSinglePlayerAuth = () => {
+    setError("");
+    
+    if (!singlePlayerId.trim()) {
+      setError("Inserisci il tuo ID");
+      return;
+    }
+    
+    if (singlePlayerPin.length !== 4) {
+      setError("Inserisci il tuo PIN (4 cifre)");
+      return;
+    }
+    
+    setSinglePlayerLoading(true);
+    
+    socket.emit("singlePlayerAuth", {
+      playerId: singlePlayerId.trim(),
+      pin: singlePlayerPin
+    }, (res) => {
+      setSinglePlayerLoading(false);
+      
+      if (!res || !res.ok) {
+        setError(res?.error || "Errore autenticazione");
+        return;
+      }
+      
+      console.log("✅ Giocatore autenticato:", res.player);
+      
+      // TODO: Avvia partita dal livello salvato (Step successivo)
+      setError(`✅ Bentornato! Livello ${res.player.level} (Partita in arrivo...)`);
+    });
+  };
+
   return (
     <div className="lobby-container">
       {/* SCHERMATA HOME - SELEZIONE MODALITÀ */}
@@ -303,27 +376,44 @@ export default function LobbyOnline({ onGameStart }) {
             <input
               type="text"
               placeholder="es. MARCO2024"
+              value={singlePlayerId}
+              onChange={(e) => setSinglePlayerId(e.target.value.toUpperCase())}
               autoComplete="off"
               autoCapitalize="characters"
+              disabled={singlePlayerLoading}
             />
             
             <label className="form-label">Crea PIN (4 cifre)</label>
             <input
               type="text"
               placeholder="es. 1234"
+              value={singlePlayerPin}
+              onChange={(e) => setSinglePlayerPin(e.target.value.replace(/\D/g, "").slice(0, 4))}
               maxLength={4}
               autoComplete="off"
               inputMode="numeric"
+              disabled={singlePlayerLoading}
             />
             
-            <button>
-              🚀 INIZIA PARTITA
+            {error && <p className="error">{error}</p>}
+            
+            <button 
+              onClick={handleSinglePlayerCreate}
+              disabled={singlePlayerLoading}
+            >
+              {singlePlayerLoading ? "⏳ CREAZIONE..." : "🚀 INIZIA PARTITA"}
             </button>
             
             <button 
-              onClick={() => setLobbyMode("singlePlayer")} 
+              onClick={() => {
+                setLobbyMode("singlePlayer");
+                setError("");
+                setSinglePlayerId("");
+                setSinglePlayerPin("");
+              }}
               className="btn-secondary"
               style={{ fontSize: '1rem', padding: '10px 20px', minWidth: '150px' }}
+              disabled={singlePlayerLoading}
             >
               ⬅️ INDIETRO
             </button>
@@ -341,27 +431,44 @@ export default function LobbyOnline({ onGameStart }) {
             <input
               type="text"
               placeholder="Il tuo ID"
+              value={singlePlayerId}
+              onChange={(e) => setSinglePlayerId(e.target.value.toUpperCase())}
               autoComplete="off"
               autoCapitalize="characters"
+              disabled={singlePlayerLoading}
             />
             
             <label className="form-label">Inserisci PIN</label>
             <input
               type="text"
               placeholder="Il tuo PIN (4 cifre)"
+              value={singlePlayerPin}
+              onChange={(e) => setSinglePlayerPin(e.target.value.replace(/\D/g, "").slice(0, 4))}
               maxLength={4}
               autoComplete="off"
               inputMode="numeric"
+              disabled={singlePlayerLoading}
             />
             
-            <button>
-              ✅ ACCEDI
+            {error && <p className="error">{error}</p>}
+            
+            <button 
+              onClick={handleSinglePlayerAuth}
+              disabled={singlePlayerLoading}
+            >
+              {singlePlayerLoading ? "⏳ ACCESSO..." : "✅ ACCEDI"}
             </button>
             
             <button 
-              onClick={() => setLobbyMode("singlePlayer")} 
+              onClick={() => {
+                setLobbyMode("singlePlayer");
+                setError("");
+                setSinglePlayerId("");
+                setSinglePlayerPin("");
+              }}
               className="btn-secondary"
               style={{ fontSize: '1rem', padding: '10px 20px', minWidth: '150px' }}
+              disabled={singlePlayerLoading}
             >
               ⬅️ INDIETRO
             </button>
