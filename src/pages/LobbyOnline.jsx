@@ -220,12 +220,26 @@ export default function LobbyOnline({ onGameStart }) {
 
       {/* MODALITÀ MULTI GIOCATORE - FORM ESISTENTE */}
       {lobbyMode === "multiPlayer" && !room && (
-        <LobbyFormMinimal
-          onCreate={handleCreate}
-          onJoin={handleJoin}
-          onSpectate={handleSpectate}
-          error={error}
-        />
+        <>
+          <LobbyFormMinimal
+            onCreate={handleCreate}
+            onJoin={handleJoin}
+            onSpectate={handleSpectate}
+            error={error}
+          />
+          <button 
+            onClick={() => setLobbyMode("home")} 
+            className="btn-secondary"
+            style={{ 
+              fontSize: '1rem', 
+              padding: '10px 20px', 
+              marginTop: '15px',
+              minWidth: '150px'
+            }}
+          >
+            ⬅️ INDIETRO
+          </button>
+        </>
       )}
 
       {/* MODALITÀ GIOCATORE SINGOLO - PLACEHOLDER (Step 1.2) */}
@@ -235,7 +249,15 @@ export default function LobbyOnline({ onGameStart }) {
           <p style={{ color: '#00ff55', fontSize: '1.2rem' }}>
             Modalità in costruzione...
           </p>
-          <button onClick={() => setLobbyMode("home")} className="btn-secondary">
+          <button 
+            onClick={() => setLobbyMode("home")} 
+            className="btn-secondary"
+            style={{ 
+              fontSize: '1rem', 
+              padding: '10px 20px',
+              minWidth: '150px'
+            }}
+          >
             ⬅️ INDIETRO
           </button>
         </div>
