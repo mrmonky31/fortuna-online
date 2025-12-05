@@ -950,6 +950,8 @@ io.on("connection", (socket) => {
       const sliceIndex = Math.floor(Math.random() * gs.wheel.length);
       const targetSlice = gs.wheel[sliceIndex];
       
+      console.log(`🎯 Spin Debug - sliceIndex: ${sliceIndex}, targetSlice: ${targetSlice}, wheel:`, gs.wheel);
+      
       // ✅ Gestione spicchi doppi: scegli metà sinistra o destra
       let halfOffset = 0; // Offset angolare per metà spicchio
       let chosen = targetSlice;
@@ -967,6 +969,8 @@ io.on("connection", (socket) => {
       // ✅ Calcola angolo finale preciso
       const SLICE_DEG = 360 / gs.wheel.length; // 18° per 20 spicchi
       const targetAngle = sliceIndex * SLICE_DEG + halfOffset;
+      
+      console.log(`🎯 targetAngle: ${targetAngle}°, chosen: ${chosen}, halfOffset: ${halfOffset}`);
       
       io.to(code).emit("wheelSpinStart", { 
         spinning: true,
@@ -1007,24 +1011,43 @@ io.on("connection", (socket) => {
             });
           }
         } else if (outcome.type === "double") {
-  // 🎯 Lo spicchio RADDOPPIA NON assegna punti ora.
-  // Attende una consonante per decidere se raddoppiare o no.
-  gs.pendingDouble = true;
-  gs.mustSpin = false;
-  gs.awaitingConsonant = true;
-  gs.lastSpinTarget = 100; // valore base se roundScore era 0
-  gs.gameMessage = {
-    type: "info",
-    text: "🎯 RADDOPPIA: inserisci una consonante!"
-  };
-  
-  // ✅ MODALITÀ PRESENTATORE: Auto-attiva griglia consonanti
-  if (room.gameMode === "presenter") {
-    io.to(code).emit("buttonStateSync", { 
-      type: "consonant", 
-      playerId: gs.currentPlayerId 
-    });
-  }
+          // ✅ Se roundScore = 0, RADDOPPIA si comporta come 100pt
+          if (gs.players[i].roundScore === 0) {
+            gs.lastSpinTarget = 100;
+            gs.mustSpin = false;
+            gs.awaitingConsonant = true;
+            gs.pendingDouble = false; // ✅ NON raddoppia
+            gs.gameMessage = {
+              type: "info",
+              text: "Valore: 100 pt. Inserisci una consonante."
+            };
+            
+            // ✅ MODALITÀ PRESENTATORE: Auto-attiva griglia consonanti
+            if (room.gameMode === "presenter") {
+              io.to(code).emit("buttonStateSync", { 
+                type: "consonant", 
+                playerId: gs.currentPlayerId 
+              });
+            }
+          } else {
+            // ✅ roundScore > 0: RADDOPPIA normale
+            gs.pendingDouble = true;
+            gs.mustSpin = false;
+            gs.awaitingConsonant = true;
+            gs.lastSpinTarget = 100; // valore base di fallback
+            gs.gameMessage = {
+              type: "info",
+              text: "🎯 RADDOPPIA: inserisci una consonante!"
+            };
+            
+            // ✅ MODALITÀ PRESENTATORE: Auto-attiva griglia consonanti
+            if (room.gameMode === "presenter") {
+              io.to(code).emit("buttonStateSync", { 
+                type: "consonant", 
+                playerId: gs.currentPlayerId 
+              });
+            }
+          }
         } else if (outcome.type === "pass") {
           // ✅ MODALITÀ GIOCATORE SINGOLO: Penalità -200
           if (room.gameMode === "singlePlayer") {
