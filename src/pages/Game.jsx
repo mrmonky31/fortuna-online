@@ -1209,7 +1209,7 @@ export default function Game({
 
           {!isMyTurn && !betweenRounds && (
             <div className="alert warning">
-              ⏸️ Turno di {gameState.players[gameState.currentPlayerIndex]?.name}
+              Turno di {gameState.players[gameState.currentPlayerIndex]?.name}
             </div>
           )}
         </div>
