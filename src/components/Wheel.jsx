@@ -1,8 +1,5 @@
 // 🎡 VERSIONE A: SEED SINCRONIZZATO
-// ✅ TUE POSIZIONI (non toccate)
-// ✅ TUOI PATTERN (ordine rispettato)
-// ✅ Perno fisso (transform-origin)
-// ✅ Sincronizzazione tramite seed
+// ✅ FIX OFFSET: Rimosso -9.9° e allineato con calcolo server
 
 import React, { useEffect, useRef, useState } from "react";
 import "../styles/wheel.css";
@@ -136,11 +133,11 @@ export default function WheelVersionA({ slices = [], spinning = false, onStop, s
       // ✅ NUOVO: Aggiungi variazione casuale ±9° per non fermarsi sempre al centro
       const variation = (seededRandom(spinSeed + 100) - 0.5) * 18; // ±9° (metà spicchio)
       
-      // ✅ Lo spicchio target deve finire sotto il puntatore fisso (ore 12)
-      // Il puntatore è nell'asse invisibile fisso, la ruota gira
-      // Gli spicchi nella ruota partono da -90° (indice 0 a ore 12 quando angle=0)
-      // Per far finire lo spicchio N sotto il puntatore:
-      const finalAngle = 360 - targetAngle + variation - 9.9 ;
+      // ✅ FIX: Allineamento con calcolo server
+      // Server: targetAngle = sliceIndex * 18° (parte da 0° per indice 0)
+      // Client: spicchi partono da -90° (indice 0 a ore 12)
+      // Per compensare: dobbiamo aggiungere 90° al targetAngle del server
+      const finalAngle = 360 - (targetAngle + 90) + variation;
       
       // ✅ FASE 1: Rotazione principale con overshoot (va oltre il target)
       const overshoot = 3.6; // Gradi di overshoot (0.2 spicchi = 3.6°)
