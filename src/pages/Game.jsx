@@ -1087,39 +1087,6 @@ export default function Game({
           </button>
         )}
 
-        {/* ✅ PULSANTE TOP 10 per modalità Giocatore Singolo */}
-        {isSinglePlayerMode && (
-          <button
-            onClick={handleOpenTop10}
-            className="btn-top10"
-            style={{
-              position: 'absolute',
-              top: '65%',
-              right: '10%',
-              transform: 'translateY(-50%)',
-              width: '60px',
-              height: '60px',
-              borderRadius: '50%',
-              padding: '0',
-              fontSize: '1.5rem',
-              fontWeight: 'bold',
-              background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-              color: 'white',
-              border: '3px solid rgba(245, 158, 11, 0.3)',
-              cursor: 'pointer',
-              transition: 'all 0.3s ease',
-              boxShadow: '0 4px 15px rgba(245, 158, 11, 0.4)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              zIndex: 500
-            }}
-            title="Visualizza TOP 10"
-          >
-            🏆
-          </button>
-        )}
-
         {/* ✅ PULSANTE REGOLE per modalità Giocatore Singolo - AL CENTRO */}
         {isSinglePlayerMode && (
           <button
@@ -1152,6 +1119,23 @@ export default function Game({
             📖
           </button>
         )}
+
+        {/* ✅ PULSANTE TOP 10 per modalità Giocatore Singolo */}
+        {isSinglePlayerMode && (
+          <button
+            onClick={handleOpenTop10}
+            className="btn-top10"
+            style={{
+              position: 'absolute',
+              top: '65%',
+              right: '10%',
+              transform: 'translateY(-50%)',
+              width: '60px',
+              height: '60px',
+              borderRadius: '50%',
+              padding: '0',
+              fontSize: '1.5rem',
+              fontWeight: 'bold',
               background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
               color: 'white',
               border: '3px solid rgba(245, 158, 11, 0.3)',
@@ -1209,7 +1193,7 @@ export default function Game({
 
           {!isMyTurn && !betweenRounds && (
             <div className="alert warning">
-              Turno di {gameState.players[gameState.currentPlayerIndex]?.name}
+              ⏸️ Turno di {gameState.players[gameState.currentPlayerIndex]?.name}
             </div>
           )}
         </div>
