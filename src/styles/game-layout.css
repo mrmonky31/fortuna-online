@@ -35,7 +35,7 @@ html, body {
   position: absolute;
   top: 4vh;
   left: 50%;
-  transform: translateX(-50%) scale(0.45);
+  transform: translateX(-50%) scale(0.4);
   transform-origin: center top;
   z-index: 8;
 }

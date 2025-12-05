@@ -860,7 +860,7 @@ export default function Game({
             width: '690px',
             maxWidth: '90vw',
             margin: '0 auto',
-            Top: '38px'  // ← AGGIUNGI QUESTA (puoi usare 30px, 40px, ecc.)
+            Top: '38px',  // ← AGGIUNGI QUESTA (puoi usare 30px, 40px, ecc.)
           }}>
             {/* ID Giocatore */}
             <div style={{
