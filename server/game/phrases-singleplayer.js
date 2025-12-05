@@ -14,7 +14,7 @@ export const singlePlayerPhrases = [
   { category: "UOMO", text: "È L'UNICO ANIMALE CHE ARROSSISCE" },
   { category: "CULTURA", text: "LE PIRAMIDI DI GIZA SI TROVANO IN EGITTO" },
   { category: "PROVERBIO", text: "CHI DORME NON PIGLIA PESCI" },
-  { category: "RAGGI", text: "GLI INSETTI POSSONO VEDERLI MA L'UOMO NO" },
+  { category: "RAGGI X", text: "GLI INSETTI POSSONO VEDERLI MA L'UOMO NO" },
   { category: "CULTURA", text: "IL LAGO DI GARDA È IL PIÙ GRANDE D'ITALIA" },
   { category: "PROVERBIO", text: "TRA IL DIRE E IL FARE C'È DI MEZZO IL MARE" },
   { category: "MELANINA", text: "PROTEGGE LA PELLE DAI RAGGI ULTRAVIOLETTI" },
