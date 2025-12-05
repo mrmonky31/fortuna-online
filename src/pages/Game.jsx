@@ -1094,11 +1094,11 @@ export default function Game({
             className="btn-rules"
             style={{
               position: 'absolute',
-              top: '60%',
-              left: '80%',
+              top: '64%',
+              left: '72%',
               transform: 'translate(-50%, -50%)',
-              width: '40px',
-              height: '40px',
+              width: '35px',
+              height: '35px',
               borderRadius: '50%',
               padding: '0',
               fontSize: '1.5rem',
