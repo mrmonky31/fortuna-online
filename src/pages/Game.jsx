@@ -1248,10 +1248,10 @@ export default function Game({
                         border: '1px solid rgba(255, 215, 0, 0.3)'
                       }}>
                         <span style={{ color: '#ffd700' }}>
-                          💰 BONUS 500: {Math.floor(gameState.lastRoundDetails.roundScore / 500)} x 2pt
+                          💰 Round Score: {gameState.lastRoundDetails.roundScore}pt
                         </span>
                         <span style={{ color: '#aaa', fontSize: '0.9rem', marginLeft: '8px' }}>
-                          = +{gameState.lastRoundDetails.bonusPoints}pt
+                          = +{gameState.lastRoundDetails.bonusPoints}pt bonus
                         </span>
                       </div>
                     )}

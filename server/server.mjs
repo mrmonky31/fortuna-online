@@ -68,6 +68,10 @@ async function loadAllPlayers() {
     });
     
     console.log(`✅ Database caricato: ${players.length} giocatori`);
+    
+    // ✅ IMPORTANTE: Aggiorna leaderboard dopo caricamento
+    await updateLeaderboard();
+    console.log(`📊 Leaderboard aggiornata: ${singlePlayerDB.leaderboard.length} giocatori in classifica`);
   } catch (err) {
     console.error("❌ Errore caricamento players:", err);
   }
@@ -485,6 +489,7 @@ async function updateLeaderboard() {
 
 // ✅ Ottieni classifica
 function getLeaderboard(limit = 30) {
+  console.log(`📊 Richiesta leaderboard: ${singlePlayerDB.leaderboard.length} giocatori totali, limit ${limit}`);
   return singlePlayerDB.leaderboard.slice(0, limit);
 }
 
