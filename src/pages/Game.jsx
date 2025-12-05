@@ -40,6 +40,12 @@ export default function Game({
   // ✅ NUOVO: Stato per TOP 10 popup
   const [showTop10, setShowTop10] = useState(false);
   const [top10Data, setTop10Data] = useState([]);
+  
+  // ✅ NUOVO: Stato per popup REGOLE
+  const [showRules, setShowRules] = useState(false);
+  
+  // ✅ NUOVO: Animazione punteggio
+  const [animatedScore, setAnimatedScore] = useState(0);
 
   const [gameState, setGameState] = useState(() => {
     if (!state) return null;
@@ -327,6 +333,9 @@ export default function Game({
       setBetweenRounds(true);
       setRoundCountdown(countdown);
       
+      // ✅ Reset animazione punteggio
+      setAnimatedScore(0);
+      
       // ✅ Genera nuovo colore per il prossimo round
       const colors = [
         '#FF0000', '#00FF00', '#0000FF', '#FF00FF', '#00FFFF', 
@@ -358,6 +367,35 @@ export default function Game({
 
     return () => clearInterval(id);
   }, [betweenRounds, roundCountdown, isSinglePlayerMode]);
+
+  // ✅ Animazione conteggio punteggio (modalità singlePlayer)
+  useEffect(() => {
+    if (!betweenRounds || !isSinglePlayerMode) return;
+    
+    const targetScore = gameState?.lastRoundScore || 0;
+    if (targetScore === 0) return;
+    
+    // Durata animazione: 2 secondi
+    const duration = 2000;
+    const fps = 60;
+    const totalFrames = (duration / 1000) * fps;
+    const increment = targetScore / totalFrames;
+    
+    let currentFrame = 0;
+    
+    const animation = setInterval(() => {
+      currentFrame++;
+      
+      if (currentFrame >= totalFrames) {
+        setAnimatedScore(targetScore);
+        clearInterval(animation);
+      } else {
+        setAnimatedScore(Math.floor(increment * currentFrame));
+      }
+    }, 1000 / fps);
+    
+    return () => clearInterval(animation);
+  }, [betweenRounds, isSinglePlayerMode, gameState?.lastRoundScore]);
 
   // ✅ NUOVO: Costruisci grid dalla frase
   useEffect(() => {
@@ -1082,6 +1120,55 @@ export default function Game({
           </button>
         )}
 
+        {/* ✅ PULSANTE REGOLE per modalità Giocatore Singolo - AL CENTRO */}
+        {isSinglePlayerMode && (
+          <button
+            onClick={() => setShowRules(true)}
+            className="btn-rules"
+            style={{
+              position: 'absolute',
+              top: '65%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              width: '60px',
+              height: '60px',
+              borderRadius: '50%',
+              padding: '0',
+              fontSize: '1.5rem',
+              fontWeight: 'bold',
+              background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+              color: 'white',
+              border: '3px solid rgba(139, 92, 246, 0.3)',
+              cursor: 'pointer',
+              transition: 'all 0.3s ease',
+              boxShadow: '0 4px 15px rgba(139, 92, 246, 0.4)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 500
+            }}
+            title="Regole del gioco"
+          >
+            📖
+          </button>
+        )}
+              background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+              color: 'white',
+              border: '3px solid rgba(245, 158, 11, 0.3)',
+              cursor: 'pointer',
+              transition: 'all 0.3s ease',
+              boxShadow: '0 4px 15px rgba(245, 158, 11, 0.4)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 500
+            }}
+            title="Visualizza TOP 10"
+          >
+            🏆
+          </button>
+        )}
+
         {/* Scritte consonanti/vocali finite */}
         {consonantsFinished && (
           <div className="consonants-finished">
@@ -1144,45 +1231,62 @@ export default function Game({
                   <div style={{
                     fontSize: '1.1rem',
                     color: '#ffffff',
-                    margin: '15px 0',
+                    margin: '15px 0 10px 0',
                     textAlign: 'center',
                     lineHeight: '1.8'
                   }}>
                     <div style={{ marginBottom: '8px' }}>
                       <span style={{ color: '#88ccff' }}>
-                        {gameState.lastRoundDetails.singleCells} caselle × 10pt
+                        {gameState.lastRoundDetails.singleCells} caselle × 1pt
                       </span>
                       {gameState.lastRoundDetails.singleCells > 0 && (
                         <span style={{ color: '#aaa', fontSize: '0.9rem', marginLeft: '8px' }}>
-                          = {gameState.lastRoundDetails.singleCells * 10}pt
+                          = {gameState.lastRoundDetails.singleCells}pt
                         </span>
                       )}
                     </div>
-                    <div>
+                    <div style={{ marginBottom: '8px' }}>
                       <span style={{ color: '#ffaa44' }}>
-                        {gameState.lastRoundDetails.doubleCells} caselle × 20pt
+                        {gameState.lastRoundDetails.doubleCells} caselle × 2pt
                       </span>
                       {gameState.lastRoundDetails.doubleCells > 0 && (
                         <span style={{ color: '#aaa', fontSize: '0.9rem', marginLeft: '8px' }}>
-                          = {gameState.lastRoundDetails.doubleCells * 20}pt
+                          = {gameState.lastRoundDetails.doubleCells * 2}pt
                         </span>
                       )}
                     </div>
+                    {gameState.lastRoundDetails.bonusPoints > 0 && (
+                      <div style={{ 
+                        marginTop: '12px',
+                        padding: '8px',
+                        background: 'rgba(255, 215, 0, 0.1)',
+                        borderRadius: '8px',
+                        border: '1px solid rgba(255, 215, 0, 0.3)'
+                      }}>
+                        <span style={{ color: '#ffd700' }}>
+                          💰 BONUS 500: {Math.floor(gameState.lastRoundDetails.roundScore / 500)} × 2pt
+                        </span>
+                        <span style={{ color: '#aaa', fontSize: '0.9rem', marginLeft: '8px' }}>
+                          = +{gameState.lastRoundDetails.bonusPoints}pt
+                        </span>
+                      </div>
+                    )}
                   </div>
                 )}
                 
-                {/* Mostra punteggio ottenuto */}
+                {/* Mostra punteggio ottenuto con ANIMAZIONE */}
                 <div style={{
-                  fontSize: '2rem',
+                  fontSize: '2.5rem',
                   fontWeight: 'bold',
                   color: '#ffd700',
                   margin: '20px 0',
-                  textShadow: '0 0 10px rgba(255, 215, 0, 0.5)'
+                  textShadow: '0 0 15px rgba(255, 215, 0, 0.8)',
+                  letterSpacing: '2px'
                 }}>
-                  +{gameState?.lastRoundScore || 0} PUNTI
+                  +{animatedScore} PUNTI
                 </div>
                 
-                <div className="round-won-winner">
+                <div className="round-won-winner" style={{ fontSize: '1.2rem' }}>
                   Punteggio totale: {gameState?.players?.[0]?.totalScore || 0}
                 </div>
                 
@@ -1412,6 +1516,181 @@ export default function Game({
               onMouseOut={(e) => e.target.style.transform = 'scale(1)'}
             >
               ❌ CHIUDI
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ✅ POPUP REGOLE */}
+      {showRules && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
+          background: 'rgba(0,0,0,0.9)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999,
+          overflowY: 'auto',
+          padding: '20px'
+        }}>
+          <div style={{
+            background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)',
+            padding: '30px',
+            borderRadius: '15px',
+            border: '3px solid #8b5cf6',
+            boxShadow: '0 0 30px rgba(139, 92, 246, 0.5)',
+            maxWidth: '700px',
+            width: '90vw',
+            maxHeight: '85vh',
+            overflowY: 'auto'
+          }}>
+            <h2 style={{ 
+              color: '#8b5cf6', 
+              marginBottom: '25px', 
+              fontSize: '2rem',
+              textAlign: 'center',
+              textShadow: '0 0 15px rgba(139, 92, 246, 0.8)',
+              fontFamily: 'monospace',
+              letterSpacing: '2px'
+            }}>
+              📖 REGOLE DEL GIOCO
+            </h2>
+            
+            <div style={{ 
+              color: '#ffffff', 
+              fontSize: '1rem',
+              lineHeight: '1.8',
+              textAlign: 'left'
+            }}>
+              {/* OBIETTIVO */}
+              <div style={{ marginBottom: '20px' }}>
+                <h3 style={{ color: '#00ff88', fontSize: '1.3rem', marginBottom: '10px' }}>
+                  🎯 OBIETTIVO
+                </h3>
+                <p style={{ color: '#cccccc' }}>
+                  Completa tutti i <strong style={{color: '#ffd700'}}>600+ livelli</strong> indovinando le frasi nascoste! 
+                  Ogni livello completato ti avvicina alla vetta della classifica e ti prepara per le sfide multiplayer.
+                </p>
+              </div>
+
+              {/* COME SI GIOCA */}
+              <div style={{ marginBottom: '20px' }}>
+                <h3 style={{ color: '#00ff88', fontSize: '1.3rem', marginBottom: '10px' }}>
+                  🎮 COME SI GIOCA
+                </h3>
+                <ul style={{ color: '#cccccc', paddingLeft: '20px' }}>
+                  <li><strong style={{color: '#88ccff'}}>Gira la ruota</strong> per determinare il valore del tuo turno</li>
+                  <li><strong style={{color: '#88ccff'}}>Scegli una consonante</strong> (gratis) o <strong style={{color: '#88ccff'}}>compra una vocale</strong> (500pt)</li>
+                  <li>Ogni lettera corretta ti fa guadagnare punti round</li>
+                  <li>Quando sei sicuro, <strong style={{color: '#ffd700'}}>proponi la soluzione!</strong></li>
+                </ul>
+              </div>
+
+              {/* PUNTEGGIO */}
+              <div style={{ marginBottom: '20px' }}>
+                <h3 style={{ color: '#00ff88', fontSize: '1.3rem', marginBottom: '10px' }}>
+                  💰 PUNTEGGIO A FINE LIVELLO
+                </h3>
+                <div style={{ 
+                  background: 'rgba(0,255,136,0.1)', 
+                  padding: '15px', 
+                  borderRadius: '8px',
+                  border: '1px solid rgba(0,255,136,0.3)',
+                  marginBottom: '10px'
+                }}>
+                  <p style={{ color: '#cccccc', marginBottom: '8px' }}>
+                    📊 Più caselle lasci <strong style={{color: '#ffd700'}}>bianche</strong> (non rivelate), più punti guadagni:
+                  </p>
+                  <ul style={{ paddingLeft: '20px', color: '#88ccff' }}>
+                    <li>Prime 2 caselle consecutive: <strong style={{color: '#ffd700'}}>1pt</strong> ciascuna</li>
+                    <li>Dalla 3ª casella in poi: <strong style={{color: '#ffd700'}}>2pt</strong> ciascuna</li>
+                  </ul>
+                </div>
+                <div style={{ 
+                  background: 'rgba(255,215,0,0.1)', 
+                  padding: '15px', 
+                  borderRadius: '8px',
+                  border: '1px solid rgba(255,215,0,0.3)'
+                }}>
+                  <p style={{ color: '#ffd700' }}>
+                    ⚡ <strong>BONUS 500:</strong> Ogni 500 punti round score = <strong>+2pt extra!</strong>
+                  </p>
+                  <p style={{ color: '#aaa', fontSize: '0.9rem', marginTop: '5px' }}>
+                    Esempio: 1500 round score = 3 × 2pt = +6pt bonus
+                  </p>
+                </div>
+              </div>
+
+              {/* REGOLE SPECIALI */}
+              <div style={{ marginBottom: '20px' }}>
+                <h3 style={{ color: '#00ff88', fontSize: '1.3rem', marginBottom: '10px' }}>
+                  ⚠️ REGOLE SPECIALI
+                </h3>
+                <ul style={{ color: '#cccccc', paddingLeft: '20px' }}>
+                  <li><strong style={{color: '#ff6b6b'}}>BANCAROTTA:</strong> Azzera solo round score (non total score)</li>
+                  <li><strong style={{color: '#ff9f43'}}>PASSA:</strong> -200 punti dal round score</li>
+                  <li><strong style={{color: '#ff9f43'}}>Errori:</strong> -200 punti (lettera già usata, assente, soluzione sbagliata)</li>
+                  <li><strong style={{color: '#ff9f43'}}>Vocale errata:</strong> -700 punti totali (500 costo + 200 penalità)</li>
+                </ul>
+              </div>
+
+              {/* VANTAGGIO MULTIPLAYER */}
+              <div style={{ 
+                background: 'linear-gradient(135deg, rgba(139,92,246,0.2) 0%, rgba(124,58,237,0.2) 100%)',
+                padding: '20px',
+                borderRadius: '12px',
+                border: '2px solid rgba(139,92,246,0.5)',
+                marginBottom: '20px'
+              }}>
+                <h3 style={{ color: '#ffd700', fontSize: '1.4rem', marginBottom: '10px', textAlign: 'center' }}>
+                  🚀 VANTAGGIO MULTIPLAYER
+                </h3>
+                <p style={{ color: '#ffffff', textAlign: 'center', fontSize: '1.1rem' }}>
+                  <strong>Più livelli completi, più probabilità hai di incontrare le stesse frasi nelle sfide multiplayer online!</strong>
+                </p>
+                <p style={{ color: '#cccccc', textAlign: 'center', marginTop: '10px', fontSize: '0.95rem' }}>
+                  Allenati in modalità singola per dominare contro altri giocatori! 💪
+                </p>
+              </div>
+
+              {/* MOTIVAZIONE */}
+              <div style={{ 
+                textAlign: 'center',
+                padding: '15px',
+                background: 'rgba(0,217,255,0.1)',
+                borderRadius: '8px',
+                border: '1px solid rgba(0,217,255,0.3)'
+              }}>
+                <p style={{ color: '#00d9ff', fontSize: '1.1rem', fontWeight: 'bold' }}>
+                  🏆 Scala la classifica e diventa il campione della Ruota della Fortuna!
+                </p>
+              </div>
+            </div>
+            
+            <button
+              onClick={() => setShowRules(false)}
+              style={{
+                marginTop: '25px',
+                width: '100%',
+                padding: '15px',
+                fontSize: '1.2rem',
+                fontWeight: 'bold',
+                background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+                color: 'white',
+                border: 'none',
+                borderRadius: '10px',
+                cursor: 'pointer',
+                boxShadow: '0 4px 15px rgba(139, 92, 246, 0.4)',
+                transition: 'all 0.3s ease'
+              }}
+              onMouseOver={(e) => e.target.style.transform = 'scale(1.02)'}
+              onMouseOut={(e) => e.target.style.transform = 'scale(1)'}
+            >
+              ✅ HO CAPITO!
             </button>
           </div>
         </div>

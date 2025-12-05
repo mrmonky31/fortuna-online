@@ -358,8 +358,8 @@ function calculateWhiteCellsScore(phrase, revealedLetters) {
   // Conta gruppi di caselle bianche consecutive
   let totalScore = 0;
   let consecutiveWhite = 0;
-  let singleCells = 0; // Prime 2 di ogni gruppo (10pt)
-  let doubleCells = 0; // Dalla 3ª in poi (20pt)
+  let singleCells = 0; // Prime 2 di ogni gruppo (1pt)
+  let doubleCells = 0; // Dalla 3ª in poi (2pt)
   
   for (const cell of cells) {
     if (cell.type === 'letter' && !cell.revealed) {
@@ -368,13 +368,13 @@ function calculateWhiteCellsScore(phrase, revealedLetters) {
     } else {
       // Fine gruppo consecutivo
       if (consecutiveWhite > 0) {
-        // Prime 2 = 10pt, dalla 3ª in poi = 20pt
+        // Prime 2 = 1pt, dalla 3ª in poi = 2pt
         for (let i = 0; i < consecutiveWhite; i++) {
           if (i < 2) {
-            totalScore += 10;
+            totalScore += 1;
             singleCells++;
           } else {
-            totalScore += 20;
+            totalScore += 2;
             doubleCells++;
           }
         }
@@ -387,10 +387,10 @@ function calculateWhiteCellsScore(phrase, revealedLetters) {
   if (consecutiveWhite > 0) {
     for (let i = 0; i < consecutiveWhite; i++) {
       if (i < 2) {
-        totalScore += 10;
+        totalScore += 1;
         singleCells++;
       } else {
-        totalScore += 20;
+        totalScore += 2;
         doubleCells++;
       }
     }
@@ -398,8 +398,8 @@ function calculateWhiteCellsScore(phrase, revealedLetters) {
   
   return { 
     totalScore, 
-    singleCells, // Caselle da 10pt
-    doubleCells  // Caselle da 20pt
+    singleCells, // Caselle da 1pt
+    doubleCells  // Caselle da 2pt
   };
 }
 
@@ -1419,15 +1419,25 @@ if (gs.usedLetters.includes(upper)) {
         if (room.gameMode === "singlePlayer") {
           // Calcola punteggio basato su caselle bianche rimaste
           const scoreDetails = calculateWhiteCellsScore(gs.phrase, gs.revealedLetters);
-          gs.players[i].totalScore += scoreDetails.totalScore;
-          gs.lastRoundScore = scoreDetails.totalScore; // ✅ Salva per mostrare nel popup
+          
+          // ✅ Bonus: ogni 500 round score = +2pt
+          const roundScore = gs.players[i].roundScore;
+          const bonusMultiplier = Math.floor(roundScore / 500);
+          const bonusPoints = bonusMultiplier * 2;
+          
+          const finalScore = scoreDetails.totalScore + bonusPoints;
+          
+          gs.players[i].totalScore += finalScore;
+          gs.lastRoundScore = finalScore; // ✅ Salva per mostrare nel popup
           gs.lastRoundDetails = { // ✅ Salva dettagli per popup
             singleCells: scoreDetails.singleCells,
-            doubleCells: scoreDetails.doubleCells
+            doubleCells: scoreDetails.doubleCells,
+            roundScore: roundScore,
+            bonusPoints: bonusPoints
           };
           
-          console.log(`🎯 Punteggio caselle: ${scoreDetails.singleCells}x10 + ${scoreDetails.doubleCells}x20 = ${scoreDetails.totalScore}`);
-          gs.gameMessage = { type: "success", text: `✅ Frase indovinata! +${scoreDetails.totalScore} punti!` };
+          console.log(`🎯 Punteggio: ${scoreDetails.singleCells}x1 + ${scoreDetails.doubleCells}x2 = ${scoreDetails.totalScore} | Bonus 500: +${bonusPoints} | Totale: ${finalScore}`);
+          gs.gameMessage = { type: "success", text: `✅ Frase indovinata! +${finalScore} punti!` };
         } else {
           // Modalità multiplayer: round score + bonus
           gs.players[i].totalScore += gs.players[i].roundScore;
