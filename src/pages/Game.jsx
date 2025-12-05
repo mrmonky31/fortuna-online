@@ -1061,7 +1061,7 @@ export default function Game({
             className="btn-save-progress"
             style={{
               position: 'absolute',
-              top: '69%',
+              top: '71%',
               left: '10%',
               transform: 'translateY(-50%)',
               width: '60px',
@@ -1094,11 +1094,11 @@ export default function Game({
             className="btn-rules"
             style={{
               position: 'absolute',
-              top: '58%',
-              left: '50%',
+              top: '60%',
+              left: '80%',
               transform: 'translate(-50%, -50%)',
-              width: '50px',
-              height: '50px',
+              width: '40px',
+              height: '40px',
               borderRadius: '50%',
               padding: '0',
               fontSize: '1.5rem',
@@ -1127,7 +1127,7 @@ export default function Game({
             className="btn-top10"
             style={{
               position: 'absolute',
-              top: '69%',
+              top: '71%',
               right: '10%',
               transform: 'translateY(-50%)',
               width: '60px',
