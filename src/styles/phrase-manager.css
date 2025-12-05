@@ -6,8 +6,8 @@
   justify-content: center;
   align-items: center;
   gap: 4px;
-  min-height: 420px;
-  max-height: 420px;
+  min-height: 425px;
+  max-height: 425px;
 }
 
 .pm-cell {
@@ -21,8 +21,8 @@
   padding: 5px 7px;
   background: #ffffff; /* ✅ BIANCHE come originale */
   color: #111;
-  font-size: 3rem;
-  font-weight: 1000;
+  font-size: 2.9rem;
+  font-weight: 950;
   line-height: 1;
   position: relative;
   overflow: hidden;

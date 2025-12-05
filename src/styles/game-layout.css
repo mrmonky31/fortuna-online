@@ -43,7 +43,7 @@ html, body {
 /* ---------- 2️⃣ MESSAGGI + INPUT ---------- */
 .game-wrapper:not(.fullscreen-mode) .game-alerts {
   position: absolute;
-  top: 27vh;
+  top: 26vh;
   left: 50%;
   transform: translateX(-50%);
   z-index: 1;
@@ -84,7 +84,7 @@ html, body {
 /* ---------- 4️⃣ GIRA LA RUOTA (pulsante principale) ---------- */
 .game-wrapper:not(.fullscreen-mode) .controls-area {
   position: absolute;
-  top: 31vh;
+  top: 30vh;
   left: 50%;
   transform: translateX(-50%);
   z-index: 15;
@@ -121,7 +121,7 @@ html, body {
 /* ---------- 5️⃣-8️⃣ PULSANTI SECONDARI ---------- */
 .game-wrapper:not(.fullscreen-mode) .controls-row-secondary {
   position: absolute;
-  top: 6vh;
+  top: 5vh;
   left: 50%;
   transform: translateX(-50%) scale(0.65);
   transform-origin: center top;
