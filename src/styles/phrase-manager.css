@@ -1,12 +1,13 @@
 /* Celle del tabellone */
-.pm-row { display: flex; gap: 3px; margin-bottom: 3px; }
+.pm-row { display: flex; gap: 3px; margin-bottom: 4px; }
 .pm-board {
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
   gap: 4px;
-  min-height: 440px;
+  min-height: 430px;
+  max-height: 430px;
 }
 
 .pm-cell {
