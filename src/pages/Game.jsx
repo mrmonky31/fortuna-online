@@ -1572,7 +1572,7 @@ export default function Game({
                   🎯 OBIETTIVO
                 </h3>
                 <p style={{ color: '#cccccc' }}>
-                  Completa tutti i <strong style={{color: '#ffd700'}}>600+ livelli</strong> indovinando le frasi nascoste! 
+                  Completa tutti i <strong style={{ color: '#ffd700' }}>600+ livelli</strong> indovinando le frasi nascoste! 
                   Ogni livello completato ti avvicina alla vetta della classifica e ti prepara per le sfide multiplayer.
                 </p>
               </div>
@@ -1583,10 +1583,10 @@ export default function Game({
                   🎮 COME SI GIOCA
                 </h3>
                 <ul style={{ color: '#cccccc', paddingLeft: '20px' }}>
-                  <li><strong style={{color: '#88ccff'}}>Gira la ruota</strong> per determinare il valore del tuo turno</li>
-                  <li><strong style={{color: '#88ccff'}}>Scegli una consonante</strong> (gratis) o <strong style={{color: '#88ccff'}}>compra una vocale</strong> (500pt)</li>
+                  <li><strong style={{ color: '#88ccff' }}>Gira la ruota</strong> per determinare il valore del tuo turno</li>
+                  <li><strong style={{ color: '#88ccff' }}>Scegli una consonante</strong> (gratis) o <strong style={{ color: '#88ccff' }}>compra una vocale</strong> (500pt)</li>
                   <li>Ogni lettera corretta ti fa guadagnare punti round</li>
-                  <li>Quando sei sicuro, <strong style={{color: '#ffd700'}}>proponi la soluzione!</strong></li>
+                  <li>Quando sei sicuro, <strong style={{ color: '#ffd700' }}>proponi la soluzione!</strong></li>
                 </ul>
               </div>
 
@@ -1603,11 +1603,11 @@ export default function Game({
                   marginBottom: '10px'
                 }}>
                   <p style={{ color: '#cccccc', marginBottom: '8px' }}>
-                    📊 Più caselle lasci <strong style={{color: '#ffd700'}}>bianche</strong> (non rivelate), più punti guadagni:
+                    📊 Più caselle lasci <strong style={{ color: '#ffd700' }}>bianche</strong> (non rivelate), più punti guadagni:
                   </p>
                   <ul style={{ paddingLeft: '20px', color: '#88ccff' }}>
-                    <li>Prime 2 caselle consecutive: <strong style={{color: '#ffd700'}}>1pt</strong> ciascuna</li>
-                    <li>Dalla 3ª casella in poi: <strong style={{color: '#ffd700'}}>2pt</strong> ciascuna</li>
+                    <li>Prime 2 caselle consecutive: <strong style={{ color: '#ffd700' }}>1pt</strong> ciascuna</li>
+                    <li>Dalla 3ª casella in poi: <strong style={{ color: '#ffd700' }}>2pt</strong> ciascuna</li>
                   </ul>
                 </div>
                 <div style={{ 
@@ -1631,10 +1631,10 @@ export default function Game({
                   ⚠️ REGOLE SPECIALI
                 </h3>
                 <ul style={{ color: '#cccccc', paddingLeft: '20px' }}>
-                  <li><strong style={{color: '#ff6b6b'}}>BANCAROTTA:</strong> Azzera solo round score (non total score)</li>
-                  <li><strong style={{color: '#ff9f43'}}>PASSA:</strong> -200 punti dal round score</li>
-                  <li><strong style={{color: '#ff9f43'}}>Errori:</strong> -200 punti (lettera già usata, assente, soluzione sbagliata)</li>
-                  <li><strong style={{color: '#ff9f43'}}>Vocale errata:</strong> -700 punti totali (500 costo + 200 penalità)</li>
+                  <li><strong style={{ color: '#ff6b6b' }}>BANCAROTTA:</strong> Azzera solo round score (non total score)</li>
+                  <li><strong style={{ color: '#ff9f43' }}>PASSA:</strong> -200 punti dal round score</li>
+                  <li><strong style={{ color: '#ff9f43' }}>Errori:</strong> -200 punti (lettera già usata, assente, soluzione sbagliata)</li>
+                  <li><strong style={{ color: '#ff9f43' }}>Vocale errata:</strong> -700 punti totali (500 costo + 200 penalità)</li>
                 </ul>
               </div>
 
