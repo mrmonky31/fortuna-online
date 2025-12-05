@@ -248,7 +248,7 @@ html, body {
 /* ---------- 3️⃣ TARGET BOX ---------- */
 .game-wrapper.fullscreen-mode .target-box {
   position: absolute;
-  top: 26vh;
+  top: 24vh;
   left: 153%;
   transform: translateX(-180px);
   z-index: 1;

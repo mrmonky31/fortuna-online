@@ -859,7 +859,8 @@ export default function Game({
             textShadow: '0 0 8px rgba(0, 255, 136, 0.6)',
             width: '690px',
             maxWidth: '90vw',
-            margin: '0 auto'
+            margin: '0 auto',
+            marginTopTop: '20px'  // ← AGGIUNGI QUESTA (puoi usare 30px, 40px, ecc.)
           }}>
             {/* ID Giocatore */}
             <div style={{
