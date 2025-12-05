@@ -12,6 +12,7 @@ import cors from "cors";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 import { existsSync, readFileSync, writeFileSync } from "fs";
+import { MongoClient } from "mongodb";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -22,41 +23,73 @@ import { testPhrases } from "./game/phrases.js";
 // ✅ Carica frasi modalità giocatore singolo
 import { singlePlayerPhrases } from "./phrases-singleplayer.js";
 
-// ✅ DATABASE GIOCATORE SINGOLO
-const DB_FILE = join(__dirname, "singleplayer-db.json");
+// ✅ MONGODB CONFIGURATION
+const MONGODB_URI = process.env.MONGODB_URI || "mongodb+srv://Monkyfortuna:Monky.fortuna.31@clusterfortuna.njzzbl8.mongodb.net/?appName=Clusterfortuna";
+const DB_NAME = "fortuna_online";
 
+let mongoClient;
+let db;
+let playersCollection;
+
+// ✅ Connetti a MongoDB
+async function connectMongoDB() {
+  try {
+    mongoClient = new MongoClient(MONGODB_URI);
+    await mongoClient.connect();
+    db = mongoClient.db(DB_NAME);
+    playersCollection = db.collection("players");
+    
+    console.log("✅ MongoDB connesso!");
+    
+    // Crea indice su ID per ricerche veloci
+    await playersCollection.createIndex({ id: 1 }, { unique: true });
+    
+    // Carica leaderboard all'avvio
+    await updateLeaderboard();
+  } catch (err) {
+    console.error("❌ Errore connessione MongoDB:", err);
+    process.exit(1);
+  }
+}
+
+// ✅ DATABASE GIOCATORE SINGOLO (cache in memoria)
 const singlePlayerDB = {
-  players: {}, // { "PLAYER_ID": { id, pin, level, totalScore, createdAt, lastPlayedAt } }
+  players: {}, // Cache locale per performance
   leaderboard: [] // [ { id, totalScore, level }, ... ] ordinato
 };
 
-// ✅ Carica database da file all'avvio
-function loadDatabase() {
+// ✅ Carica tutti i giocatori da MongoDB all'avvio
+async function loadAllPlayers() {
   try {
-    if (existsSync(DB_FILE)) {
-      const data = readFileSync(DB_FILE, "utf8");
-      const loaded = JSON.parse(data);
-      singlePlayerDB.players = loaded.players || {};
-      singlePlayerDB.leaderboard = loaded.leaderboard || [];
-      console.log(`✅ Database caricato: ${Object.keys(singlePlayerDB.players).length} giocatori`);
-    }
+    const players = await playersCollection.find({}).toArray();
+    
+    players.forEach(player => {
+      singlePlayerDB.players[player.id] = player;
+    });
+    
+    console.log(`✅ Database caricato: ${players.length} giocatori`);
   } catch (err) {
-    console.error("❌ Errore caricamento database:", err);
+    console.error("❌ Errore caricamento players:", err);
   }
 }
 
-// ✅ Salva database su file
-function saveDatabase() {
+// ✅ Salva giocatore su MongoDB
+async function savePlayerToMongo(player) {
   try {
-    writeFileSync(DB_FILE, JSON.stringify(singlePlayerDB, null, 2), "utf8");
-    console.log("💾 Database salvato");
+    await playersCollection.updateOne(
+      { id: player.id },
+      { $set: player },
+      { upsert: true }
+    );
+    console.log(`💾 Player salvato su MongoDB: ${player.id}`);
   } catch (err) {
-    console.error("❌ Errore salvataggio database:", err);
+    console.error("❌ Errore salvataggio player:", err);
   }
 }
 
-// ✅ Carica database all'avvio
-loadDatabase();
+// ✅ Inizializza MongoDB prima di avviare il server
+await connectMongoDB();
+await loadAllPlayers();
 
 // ✅ Import funzioni coordinate per animazione
 import { buildGridWithCoordinates, findLetterCoordinates } from "./game/GameEngine.js";
@@ -371,7 +404,7 @@ function calculateWhiteCellsScore(phrase, revealedLetters) {
 }
 
 // ✅ Crea nuovo giocatore
-function createSinglePlayer(playerId, pin) {
+async function createSinglePlayer(playerId, pin) {
   const upperID = String(playerId).toUpperCase().trim();
   
   if (!upperID || upperID.length < 3) {
@@ -386,23 +419,26 @@ function createSinglePlayer(playerId, pin) {
     return { ok: false, error: "ID già usato" };
   }
   
-  singlePlayerDB.players[upperID] = {
+  const newPlayer = {
     id: upperID,
     pin: String(pin),
-    level: 1, // Inizia dalla frase 1
+    level: 1,
     totalScore: 0,
     createdAt: new Date().toISOString(),
     lastPlayedAt: new Date().toISOString()
   };
   
-  updateLeaderboard();
-  saveDatabase(); // ✅ Salva su file
+  singlePlayerDB.players[upperID] = newPlayer;
   
-  return { ok: true, player: singlePlayerDB.players[upperID] };
+  // ✅ Salva su MongoDB
+  await savePlayerToMongo(newPlayer);
+  await updateLeaderboard();
+  
+  return { ok: true, player: newPlayer };
 }
 
 // ✅ Autentica giocatore
-function authenticateSinglePlayer(playerId, pin) {
+async function authenticateSinglePlayer(playerId, pin) {
   const upperID = String(playerId).toUpperCase().trim();
   const player = singlePlayerDB.players[upperID];
   
@@ -415,12 +451,15 @@ function authenticateSinglePlayer(playerId, pin) {
   }
   
   player.lastPlayedAt = new Date().toISOString();
-  saveDatabase(); // ✅ Salva su file
+  
+  // ✅ Salva su MongoDB
+  await savePlayerToMongo(player);
+  
   return { ok: true, player };
 }
 
 // ✅ Salva progressi giocatore
-function saveSinglePlayerProgress(playerId, level, totalScore) {
+async function saveSinglePlayerProgress(playerId, level, totalScore) {
   const upperID = String(playerId).toUpperCase().trim();
   const player = singlePlayerDB.players[upperID];
   
@@ -430,14 +469,15 @@ function saveSinglePlayerProgress(playerId, level, totalScore) {
   player.totalScore = totalScore;
   player.lastPlayedAt = new Date().toISOString();
   
-  updateLeaderboard();
-  saveDatabase(); // ✅ Salva su file
+  // ✅ Salva su MongoDB
+  await savePlayerToMongo(player);
+  await updateLeaderboard();
   
   return { ok: true, player };
 }
 
 // ✅ Aggiorna classifica
-function updateLeaderboard() {
+async function updateLeaderboard() {
   singlePlayerDB.leaderboard = Object.values(singlePlayerDB.players)
     .sort((a, b) => b.totalScore - a.totalScore)
     .map(p => ({ id: p.id, totalScore: p.totalScore, level: p.level })); // ✅ Includi livello
@@ -1721,9 +1761,9 @@ if (gs.usedLetters.includes(upper)) {
   // ==================== GIOCATORE SINGOLO ====================
 
   // ✅ CREA NUOVO GIOCATORE SINGOLO
-  socket.on("singlePlayerCreate", ({ playerId, pin }, callback) => {
+  socket.on("singlePlayerCreate", async ({ playerId, pin }, callback) => {
     try {
-      const result = createSinglePlayer(playerId, pin);
+      const result = await createSinglePlayer(playerId, pin);
       
       if (!result.ok) {
         return callback({ ok: false, error: result.error });
@@ -1745,9 +1785,9 @@ if (gs.usedLetters.includes(upper)) {
   });
 
   // ✅ AUTENTICA GIOCATORE SINGOLO
-  socket.on("singlePlayerAuth", ({ playerId, pin }, callback) => {
+  socket.on("singlePlayerAuth", async ({ playerId, pin }, callback) => {
     try {
-      const result = authenticateSinglePlayer(playerId, pin);
+      const result = await authenticateSinglePlayer(playerId, pin);
       
       if (!result.ok) {
         return callback({ ok: false, error: result.error });
@@ -1769,9 +1809,9 @@ if (gs.usedLetters.includes(upper)) {
   });
 
   // ✅ SALVA PROGRESSI GIOCATORE SINGOLO
-  socket.on("singlePlayerSave", ({ playerId, level, totalScore }, callback) => {
+  socket.on("singlePlayerSave", async ({ playerId, level, totalScore }, callback) => {
     try {
-      const result = saveSinglePlayerProgress(playerId, level, totalScore);
+      const result = await saveSinglePlayerProgress(playerId, level, totalScore);
       
       if (!result.ok) {
         return callback({ ok: false, error: result.error });
@@ -1820,7 +1860,7 @@ if (gs.usedLetters.includes(upper)) {
   });
 
   // ✅ PROSSIMO LIVELLO (modalità singlePlayer)
-  socket.on("nextLevel", ({ roomCode }, callback) => {
+  socket.on("nextLevel", async ({ roomCode }, callback) => {
     try {
       const code = String(roomCode || "").trim().toUpperCase();
       const room = rooms[code];
@@ -1844,7 +1884,7 @@ if (gs.usedLetters.includes(upper)) {
       const totalScore = gs.players[0]?.totalScore || 0;
       
       if (playerId) {
-        const saveResult = saveSinglePlayerProgress(playerId, newLevel, totalScore);
+        const saveResult = await saveSinglePlayerProgress(playerId, newLevel, totalScore);
         if (saveResult.ok) {
           console.log(`💾 Progressi auto-salvati: ${playerId} - Livello ${newLevel}, Punteggio ${totalScore}`);
         }
