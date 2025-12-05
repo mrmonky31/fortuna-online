@@ -1221,7 +1221,7 @@ export default function Game({
                   }}>
                     <div style={{ marginBottom: '8px' }}>
                       <span style={{ color: '#88ccff' }}>
-                        {gameState.lastRoundDetails.singleCells} caselle × 1pt
+                        {gameState.lastRoundDetails.singleCells} caselle x 1pt
                       </span>
                       {gameState.lastRoundDetails.singleCells > 0 && (
                         <span style={{ color: '#aaa', fontSize: '0.9rem', marginLeft: '8px' }}>
@@ -1231,7 +1231,7 @@ export default function Game({
                     </div>
                     <div style={{ marginBottom: '8px' }}>
                       <span style={{ color: '#ffaa44' }}>
-                        {gameState.lastRoundDetails.doubleCells} caselle × 2pt
+                        {gameState.lastRoundDetails.doubleCells} caselle x 2pt
                       </span>
                       {gameState.lastRoundDetails.doubleCells > 0 && (
                         <span style={{ color: '#aaa', fontSize: '0.9rem', marginLeft: '8px' }}>
@@ -1248,7 +1248,7 @@ export default function Game({
                         border: '1px solid rgba(255, 215, 0, 0.3)'
                       }}>
                         <span style={{ color: '#ffd700' }}>
-                          💰 BONUS 500: {Math.floor(gameState.lastRoundDetails.roundScore / 500)} × 2pt
+                          💰 BONUS 500: {Math.floor(gameState.lastRoundDetails.roundScore / 500)} x 2pt
                         </span>
                         <span style={{ color: '#aaa', fontSize: '0.9rem', marginLeft: '8px' }}>
                           = +{gameState.lastRoundDetails.bonusPoints}pt
@@ -1604,7 +1604,7 @@ export default function Game({
                     ⚡ <strong>BONUS 500:</strong> Ogni 500 punti round score = <strong>+2pt extra!</strong>
                   </p>
                   <p style={{ color: '#aaa', fontSize: '0.9rem', marginTop: '5px' }}>
-                    Esempio: 1500 round score = 3 × 2pt = +6pt bonus
+                    Esempio: 1500 round score = 3 x 2pt = +6pt bonus
                   </p>
                 </div>
               </div>
