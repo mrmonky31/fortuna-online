@@ -806,12 +806,12 @@ export default function Game({
   
   // ✅ DEBUG modalità singlePlayer
   if (isSinglePlayerMode && !isMyTurn) {
-// console.log("⚠️ DEBUG isMyTurn:", {
-      currentPlayerId: gameState.currentPlayerId,
-      mySocketId: mySocketId,
-      match: gameState.currentPlayerId === mySocketId,
-      isSinglePlayerMode: isSinglePlayerMode
-    });
+    // console.log("⚠️ DEBUG isMyTurn:", {
+    //   currentPlayerId: gameState.currentPlayerId,
+    //   mySocketId: mySocketId,
+    //   match: gameState.currentPlayerId === mySocketId,
+    //   isSinglePlayerMode: isSinglePlayerMode
+    // });
   }
   
   const flashType = betweenRounds ? "success" : 
