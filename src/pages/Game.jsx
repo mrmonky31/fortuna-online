@@ -111,6 +111,7 @@ export default function Game({
   // ⭐ NUOVO: Stati per sincronizzazione animazione ruota
   const [wheelSpinning, setWheelSpinning] = useState(false);
   const [wheelSpinSeed, setWheelSpinSeed] = useState(null);
+  const [wheelForcedTarget, setWheelForcedTarget] = useState(null); // ← Target forzato PASSA/BANCAROTTA
 
   // ✅ NUOVO: Colore random per round (mai bianco/nero)
   const [roundColor, setRoundColor] = useState(() => {
@@ -275,10 +276,11 @@ export default function Game({
 
   // ⭐ NUOVO: Listener per wheelSpinStart
   useEffect(() => {
-    function handleWheelSpinStart({ spinning, spinSeed }) {
-      console.log("🎡 wheelSpinStart ricevuto:", { spinning, spinSeed });
+    function handleWheelSpinStart({ spinning, spinSeed, forcedTarget }) {
+      console.log("🎡 wheelSpinStart ricevuto:", { spinning, spinSeed, forcedTarget });
       setWheelSpinning(spinning);
       setWheelSpinSeed(spinSeed);
+      setWheelForcedTarget(forcedTarget || null);
     }
 
     socket.on("wheelSpinStart", handleWheelSpinStart);
@@ -1031,6 +1033,7 @@ export default function Game({
               slices={gameState.wheel}
               spinning={wheelSpinning}
               spinSeed={wheelSpinSeed}
+              forcedTarget={wheelForcedTarget}
               onStop={handleWheelStop}
             />
           </div>

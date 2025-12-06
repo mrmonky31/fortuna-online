@@ -84,7 +84,7 @@ function validatePattern(pattern) {
   return true;
 }
 
-export default function WheelVersionA({ slices = [], spinning = false, onStop, spinSeed = null }) {
+export default function WheelVersionA({ slices = [], spinning = false, onStop, spinSeed = null, forcedTarget = null }) {
   const wheelRef = useRef(null);
   const [angle, setAngle] = useState(0);
   const [isSpinning, setIsSpinning] = useState(false);
@@ -205,8 +205,47 @@ export default function WheelVersionA({ slices = [], spinning = false, onStop, s
       const rotationIndex = Math.floor(randomFromSeed * SPIN_ROTATIONS.length);
       const numberOfRotations = SPIN_ROTATIONS[rotationIndex];
       
-      // 🎲 Angolo casuale finale (0-360°) per variare dove si ferma
-      const randomFinalAngle = seededRandom(spinSeed + 100) * 360;
+      // 🎯 FORZATURA PASSA/BANCAROTTA
+      let randomFinalAngle;
+      
+      if (forcedTarget) {
+        // 🎯 FORZA angolo verso PASSA o BANCAROTTA
+        console.log(`🎯 FORZATURA ATTIVA: Target = ${forcedTarget}`);
+        
+        // Trova tutti gli spicchi PASSA o BANCAROTTA
+        const targetIndices = [];
+        values.forEach((val, idx) => {
+          if (val === forcedTarget) {
+            targetIndices.push(idx);
+          } else if (typeof val === "string" && val.includes("/")) {
+            const parts = val.split("/");
+            if (parts.includes(forcedTarget)) {
+              targetIndices.push(idx);
+            }
+          }
+        });
+        
+        if (targetIndices.length > 0) {
+          // Scegli random uno degli spicchi target
+          const chosenIndex = targetIndices[Math.floor(seededRandom(spinSeed + 200) * targetIndices.length)];
+          
+          // Calcola angolo per quel spicchio (centro dello spicchio)
+          const targetSliceAngle = chosenIndex * SLICE_DEG;
+          
+          // Piccola variazione casuale dentro lo spicchio (±5°)
+          const variation = (seededRandom(spinSeed + 300) - 0.5) * 10;
+          
+          randomFinalAngle = targetSliceAngle + variation;
+          console.log(`🎯 Angolo forzato: ${randomFinalAngle}° (spicchio #${chosenIndex})`);
+        } else {
+          // Fallback: angolo casuale se non trova target
+          randomFinalAngle = seededRandom(spinSeed + 100) * 360;
+          console.warn(`⚠️ Target ${forcedTarget} non trovato, angolo random`);
+        }
+      } else {
+        // 🎲 Angolo casuale normale
+        randomFinalAngle = seededRandom(spinSeed + 100) * 360;
+      }
       
       // ⏱️ Durata casuale tra 3-4.5 secondi
       const duration = 3 + randomFromSeed * 1.5;

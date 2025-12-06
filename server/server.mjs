@@ -943,12 +943,38 @@ io.on("connection", (socket) => {
 
       gs.spinning = true;
       
+      // 🎯 SISTEMA FORZATURA PASSA/BANCAROTTA
+      // ========================================
+      // Inizializza contatore se non esiste
+      if (!gs.spinCounter) {
+        gs.spinCounter = 0;
+        // Randomizza prossima forzatura: tra 5 e 10 spin
+        gs.nextForcedSpin = Math.floor(Math.random() * 6) + 5; // 5-10
+        console.log(`🎲 Prima forzatura tra ${gs.nextForcedSpin} spin`);
+      }
+      
+      gs.spinCounter++;
+      
+      // Controlla se è il momento di forzare PASSA/BANCAROTTA
+      let forcedTarget = null;
+      if (gs.spinCounter >= gs.nextForcedSpin) {
+        // Scegli random PASSA o BANCAROTTA
+        forcedTarget = Math.random() < 0.5 ? "PASSA" : "BANCAROTTA";
+        console.log(`🎯 FORZATURA! Spin #${gs.spinCounter} → ${forcedTarget}`);
+        
+        // Reset counter e scegli prossima forzatura
+        gs.spinCounter = 0;
+        gs.nextForcedSpin = Math.floor(Math.random() * 6) + 5; // 5-10
+        console.log(`🎲 Prossima forzatura tra ${gs.nextForcedSpin} spin`);
+      }
+      
       // ✅ Genera seed per sincronizzazione animazione
       const spinSeed = Date.now();
       
       io.to(code).emit("wheelSpinStart", { 
         spinning: true,
-        spinSeed: spinSeed
+        spinSeed: spinSeed,
+        forcedTarget: forcedTarget // ← Invia target forzato se presente
       });
 
       // ✅ Il server ora ASPETTA che il client invii l'outcome tramite evento "wheelOutcome"
