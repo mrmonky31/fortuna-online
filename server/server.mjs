@@ -39,7 +39,7 @@ async function connectMongoDB() {
     db = mongoClient.db(DB_NAME);
     playersCollection = db.collection("players");
     
-    console.log("✅ MongoDB connesso!");
+// console.log("✅ MongoDB connesso!");
     
     // Crea indice su ID per ricerche veloci
     await playersCollection.createIndex({ id: 1 }, { unique: true });
@@ -67,11 +67,11 @@ async function loadAllPlayers() {
       singlePlayerDB.players[player.id] = player;
     });
     
-    console.log(`✅ Database caricato: ${players.length} giocatori`);
+// console.log(`✅ Database caricato: ${players.length} giocatori`);
     
     // ✅ IMPORTANTE: Aggiorna leaderboard dopo caricamento
     await updateLeaderboard();
-    console.log(`📊 Leaderboard aggiornata: ${singlePlayerDB.leaderboard.length} giocatori in classifica`);
+// console.log(`📊 Leaderboard aggiornata: ${singlePlayerDB.leaderboard.length} giocatori in classifica`);
   } catch (err) {
     console.error("❌ Errore caricamento players:", err);
   }
@@ -85,7 +85,7 @@ async function savePlayerToMongo(player) {
       { $set: player },
       { upsert: true }
     );
-    console.log(`💾 Player salvato su MongoDB: ${player.id}`);
+// console.log(`💾 Player salvato su MongoDB: ${player.id}`);
   } catch (err) {
     console.error("❌ Errore salvataggio player:", err);
   }
@@ -489,7 +489,7 @@ async function updateLeaderboard() {
 
 // ✅ Ottieni classifica
 function getLeaderboard(limit = 30) {
-  console.log(`📊 Richiesta leaderboard: ${singlePlayerDB.leaderboard.length} giocatori totali, limit ${limit}`);
+// console.log(`📊 Richiesta leaderboard: ${singlePlayerDB.leaderboard.length} giocatori totali, limit ${limit}`);
   return singlePlayerDB.leaderboard.slice(0, limit);
 }
 
@@ -512,7 +512,7 @@ async function loadPhrases(roomName) {
   const customPhrases = module.testPhrases;
   const mode = module.phraseMode === "sequential" ? "sequential" : "random";
 
-  console.log(`✅ Set personalizzato caricato: phrases-${normalized}.js [${mode}]`);
+// console.log(`✅ Set personalizzato caricato: phrases-${normalized}.js [${mode}]`);
 
   return {
     phrases: customPhrases,
@@ -545,7 +545,7 @@ function findRoomBySocketId(socketId) {
 }
 
 function handleTemporaryDisconnect(socketId, code, room) {
-  console.log(`⏳ Timeout disconnessione per ${socketId} in ${code}`);
+// console.log(`⏳ Timeout disconnessione per ${socketId} in ${code}`);
   
   const player = room.players?.find(p => p.id === socketId);
   if (!player) return;
@@ -556,7 +556,7 @@ function handleTemporaryDisconnect(socketId, code, room) {
   });
 
   disconnectionTimeouts[socketId] = setTimeout(() => {
-    console.log(`❌ Timeout scaduto per ${socketId}, rimozione permanente`);
+// console.log(`❌ Timeout scaduto per ${socketId}, rimozione permanente`);
     
     const idx = room.players.findIndex((p) => p.id === socketId);
     if (idx !== -1) {
@@ -570,7 +570,7 @@ function handleTemporaryDisconnect(socketId, code, room) {
       io.to(code).emit("roomUpdate", { room, roomCode: code });
       
       if (room.players.length === 0) {
-        console.log(`🗑️ Stanza ${code} eliminata (nessun giocatore)`);
+// console.log(`🗑️ Stanza ${code} eliminata (nessun giocatore)`);
         delete rooms[code];
       }
     }
@@ -580,12 +580,12 @@ function handleTemporaryDisconnect(socketId, code, room) {
 // ==================== SOCKET.IO ====================
 
 io.on("connection", (socket) => {
-  console.log("🔌 Connessione:", socket.id);
+// console.log("🔌 Connessione:", socket.id);
 
   if (disconnectionTimeouts[socket.id]) {
     clearTimeout(disconnectionTimeouts[socket.id]);
     delete disconnectionTimeouts[socket.id];
-    console.log("✅ Giocatore riconnesso:", socket.id);
+// console.log("✅ Giocatore riconnesso:", socket.id);
   }
 
   // CREA STANZA
@@ -619,7 +619,7 @@ io.on("connection", (socket) => {
       };
 
       socket.join(code);
-      console.log(`✅ Stanza creata: ${code} da ${name} [${mode.toUpperCase()}] [${phraseSet.mode === "sequential" ? `SET: ${phraseSet.customName}` : "RANDOM"}]`);
+// console.log(`✅ Stanza creata: ${code} da ${name} [${mode.toUpperCase()}] [${phraseSet.mode === "sequential" ? `SET: ${phraseSet.customName}` : "RANDOM"}]`);
 
       if (callback) callback({
         ok: true,
@@ -657,7 +657,7 @@ io.on("connection", (socket) => {
 
       // ✅ Se partita iniziata, chiedi approvazione a TUTTI
       if (room.gameState && !room.gameState.gameOver) {
-        console.log(`🔔 ${name} chiede di entrare a partita iniziata in ${code}`);
+// console.log(`🔔 ${name} chiede di entrare a partita iniziata in ${code}`);
         
         // Manda richiesta a TUTTI i giocatori
         room.players.forEach(player => {
@@ -684,7 +684,7 @@ io.on("connection", (socket) => {
       if (existingPlayerByName) {
         existingPlayerByName.id = socket.id;
         socket.join(code);
-        console.log(`✅ ${name} ha ripreso il suo box in ${code}`);
+// console.log(`✅ ${name} ha ripreso il suo box in ${code}`);
         
         io.to(code).emit("roomUpdate", { room, roomCode: code });
         
@@ -701,7 +701,7 @@ io.on("connection", (socket) => {
       room.players.push({ name, id: socket.id, isHost: false });
       socket.join(code);
 
-      console.log(`✅ ${name} entra in ${code}`);
+// console.log(`✅ ${name} entra in ${code}`);
 
       io.to(code).emit("roomUpdate", { room, roomCode: code });
 
@@ -734,7 +734,7 @@ io.on("connection", (socket) => {
 
       // ✅ Se partita iniziata, chiedi approvazione a TUTTI
       if (room.gameState && !room.gameState.gameOver) {
-        console.log(`🔔 ${spectatorName} chiede di entrare come spettatore a partita iniziata in ${code}`);
+// console.log(`🔔 ${spectatorName} chiede di entrare come spettatore a partita iniziata in ${code}`);
         
         room.players.forEach(player => {
           io.to(player.id).emit("joinRequest", {
@@ -757,7 +757,7 @@ io.on("connection", (socket) => {
       room.spectators.push({ name: spectatorName, id: socket.id });
 
       socket.join(code);
-      console.log(`👁️ ${spectatorName} entra come spettatore in ${code}`);
+// console.log(`👁️ ${spectatorName} entra come spettatore in ${code}`);
 
       io.to(code).emit("roomUpdate", { room, roomCode: code });
 
@@ -786,17 +786,17 @@ io.on("connection", (socket) => {
       const pIdx = room.players?.findIndex((p) => p.id === socket.id);
       if (pIdx !== -1) {
         room.players.splice(pIdx, 1);
-        console.log(`👋 Giocatore uscito: ${code}`);
+// console.log(`👋 Giocatore uscito: ${code}`);
       }
 
       const sIdx = room.spectators?.findIndex((s) => s.id === socket.id);
       if (sIdx !== -1) {
         room.spectators.splice(sIdx, 1);
-        console.log(`👋 Spettatore uscito: ${code}`);
+// console.log(`👋 Spettatore uscito: ${code}`);
       }
 
       if (room.players.length === 0) {
-        console.log(`🗑️ Stanza ${code} eliminata`);
+// console.log(`🗑️ Stanza ${code} eliminata`);
         delete rooms[code];
       } else {
         io.to(code).emit("roomUpdate", { room, roomCode: code });
@@ -845,7 +845,7 @@ io.on("connection", (socket) => {
       room.gameState = initGameState(room.players, room.totalRounds, selectedPhrase.text, selectedPhrase.category);
       room.gameState.phraseMode = mode; // ✅ Salva la modalità nel gameState
 
-      console.log("🚀 START GAME:", code, `[${selectedPhrase.category}]`, selectedPhrase.text);
+// console.log("🚀 START GAME:", code, `[${selectedPhrase.category}]`, selectedPhrase.text);
 
       io.to(code).emit("gameStart", {
         room,
@@ -950,7 +950,7 @@ io.on("connection", (socket) => {
         gs.spinCounter = 0;
         // Randomizza prossima forzatura: tra 5 e 10 spin
         gs.nextForcedSpin = Math.floor(Math.random() * 6) + 5; // 5-10
-        console.log(`🎲 Prima forzatura tra ${gs.nextForcedSpin} spin`);
+// console.log(`🎲 Prima forzatura tra ${gs.nextForcedSpin} spin`);
       }
       
       gs.spinCounter++;
@@ -960,12 +960,12 @@ io.on("connection", (socket) => {
       if (gs.spinCounter >= gs.nextForcedSpin) {
         // Scegli random PASSA o BANCAROTTA
         forcedTarget = Math.random() < 0.5 ? "PASSA" : "BANCAROTTA";
-        console.log(`🎯 FORZATURA! Spin #${gs.spinCounter} → ${forcedTarget}`);
+// console.log(`🎯 FORZATURA! Spin #${gs.spinCounter} → ${forcedTarget}`);
         
         // Reset counter e scegli prossima forzatura
         gs.spinCounter = 0;
         gs.nextForcedSpin = Math.floor(Math.random() * 6) + 5; // 5-10
-        console.log(`🎲 Prossima forzatura tra ${gs.nextForcedSpin} spin`);
+// console.log(`🎲 Prossima forzatura tra ${gs.nextForcedSpin} spin`);
       }
       
       // ✅ Genera seed per sincronizzazione animazione
@@ -1001,7 +1001,7 @@ io.on("connection", (socket) => {
       const gs = room.gameState;
       const i = gs.currentPlayerIndex;
 
-      console.log("🎯 Outcome ricevuto dal client:", outcome);
+// console.log("🎯 Outcome ricevuto dal client:", outcome);
 
       gs.spinning = false;
 
@@ -1471,7 +1471,7 @@ if (gs.usedLetters.includes(upper)) {
             bonusPoints: bonusPoints
           };
           
-          console.log(`🎯 Punteggio: ${scoreDetails.singleCells}x1 + ${scoreDetails.doubleCells}x2 = ${scoreDetails.totalScore} | Bonus 500: +${bonusPoints} | Totale: ${finalScore}`);
+// console.log(`🎯 Punteggio: ${scoreDetails.singleCells}x1 + ${scoreDetails.doubleCells}x2 = ${scoreDetails.totalScore} | Bonus 500: +${bonusPoints} | Totale: ${finalScore}`);
           gs.gameMessage = { type: "success", text: `✅ Frase indovinata! +${finalScore} punti!` };
         } else {
           // Modalità multiplayer: round score + bonus
@@ -1573,7 +1573,7 @@ if (gs.usedLetters.includes(upper)) {
       // ✅ Aggiungi lettera a revealedLetters
       if (upper && !gs.revealedLetters.includes(upper)) {
         gs.revealedLetters.push(upper);
-        console.log(`✅ Lettera ${upper} aggiunta a revealedLetters dopo animazione`);
+// console.log(`✅ Lettera ${upper} aggiunta a revealedLetters dopo animazione`);
         
         // ✅ Manda gameState aggiornato SENZA revealQueue
         io.to(code).emit("gameStateUpdate", { gameState: gs });
@@ -1610,12 +1610,12 @@ if (gs.usedLetters.includes(upper)) {
               const gsPlayer = room.gameState.players.find(p => p.id === oldSocketId || p.name === playerName);
               if (gsPlayer) {
                 gsPlayer.id = playerId;
-                console.log(`🔄 ${playerName} ha ripreso il suo box in gameState`);
+// console.log(`🔄 ${playerName} ha ripreso il suo box in gameState`);
               }
             }
             
             targetSocket.join(code);
-            console.log(`✅ ${playerName} ha ripreso il suo box approvato da ${acceptingPlayer.name}`);
+// console.log(`✅ ${playerName} ha ripreso il suo box approvato da ${acceptingPlayer.name}`);
             
             // Notifica TUTTI che richiesta risolta
             room.players.forEach(player => {
@@ -1638,7 +1638,7 @@ if (gs.usedLetters.includes(upper)) {
         
         // ✅ Altrimenti crea nuovo giocatore
         if (room.players.some(p => p.id === playerId)) {
-          console.log(`⚠️ ${playerName} già aggiunto`);
+// console.log(`⚠️ ${playerName} già aggiunto`);
           return;
         }
         
@@ -1666,7 +1666,7 @@ if (gs.usedLetters.includes(upper)) {
       }
 
       targetSocket.join(code);
-      console.log(`✅ ${playerName} approvato da ${acceptingPlayer.name} in ${code}`);
+// console.log(`✅ ${playerName} approvato da ${acceptingPlayer.name} in ${code}`);
 
       // Notifica TUTTI che richiesta risolta
       room.players.forEach(player => {
@@ -1723,7 +1723,7 @@ if (gs.usedLetters.includes(upper)) {
           message: message,
           timestamp: Date.now()
         });
-        console.log(`💬 Messaggio da ${fromName} a ${toPlayerId}: ${message}`);
+// console.log(`💬 Messaggio da ${fromName} a ${toPlayerId}: ${message}`);
       }
     } catch (err) {
       console.error("Errore sendMessageToPlayer:", err);
@@ -1782,7 +1782,7 @@ if (gs.usedLetters.includes(upper)) {
         io.to(code).emit("gameStateUpdate", { gameState: gs });
       }
 
-      console.log(`🎯 Presentatore verifica soluzione: ${isCorrect ? "CORRETTA" : "SBAGLIATA"}`);
+// console.log(`🎯 Presentatore verifica soluzione: ${isCorrect ? "CORRETTA" : "SBAGLIATA"}`);
     } catch (err) {
       console.error("Errore presenterSolutionCheck:", err);
     }
@@ -1796,7 +1796,7 @@ if (gs.usedLetters.includes(upper)) {
       
       if (room && room.gameState) {
         socket.emit("gameStateUpdate", { gameState: room.gameState });
-        console.log(`🔄 Stato gioco inviato a ${socket.id} per room ${code}`);
+// console.log(`🔄 Stato gioco inviato a ${socket.id} per room ${code}`);
       }
     } catch (err) {
       console.error("Errore requestGameState:", err);
@@ -1814,7 +1814,7 @@ if (gs.usedLetters.includes(upper)) {
         return callback({ ok: false, error: result.error });
       }
       
-      console.log(`✨ Nuovo giocatore singolo: ${result.player.id}`);
+// console.log(`✨ Nuovo giocatore singolo: ${result.player.id}`);
       callback({ 
         ok: true, 
         player: {
@@ -1838,7 +1838,7 @@ if (gs.usedLetters.includes(upper)) {
         return callback({ ok: false, error: result.error });
       }
       
-      console.log(`🔐 Giocatore autenticato: ${result.player.id} (livello ${result.player.level})`);
+// console.log(`🔐 Giocatore autenticato: ${result.player.id} (livello ${result.player.level})`);
       callback({ 
         ok: true, 
         player: {
@@ -1862,7 +1862,7 @@ if (gs.usedLetters.includes(upper)) {
         return callback({ ok: false, error: result.error });
       }
       
-      console.log(`💾 Progressi salvati: ${playerId} - Livello ${level}, Punteggio ${totalScore}`);
+// console.log(`💾 Progressi salvati: ${playerId} - Livello ${level}, Punteggio ${totalScore}`);
       callback({ ok: true });
     } catch (err) {
       console.error("Errore singlePlayerSave:", err);
@@ -1891,7 +1891,7 @@ if (gs.usedLetters.includes(upper)) {
         return callback({ ok: false, error: "Frase non trovata" });
       }
       
-      console.log(`📖 Frase livello ${level}: "${phrase.text}"`);
+// console.log(`📖 Frase livello ${level}: "${phrase.text}"`);
       callback({ 
         ok: true, 
         phrase: phrase.text,
@@ -1931,7 +1931,7 @@ if (gs.usedLetters.includes(upper)) {
       if (playerId) {
         const saveResult = await saveSinglePlayerProgress(playerId, newLevel, totalScore);
         if (saveResult.ok) {
-          console.log(`💾 Progressi auto-salvati: ${playerId} - Livello ${newLevel}, Punteggio ${totalScore}`);
+// console.log(`💾 Progressi auto-salvati: ${playerId} - Livello ${newLevel}, Punteggio ${totalScore}`);
         }
       }
       
@@ -1958,7 +1958,7 @@ if (gs.usedLetters.includes(upper)) {
       gs.spinning = false;
       gs.gameMessage = { type: "info", text: `🎮 Livello ${newLevel} - ${selectedPhrase.category}` };
       
-      console.log(`➡️ Livello ${newLevel} caricato: "${selectedPhrase.text}"`);
+// console.log(`➡️ Livello ${newLevel} caricato: "${selectedPhrase.text}"`);
       
       io.to(code).emit("gameStateUpdate", { gameState: gs });
       
@@ -2017,7 +2017,7 @@ if (gs.usedLetters.includes(upper)) {
       
       socket.join(roomCode);
       
-      console.log(`🎮 Partita singolo avviata: ${playerId} - Livello ${level}`);
+// console.log(`🎮 Partita singolo avviata: ${playerId} - Livello ${level}`);
       
       callback({
         ok: true,
@@ -2042,7 +2042,7 @@ if (gs.usedLetters.includes(upper)) {
   socket.on("disconnect", () => {
     const info = findRoomBySocketId(socket.id);
     if (!info) {
-      console.log("❌ Disconnessione:", socket.id);
+// console.log("❌ Disconnessione:", socket.id);
       return;
     }
 
@@ -2057,7 +2057,7 @@ if (gs.usedLetters.includes(upper)) {
         const idx = room.spectators?.findIndex((s) => s.id === socket.id);
         if (idx !== -1) {
           room.spectators.splice(idx, 1);
-          console.log(`👋 Spettatore uscito: ${code}`);
+// console.log(`👋 Spettatore uscito: ${code}`);
           io.to(code).emit("roomUpdate", { room, roomCode: code });
         }
       }
@@ -2065,11 +2065,11 @@ if (gs.usedLetters.includes(upper)) {
       console.error("Errore disconnect:", err);
     }
 
-    console.log("❌ Disconnessione:", socket.id);
+// console.log("❌ Disconnessione:", socket.id);
   });
 });
 
 server.listen(PORT, () => {
-  console.log(`🚀 Server su porta ${PORT}`);
-  console.log("✅ CORS abilitato per localhost e Vercel");
+// console.log(`🚀 Server su porta ${PORT}`);
+// console.log("✅ CORS abilitato per localhost e Vercel");
 });

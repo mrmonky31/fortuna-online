@@ -52,7 +52,7 @@ export default function Game({
     
     // ✅ Se il server ha già un gameState (partita in corso), usalo!
     if (state.gameState) {
-      console.log("🎮 Usando gameState dal server (partita in corso)");
+// console.log("🎮 Usando gameState dal server (partita in corso)");
       return {
         ...state.gameState,
         roomCode: state.roomCode
@@ -60,7 +60,7 @@ export default function Game({
     }
     
     // ✅ Altrimenti crea nuovo gameState (partita appena iniziata)
-    console.log("🆕 Creando nuovo gameState");
+// console.log("🆕 Creando nuovo gameState");
     return {
       players: (state.room?.players || []).map(p => ({
         name: p.name,
@@ -179,7 +179,7 @@ export default function Game({
       try {
         const { roomCode: savedRoom, timestamp } = JSON.parse(savedSession);
         if (Date.now() - timestamp < 10 * 60 * 1000) {
-          console.log("🔄 Tentativo riconnessione a:", savedRoom);
+// console.log("🔄 Tentativo riconnessione a:", savedRoom);
           setRoomCode(savedRoom);
         } else {
           localStorage.removeItem("gameSession");
@@ -219,7 +219,7 @@ export default function Game({
       if (document.visibilityState === 'visible') {
         // Riconnetti socket se disconnesso
         if (!socket.connected) {
-          console.log("🔄 Riconnessione socket...");
+// console.log("🔄 Riconnessione socket...");
           socket.connect();
           
           // Richiedi aggiornamento stato
@@ -240,13 +240,13 @@ export default function Game({
   // ✅ NUOVO: Listener per richieste join durante partita
   useEffect(() => {
     function handleJoinRequest(request) {
-      console.log("🔔 Richiesta join:", request);
+// console.log("🔔 Richiesta join:", request);
       setJoinRequest(request);
     }
 
     function handleJoinRequestResolved({ playerId }) {
       if (joinRequest && joinRequest.playerId === playerId) {
-        console.log("✅ Richiesta già gestita");
+// console.log("✅ Richiesta già gestita");
         setJoinRequest(null);
       }
     }
@@ -262,7 +262,7 @@ export default function Game({
 
   useEffect(() => {
     function handleGameStart({ gameState: serverState }) {
-      console.log("🚀 GameStart dal server:", serverState);
+// console.log("🚀 GameStart dal server:", serverState);
       if (serverState) {
         setGameState(serverState);
         setTurnTimer(60);
@@ -277,7 +277,7 @@ export default function Game({
   // ⭐ NUOVO: Listener per wheelSpinStart
   useEffect(() => {
     function handleWheelSpinStart({ spinning, spinSeed, forcedTarget }) {
-      console.log("🎡 wheelSpinStart ricevuto:", { spinning, spinSeed, forcedTarget });
+// console.log("🎡 wheelSpinStart ricevuto:", { spinning, spinSeed, forcedTarget });
       setWheelSpinning(spinning);
       setWheelSpinSeed(spinSeed);
       setWheelForcedTarget(forcedTarget || null);
@@ -328,7 +328,7 @@ export default function Game({
 
   useEffect(() => {
     function handleRoundWon({ winnerName, countdown }) {
-      console.log("🎉 Round vinto da:", winnerName);
+// console.log("🎉 Round vinto da:", winnerName);
       setWinnerName(winnerName);
       setBetweenRounds(true);
       setRoundCountdown(countdown);
@@ -573,7 +573,7 @@ export default function Game({
     if (!isPresenter) return;
     
     function handleSolutionAttempt() {
-      console.log("🎯 Giocatore ha tentato soluzione - attesa verifica");
+// console.log("🎯 Giocatore ha tentato soluzione - attesa verifica");
       setAwaitingSolutionCheck(true);
     }
     
@@ -586,7 +586,7 @@ export default function Game({
     if (!isPresenter) return;
     
     function handleShowLetterGrid({ type }) {
-      console.log("🔤 Mostra griglia:", type);
+// console.log("🔤 Mostra griglia:", type);
       setActiveLetterType(type); // "consonant" | "vowel"
     }
     
@@ -597,7 +597,7 @@ export default function Game({
   // ✅ NUOVO: Listener sincronizza stato pulsanti per TUTTI i client
   useEffect(() => {
     function handleButtonStateSync({ type, playerId }) {
-      console.log("🔘 Sincronizza pulsante:", type, playerId);
+// console.log("🔘 Sincronizza pulsante:", type, playerId);
       
       // Se sono il giocatore che ha premuto O sono il presentatore, illumino
       if (mySocketId === playerId || isPresenter) {
@@ -617,7 +617,7 @@ export default function Game({
   };
 
   const handleWheelStop = (outcome) => {
-    console.log("🎡 Ruota fermata, invio outcome al server:", outcome);
+// console.log("🎡 Ruota fermata, invio outcome al server:", outcome);
     
     // ✅ Invia l'outcome calcolato dal client al server
     socket.emit("wheelOutcome", { roomCode, outcome }, (res) => {
@@ -726,7 +726,7 @@ export default function Game({
       setSavingProgress(false);
       
       if (res && res.ok) {
-        console.log("✅ Progressi salvati");
+// console.log("✅ Progressi salvati");
         // Mostra messaggio temporaneo
         const prevMsg = gameState.gameMessage;
         setGameState(prev => ({
@@ -750,7 +750,7 @@ export default function Game({
   const handleNextLevel = () => {
     if (!isSinglePlayerMode || !roomCode) return;
     
-    console.log("🎮 Caricamento prossimo livello...");
+// console.log("🎮 Caricamento prossimo livello...");
     
     // Chiudi popup
     setBetweenRounds(false);
@@ -763,13 +763,13 @@ export default function Game({
         return;
       }
       
-      console.log("✅ Prossimo livello caricato");
+// console.log("✅ Prossimo livello caricato");
     });
   };
 
   // ✅ GIOCATORE SINGOLO: Apri TOP 10
   const handleOpenTop10 = () => {
-    console.log("🏆 Caricamento TOP 10...");
+// console.log("🏆 Caricamento TOP 10...");
     
     socket.emit("getLeaderboard", { limit: 10 }, (res) => {
       if (res && res.ok) {
@@ -806,7 +806,7 @@ export default function Game({
   
   // ✅ DEBUG modalità singlePlayer
   if (isSinglePlayerMode && !isMyTurn) {
-    console.log("⚠️ DEBUG isMyTurn:", {
+// console.log("⚠️ DEBUG isMyTurn:", {
       currentPlayerId: gameState.currentPlayerId,
       mySocketId: mySocketId,
       match: gameState.currentPlayerId === mySocketId,
