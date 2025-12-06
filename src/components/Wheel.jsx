@@ -235,19 +235,22 @@ export default function WheelVersionA({ slices = [], spinning = false, onStop, s
         setTimeout(() => {
           setIsSpinning(false);
           
-          // 🎯 Il puntatore fisso è a ore 12 (90° nel sistema di coordinate)
-          // Gli spicchi partono da -90° quando angle=0 (indice 0 a ore 12)
-          // Quindi dobbiamo calcolare quale spicchio è sotto il puntatore
+          // ⚙️ CALIBRAZIONE PUNTATORE
+          // ========================================
+          // 🎯 MODIFICA QUESTA RIGA PER CALIBRARE:
+          const POINTER_ANGLE = 0;  // ← Puntatore a ore 12 = 0° (modifica questo valore per calibrare)
+          // ========================================
+          // Esempi:
+          //   0° = ore 12 (↑)
+          //  90° = ore 3  (→)
+          // 180° = ore 6  (↓)
+          // 270° = ore 9  (←)
           
           const normalizedAngle = finalRotation % 360;
           
-          // Angolo sotto il puntatore fisso a ore 12
-          // Quando la ruota ruota in senso orario, gli spicchi si muovono in senso antiorario
-          // Quindi sottraggo l'angolo di rotazione dalla posizione iniziale del puntatore
-          const angleUnderPointer = (90 - normalizedAngle + 360) % 360;
-          
-          // Calcola l'indice dello spicchio
-          // Gli spicchi partono da -90° (ore 12), quindi aggiungo 90°
+          // Calcola quale spicchio è sotto il puntatore
+          // Gli spicchi partono da -90° (indice 0 a ore 12)
+          const angleUnderPointer = (POINTER_ANGLE - normalizedAngle + 360) % 360;
           const adjustedAngle = (angleUnderPointer + 90) % 360;
           const sliceIndex = Math.floor(adjustedAngle / SLICE_DEG) % values.length;
           const slice = values[sliceIndex];
