@@ -238,7 +238,7 @@ export default function WheelVersionA({ slices = [], spinning = false, onStop, s
           // ⚙️ CALIBRAZIONE PUNTATORE
           // ========================================
           // 🎯 MODIFICA QUESTA RIGA PER CALIBRARE:
-          const POINTER_ANGLE = 0;  // ← Puntatore a ore 12 = 0° (modifica questo valore per calibrare)
+          const POINTER_ANGLE = 180;  // ← Puntatore a ore 12 = 0° (modifica questo valore per calibrare)
           // ========================================
           // Esempi:
           //   0° = ore 12 (↑)
