@@ -238,7 +238,7 @@ export default function WheelVersionA({ slices = [], spinning = false, onStop, s
           // ⚙️ CALIBRAZIONE PUNTATORE
           // ========================================
           // 🎯 MODIFICA QUESTA RIGA PER CALIBRARE:
-          const POINTER_ANGLE = 350;  // ← Puntatore a ore 12 = 0° (modifica questo valore per calibrare)
+          const POINTER_ANGLE = 0;  // ← Puntatore a ore 12 = 0° (modifica questo valore per calibrare)
           // ========================================
           // Esempi:
           //   0° = ore 12 (↑)
@@ -251,7 +251,7 @@ export default function WheelVersionA({ slices = [], spinning = false, onStop, s
           // Calcola quale spicchio è sotto il puntatore
           // Gli spicchi partono da -90° (indice 0 a ore 12)
           const angleUnderPointer = (POINTER_ANGLE - normalizedAngle + 360) % 360;
-          const adjustedAngle = (angleUnderPointer + 90) % 360;
+          const adjustedAngle = (angleUnderPointer + 0) % 360;
           const sliceIndex = Math.floor(adjustedAngle / SLICE_DEG) % values.length;
           const slice = values[sliceIndex];
 
