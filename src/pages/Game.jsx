@@ -111,7 +111,6 @@ export default function Game({
   // ⭐ NUOVO: Stati per sincronizzazione animazione ruota
   const [wheelSpinning, setWheelSpinning] = useState(false);
   const [wheelSpinSeed, setWheelSpinSeed] = useState(null);
-  const [wheelTargetAngle, setWheelTargetAngle] = useState(null);
 
   // ✅ NUOVO: Colore random per round (mai bianco/nero)
   const [roundColor, setRoundColor] = useState(() => {
@@ -276,11 +275,10 @@ export default function Game({
 
   // ⭐ NUOVO: Listener per wheelSpinStart
   useEffect(() => {
-    function handleWheelSpinStart({ spinning, spinSeed, targetAngle }) {
-      console.log("🎡 wheelSpinStart ricevuto:", { spinning, spinSeed, targetAngle });
+    function handleWheelSpinStart({ spinning, spinSeed }) {
+      console.log("🎡 wheelSpinStart ricevuto:", { spinning, spinSeed });
       setWheelSpinning(spinning);
       setWheelSpinSeed(spinSeed);
-      setWheelTargetAngle(targetAngle);
     }
 
     socket.on("wheelSpinStart", handleWheelSpinStart);
@@ -617,7 +615,14 @@ export default function Game({
   };
 
   const handleWheelStop = (outcome) => {
-    console.log("🎡 Ruota fermata (visivo):", outcome);
+    console.log("🎡 Ruota fermata, invio outcome al server:", outcome);
+    
+    // ✅ Invia l'outcome calcolato dal client al server
+    socket.emit("wheelOutcome", { roomCode, outcome }, (res) => {
+      if (!res?.ok) {
+        console.error("❌ Errore invio outcome:", res?.error);
+      }
+    });
   };
 
   const handleConsonant = (letter) => {
@@ -1026,7 +1031,6 @@ export default function Game({
               slices={gameState.wheel}
               spinning={wheelSpinning}
               spinSeed={wheelSpinSeed}
-              targetAngle={wheelTargetAngle}
               onStop={handleWheelStop}
             />
           </div>

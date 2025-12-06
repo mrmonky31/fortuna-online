@@ -943,65 +943,66 @@ io.on("connection", (socket) => {
 
       gs.spinning = true;
       
-      // ✅ Genera seed per sincronizzazione
+      // ✅ Genera seed per sincronizzazione animazione
       const spinSeed = Date.now();
-      
-      // ✅ Sceglie spicchio target
-      const sliceIndex = Math.floor(Math.random() * gs.wheel.length);
-      const targetSlice = gs.wheel[sliceIndex];
-      
-      console.log(`🎯 Spin Debug - sliceIndex: ${sliceIndex}, targetSlice: ${targetSlice}, wheel:`, gs.wheel);
-      
-      // ✅ Gestione spicchi doppi: scegli metà sinistra o destra
-      let halfOffset = 0; // Offset angolare per metà spicchio
-      let chosen = targetSlice;
-      
-      if (typeof targetSlice === "string" && targetSlice.includes("/")) {
-        const [a, b] = targetSlice.split("/");
-        const isLeftHalf = Math.random() < 0.5;
-        chosen = isLeftHalf ? a : b;
-        
-        // ✅ Calcola offset per centrare sulla metà corretta
-        const SLICE_DEG = 360 / gs.wheel.length; // 18° per 20 spicchi
-        halfOffset = isLeftHalf ? -SLICE_DEG / 4 : SLICE_DEG / 4; // ±4.5° per centrare su metà
-      }
-      
-      // ✅ Calcola angolo finale preciso
-      const SLICE_DEG = 360 / gs.wheel.length; // 18° per 20 spicchi
-      const targetAngle = sliceIndex * SLICE_DEG + halfOffset;
-      
-      console.log(`🎯 targetAngle: ${targetAngle}°, chosen: ${chosen}, halfOffset: ${halfOffset}`);
       
       io.to(code).emit("wheelSpinStart", { 
         spinning: true,
-        spinSeed: spinSeed,
-        targetAngle: targetAngle, // ✅ Angolo preciso (con offset per mezzi spicchi)
-        sliceIndex: sliceIndex
+        spinSeed: spinSeed
       });
 
-      // ✅ Simula risultato dopo 5 secondi (durata max animazione 4.5s + rimbalzo 0.3s)
-      setTimeout(() => {
-        let outcome;
+      // ✅ Il server ora ASPETTA che il client invii l'outcome tramite evento "wheelOutcome"
+      // Non più timeout - il client determina lo spicchio vincente in base alla posizione finale
+
+      if (callback) callback({ ok: true });
+    } catch (err) {
+      console.error("Errore spinWheel:", err);
+      if (callback) callback({ ok: false, error: "Errore spin" });
+    }
+  });
+
+  // ✅ NUOVO: Ricevi outcome dalla ruota (calcolato dal client)
+  socket.on("wheelOutcome", ({ roomCode, outcome }, callback) => {
+    try {
+      const code = String(roomCode || "").trim().toUpperCase();
+      const room = rooms[code];
+
+      if (!room || !room.gameState) {
+        if (callback) callback({ ok: false, error: "Partita non attiva" });
+        return;
+      }
+
+      const gs = room.gameState;
+      const i = gs.currentPlayerIndex;
+
+      console.log("🎯 Outcome ricevuto dal client:", outcome);
+
+      gs.spinning = false;
+
+      if (outcome.type === "points") {
+        gs.lastSpinTarget = outcome.value;
+        gs.mustSpin = false;
+        gs.awaitingConsonant = true;
+        gs.gameMessage = { type: "info", text: `Valore: ${outcome.value} pt. Inserisci una consonante.` };
         
-        if (typeof chosen === "string") {
-          if (chosen === "PASSA") outcome = { type: "pass", label: "PASSA" };
-          else if (chosen === "BANCAROTTA") outcome = { type: "bankrupt", label: "BANCAROTTA" };
-          else if (chosen === "RADDOPPIA") outcome = { type: "double", label: "RADDOPPIA" };
-          else if (!isNaN(Number(chosen))) outcome = { type: "points", value: Number(chosen), label: chosen };
-          else outcome = { type: "custom", label: chosen };
-        } else if (typeof chosen === "number") {
-          outcome = { type: "points", value: chosen, label: chosen };
-        } else {
-          outcome = { type: "custom", label: String(chosen) };
+        // ✅ MODALITÀ PRESENTATORE: Auto-attiva griglia consonanti
+        if (room.gameMode === "presenter") {
+          io.to(code).emit("buttonStateSync", { 
+            type: "consonant", 
+            playerId: gs.currentPlayerId 
+          });
         }
-
-        gs.spinning = false;
-
-        if (outcome.type === "points") {
-          gs.lastSpinTarget = outcome.value;
+      } else if (outcome.type === "double") {
+        // ✅ Se roundScore = 0, RADDOPPIA si comporta come 100pt
+        if (gs.players[i].roundScore === 0) {
+          gs.lastSpinTarget = 100;
           gs.mustSpin = false;
           gs.awaitingConsonant = true;
-          gs.gameMessage = { type: "info", text: `Valore: ${outcome.value} pt. Inserisci una consonante.` };
+          gs.pendingDouble = false; // ✅ NON raddoppia
+          gs.gameMessage = {
+            type: "info",
+            text: "Valore: 100 pt. Inserisci una consonante."
+          };
           
           // ✅ MODALITÀ PRESENTATORE: Auto-attiva griglia consonanti
           if (room.gameMode === "presenter") {
@@ -1010,84 +1011,64 @@ io.on("connection", (socket) => {
               playerId: gs.currentPlayerId 
             });
           }
-        } else if (outcome.type === "double") {
-          // ✅ Se roundScore = 0, RADDOPPIA si comporta come 100pt
-          if (gs.players[i].roundScore === 0) {
-            gs.lastSpinTarget = 100;
-            gs.mustSpin = false;
-            gs.awaitingConsonant = true;
-            gs.pendingDouble = false; // ✅ NON raddoppia
-            gs.gameMessage = {
-              type: "info",
-              text: "Valore: 100 pt. Inserisci una consonante."
-            };
-            
-            // ✅ MODALITÀ PRESENTATORE: Auto-attiva griglia consonanti
-            if (room.gameMode === "presenter") {
-              io.to(code).emit("buttonStateSync", { 
-                type: "consonant", 
-                playerId: gs.currentPlayerId 
-              });
-            }
-          } else {
-            // ✅ roundScore > 0: RADDOPPIA normale
-            gs.pendingDouble = true;
-            gs.mustSpin = false;
-            gs.awaitingConsonant = true;
-            gs.lastSpinTarget = 100; // valore base di fallback
-            gs.gameMessage = {
-              type: "info",
-              text: "🎯 RADDOPPIA: inserisci una consonante!"
-            };
-            
-            // ✅ MODALITÀ PRESENTATORE: Auto-attiva griglia consonanti
-            if (room.gameMode === "presenter") {
-              io.to(code).emit("buttonStateSync", { 
-                type: "consonant", 
-                playerId: gs.currentPlayerId 
-              });
-            }
-          }
-        } else if (outcome.type === "pass") {
-          // ✅ MODALITÀ GIOCATORE SINGOLO: Penalità -200
-          if (room.gameMode === "singlePlayer") {
-            const i = gs.currentPlayerIndex;
-            gs.players[i].roundScore = Math.max(0, gs.players[i].roundScore - 200);
-            gs.gameMessage = { type: "warning", text: "PASSA: -200 punti. Turno al prossimo." };
-          } else {
-            gs.gameMessage = { type: "warning", text: "PASSA: turno al prossimo." };
-          }
-          
-          nextPlayer(gs); // ✅ Salta presentatore
-          gs.mustSpin = true;
-          gs.lastSpinTarget = 0;
-        } else if (outcome.type === "bankrupt") {
-          const i = gs.currentPlayerIndex;
-          gs.players[i].roundScore = 0;
-          
-          // ✅ MODALITÀ GIOCATORE SINGOLO: NON azzera total score
-          if (room.gameMode !== "singlePlayer") {
-            gs.players[i].totalScore = 0;
-          }
-          
-          nextPlayer(gs); // ✅ Salta presentatore
-          gs.mustSpin = true;
-          gs.lastSpinTarget = 0;
-          gs.gameMessage = { 
-            type: "error", 
-            text: room.gameMode === "singlePlayer" 
-              ? "BANCAROTTA: round score azzerato!" 
-              : "BANCAROTTA: punteggi azzerati!" 
+        } else {
+          // ✅ roundScore > 0: RADDOPPIA normale
+          gs.pendingDouble = true;
+          gs.mustSpin = false;
+          gs.awaitingConsonant = true;
+          gs.lastSpinTarget = 100; // valore base di fallback
+          gs.gameMessage = {
+            type: "info",
+            text: "🎯 RADDOPPIA: inserisci una consonante!"
           };
+          
+          // ✅ MODALITÀ PRESENTATORE: Auto-attiva griglia consonanti
+          if (room.gameMode === "presenter") {
+            io.to(code).emit("buttonStateSync", { 
+              type: "consonant", 
+              playerId: gs.currentPlayerId 
+            });
+          }
         }
+      } else if (outcome.type === "pass") {
+        // ✅ MODALITÀ GIOCATORE SINGOLO: Penalità -200
+        if (room.gameMode === "singlePlayer") {
+          const i = gs.currentPlayerIndex;
+          gs.players[i].roundScore = Math.max(0, gs.players[i].roundScore - 200);
+          gs.gameMessage = { type: "warning", text: "PASSA: -200 punti. Turno al prossimo." };
+        } else {
+          gs.gameMessage = { type: "warning", text: "PASSA: turno al prossimo." };
+        }
+        
+        nextPlayer(gs); // ✅ Salta presentatore
+        gs.mustSpin = true;
+        gs.lastSpinTarget = 0;
+      } else if (outcome.type === "bankrupt") {
+        const i = gs.currentPlayerIndex;
+        gs.players[i].roundScore = 0;
+        
+        // ✅ MODALITÀ GIOCATORE SINGOLO: NON azzera total score
+        if (room.gameMode !== "singlePlayer") {
+          gs.players[i].totalScore = 0;
+        }
+        
+        nextPlayer(gs); // ✅ Salta presentatore
+        gs.mustSpin = true;
+        gs.lastSpinTarget = 0;
+        gs.gameMessage = { 
+          type: "error", 
+          text: room.gameMode === "singlePlayer" 
+            ? "BANCAROTTA: round score azzerato!" 
+            : "BANCAROTTA: punteggi azzerati!" 
+        };
+      }
 
-        io.to(code).emit("gameStateUpdate", { gameState: gs });
-      }, 5000);
+      io.to(code).emit("gameStateUpdate", { gameState: gs });
 
       if (callback) callback({ ok: true });
     } catch (err) {
-      console.error("Errore spinWheel:", err);
-      if (callback) callback({ ok: false, error: "Errore spin" });
+      console.error("Errore wheelOutcome:", err);
+      if (callback) callback({ ok: false, error: "Errore outcome" });
     }
   });
 

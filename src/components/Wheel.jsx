@@ -27,7 +27,64 @@ function seededRandom(seed) {
   return x - Math.floor(x);
 }
 
-export default function WheelVersionA({ slices = [], spinning = false, onStop, spinSeed = null, targetAngle = null }) {
+// 🆕 Preprocessing pattern: converte _HALF in spicchi divisi
+function preprocessPattern(pattern) {
+  if (!Array.isArray(pattern) || pattern.length === 0) return pattern;
+  
+  const result = [];
+  let i = 0;
+  
+  while (i < pattern.length) {
+    const current = pattern[i];
+    
+    // Controlla se è un half slice
+    if (typeof current === "string" && current.includes("_HALF")) {
+      // Cerca il prossimo elemento
+      const next = pattern[i + 1];
+      
+      if (next && typeof next === "string" && next.includes("_HALF")) {
+        // Due half consecutivi → combina in uno spicchio diviso
+        const a = current.replace("_HALF", "").trim();
+        const b = next.replace("_HALF", "").trim();
+        result.push(`${a}/${b}`);
+        console.log(`🔄 Combinati half slices: ${a}_HALF + ${b}_HALF → ${a}/${b}`);
+        i += 2; // Salta entrambi
+      } else {
+        // Half singolo senza coppia → Errore!
+        console.error(`❌ ERRORE: ${current} non ha un half slice accoppiato!`);
+        // Usa come spicchio intero (fallback)
+        result.push(current.replace("_HALF", "").trim());
+        i++;
+      }
+    } else {
+      // Elemento normale (numero o stringa senza _HALF)
+      result.push(current);
+      i++;
+    }
+  }
+  
+  return result;
+}
+
+// Validazione pattern
+function validatePattern(pattern) {
+  if (!Array.isArray(pattern)) return false;
+  
+  const halfCount = pattern.filter(s => 
+    typeof s === "string" && s.includes("_HALF")
+  ).length;
+  
+  if (halfCount % 2 !== 0) {
+    console.error(`❌ Pattern invalido: numero dispari di _HALF slices (${halfCount})`);
+    console.error("Ogni _HALF deve essere accoppiato con un altro _HALF!");
+    return false;
+  }
+  
+  console.log(`✅ Pattern valido: ${halfCount} half slices (${halfCount/2} coppie)`);
+  return true;
+}
+
+export default function WheelVersionA({ slices = [], spinning = false, onStop, spinSeed = null }) {
   const wheelRef = useRef(null);
   const [angle, setAngle] = useState(0);
   const [isSpinning, setIsSpinning] = useState(false);
@@ -36,12 +93,29 @@ export default function WheelVersionA({ slices = [], spinning = false, onStop, s
   const cx = size / 2, cy = size / 2;
   const R = 170;
 
-  // ✅ USA I TUOI PATTERN nell'ORDINE ESATTO
-  const values = slices.length ? slices : [
+  // 🎲 Valori di rotazione predefiniti (numero di giri completi)
+  const SPIN_ROTATIONS = [3.4, 4.5, 3.7, 4.2, 3.3, 4.7, 3.9];
+
+  // ✅ Pattern di default (se non passati slices)
+  const defaultPattern = [
     100, 200, 300, 400, 500, 600, 700, "PASSA",
     800, 1000, "BANCAROTTA", 200, 400, "RADDOPPIA",
     500, 300, "PASSA/BANCAROTTA", 700, 800, 1000,
   ];
+
+  // 🔄 Preprocessa pattern: converte _HALF in spicchi divisi
+  const rawPattern = slices.length ? slices : defaultPattern;
+  
+  // Validazione
+  if (!validatePattern(rawPattern)) {
+    console.warn("⚠️ Pattern non valido, uso pattern di default");
+  }
+  
+  // Preprocessing
+  const processedPattern = preprocessPattern(rawPattern);
+  
+  // ✅ USA il pattern processato
+  const values = processedPattern;
 
   const arcPath = (startDeg, sweepDeg) => {
     const endDeg = startDeg + sweepDeg;
@@ -113,9 +187,9 @@ export default function WheelVersionA({ slices = [], spinning = false, onStop, s
     );
   };
 
-  // ✅ SPIN con angolo target preciso + rimbalzo realistico
+  // ✅ SPIN con rotazione casuale + rimbalzo realistico
   useEffect(() => {
-    if (!spinning || isSpinning || targetAngle === null) return;
+    if (!spinning || isSpinning) return;
     
     setIsSpinning(true);
     
@@ -126,22 +200,20 @@ export default function WheelVersionA({ slices = [], spinning = false, onStop, s
     }
 
     setTimeout(() => {
+      // 🎲 Scegli casualmente una rotazione dalla lista predefinita
       const randomFromSeed = seededRandom(spinSeed || Date.now());
-      const extraSpins = Math.floor(randomFromSeed * 2 + 3); // 3-5 giri completi
-      const duration = 3 + randomFromSeed * 1.5; // 3-4.5 secondi
+      const rotationIndex = Math.floor(randomFromSeed * SPIN_ROTATIONS.length);
+      const numberOfRotations = SPIN_ROTATIONS[rotationIndex];
       
-      // ✅ NUOVO: Aggiungi variazione casuale ±9° per non fermarsi sempre al centro
-      const variation = (seededRandom(spinSeed + 100) - 0.5) * 18; // ±9° (metà spicchio)
+      // 🎲 Angolo casuale finale (0-360°) per variare dove si ferma
+      const randomFinalAngle = seededRandom(spinSeed + 100) * 360;
       
-      // ✅ FIX: Allineamento con calcolo server
-      // Server: targetAngle = sliceIndex * 18° (parte da 0° per indice 0)
-      // Client: spicchi partono da -90° (indice 0 a ore 12)
-      // Per compensare: dobbiamo aggiungere 90° al targetAngle del server
-      const finalAngle = 360 - (targetAngle + 90) + variation;
+      // ⏱️ Durata casuale tra 3-4.5 secondi
+      const duration = 3 + randomFromSeed * 1.5;
       
-      // ✅ FASE 1: Rotazione principale con overshoot (va oltre il target)
-      const overshoot = 3.6; // Gradi di overshoot (0.2 spicchi = 3.6°)
-      const totalRotationWithOvershoot = extraSpins * 360 + finalAngle + overshoot;
+      // 🎯 FASE 1: Rotazione principale con overshoot (va oltre il target di 3.6°)
+      const overshoot = 3.6; // 18°/5 = 3.6° (1/5 di spicchio)
+      const totalRotationWithOvershoot = numberOfRotations * 360 + randomFinalAngle + overshoot;
 
       if (wheelRef.current) {
         // Animazione principale con overshoot
@@ -149,34 +221,42 @@ export default function WheelVersionA({ slices = [], spinning = false, onStop, s
         setAngle(totalRotationWithOvershoot);
       }
 
-      // ✅ FASE 2: Dopo l'overshoot, rimbalza indietro al punto esatto
+      // 🎯 FASE 2: Dopo l'overshoot, rimbalza indietro di 3.6°
       setTimeout(() => {
         const bounceBackDuration = 0.3; // 300ms per il rimbalzo
-        const finalRotation = extraSpins * 360 + finalAngle;
+        const finalRotation = numberOfRotations * 360 + randomFinalAngle;
         
         if (wheelRef.current) {
           wheelRef.current.style.transition = `transform ${bounceBackDuration}s cubic-bezier(0.36, 0, 0.66, 0.04)`;
           setAngle(finalRotation);
         }
 
-        // ✅ FASE 3: Calcola outcome dopo il rimbalzo
+        // 🎯 FASE 3: Calcola outcome in base alla posizione finale sotto il puntatore
         setTimeout(() => {
           setIsSpinning(false);
           
-          // Calcola quale spicchio è sotto il puntatore fisso
+          // 🎯 Il puntatore fisso è a ore 12 (90° nel sistema di coordinate)
+          // Gli spicchi partono da -90° quando angle=0 (indice 0 a ore 12)
+          // Quindi dobbiamo calcolare quale spicchio è sotto il puntatore
+          
           const normalizedAngle = finalRotation % 360;
           
-          // Il puntatore fisso è a 90° (ore 12)
-          // Gli spicchi partono da -90° quando angle=0
-          // Spicchio sotto puntatore = (90 + angle) / SLICE_DEG
-          const angleUnderPointer = (90 + normalizedAngle) % 360;
-          const sliceIndex = Math.floor(angleUnderPointer / SLICE_DEG) % values.length;
+          // Angolo sotto il puntatore fisso a ore 12
+          // Quando la ruota ruota in senso orario, gli spicchi si muovono in senso antiorario
+          // Quindi sottraggo l'angolo di rotazione dalla posizione iniziale del puntatore
+          const angleUnderPointer = (90 - normalizedAngle + 360) % 360;
+          
+          // Calcola l'indice dello spicchio
+          // Gli spicchi partono da -90° (ore 12), quindi aggiungo 90°
+          const adjustedAngle = (angleUnderPointer + 90) % 360;
+          const sliceIndex = Math.floor(adjustedAngle / SLICE_DEG) % values.length;
           const slice = values[sliceIndex];
 
           let outcome;
           if (typeof slice === "string" && slice.includes("/")) {
+            // Spicchio diviso
             const [a, b] = slice.split("/");
-            const localAngle = angleUnderPointer - (sliceIndex * SLICE_DEG);
+            const localAngle = adjustedAngle - (sliceIndex * SLICE_DEG);
             const chosen = localAngle < SLICE_DEG / 2 ? a : b;
             
             if (chosen === "PASSA") outcome = { type: "pass", label: "PASSA" };
@@ -200,7 +280,7 @@ export default function WheelVersionA({ slices = [], spinning = false, onStop, s
         }, bounceBackDuration * 1000);
       }, duration * 1000);
     }, 50);
-  }, [spinning, targetAngle]);
+  }, [spinning]);
 
   return (
     <div className="wheel-wrap-svg">
