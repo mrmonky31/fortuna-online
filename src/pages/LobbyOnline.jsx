@@ -351,137 +351,138 @@ export default function LobbyOnline({ onGameStart }) {
 
   return (
     <div className="lobby-container">
-      {/* 📱 PULSANTE INSTALLAZIONE FISSO IN ALTO A DESTRA */}
-      <button 
-        onClick={() => setShowInstallInstructions(true)}
-        style={{
-          position: 'fixed',
-          top: 'max(15px, env(safe-area-inset-top, 15px))',
-          right: 'max(15px, env(safe-area-inset-right, 15px))',
-          padding: '10px 20px',
-          fontSize: '0.95rem',
-          fontWeight: 'bold',
-          background: '#00ff55',
-          color: '#000',
-          border: '2px solid #00ff88',
-          borderRadius: '8px',
-          cursor: 'pointer',
-          zIndex: 9999,
-          boxShadow: '0 4px 12px rgba(0, 255, 85, 0.4)',
-          transition: 'all 0.3s ease'
-        }}
-        onMouseOver={(e) => e.target.style.transform = 'scale(1.05)'}
-        onMouseOut={(e) => e.target.style.transform = 'scale(1)'}
-      >
-        📱 INSTALLAZIONE
-      </button>
-
-      {/* 📋 POPUP ISTRUZIONI INSTALLAZIONE */}
-      {showInstallInstructions && (
-        <div 
-          onClick={() => setShowInstallInstructions(false)}
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: 'rgba(0, 0, 0, 0.9)',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            zIndex: 10000,
-            padding: '20px'
-          }}
-        >
-          <div 
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              background: '#11131a',
-              border: '3px solid #00ff55',
-              borderRadius: '15px',
-              padding: '30px',
-              maxWidth: '500px',
-              width: '90vw',
-              maxHeight: '80vh',
-              overflowY: 'auto',
-              color: '#fff'
-            }}
-          >
-            <h2 style={{ 
-              color: '#00ff55', 
-              marginTop: 0,
-              fontSize: '1.8rem',
-              textAlign: 'center',
-              marginBottom: '20px'
-            }}>
-              📱 Come installare sulla Home
-            </h2>
-            
-            <div style={{ fontSize: '1.1rem', lineHeight: '1.6' }}>
-              <h3 style={{ color: '#00ff55', fontSize: '1.4rem', marginTop: '20px' }}>
-                🍎 iOS (iPhone/iPad)
-              </h3>
-              <ol style={{ paddingLeft: '20px' }}>
-                <li>Apri il gioco in <strong>Safari</strong></li>
-                <li>Tocca il pulsante <strong>"Condividi"</strong> (quadrato con freccia in alto) in basso</li>
-                <li>Scorri e seleziona <strong>"Aggiungi a Home"</strong></li>
-                <li>Tocca <strong>"Aggiungi"</strong> in alto a destra</li>
-                <li>L'icona apparirà sulla tua Home! 🎉</li>
-              </ol>
-
-              <h3 style={{ color: '#00ff55', fontSize: '1.4rem', marginTop: '25px' }}>
-                🤖 Android (Chrome)
-              </h3>
-              <ol style={{ paddingLeft: '20px' }}>
-                <li>Apri il gioco in <strong>Chrome</strong></li>
-                <li>Tocca il menu <strong>⋮</strong> (3 puntini) in alto a destra</li>
-                <li>Seleziona <strong>"Aggiungi a schermata Home"</strong> o <strong>"Installa app"</strong></li>
-                <li>Tocca <strong>"Aggiungi"</strong></li>
-                <li>L'icona apparirà sulla tua Home! 🎉</li>
-              </ol>
-
-              <div style={{
-                marginTop: '25px',
-                padding: '15px',
-                background: 'rgba(0, 255, 85, 0.1)',
-                border: '2px solid #00ff55',
-                borderRadius: '10px'
-              }}>
-                <strong>💡 Perché installare?</strong>
-                <ul style={{ marginTop: '10px', paddingLeft: '20px' }}>
-                  <li>Accesso rapido senza browser</li>
-                  <li>Esperienza fullscreen</li>
-                  <li>Funziona offline</li>
-                  <li>Come un'app vera! 🚀</li>
-                </ul>
-              </div>
-            </div>
-
-            <button
-              onClick={() => setShowInstallInstructions(false)}
-              style={{
-                width: '100%',
-                marginTop: '25px',
-                padding: '15px',
-                fontSize: '1.3rem',
-                fontWeight: 'bold',
-                background: '#00ff55',
-                color: '#000',
-                border: 'none',
-                borderRadius: '10px',
-                cursor: 'pointer'
-              }}
-            >
-              ✅ HO CAPITO
-            </button>
-          </div>
-        </div>
-      )}
-      
       {/* SCHERMATA HOME - SELEZIONE MODALITÀ */}
       {lobbyMode === "home" && (
-        <div className="lobby-form-minimal">
+        <>
+          {/* 📱 PULSANTE INSTALLAZIONE FISSO IN ALTO A DESTRA - SOLO SCHERMATA HOME */}
+          <button 
+            onClick={() => setShowInstallInstructions(true)}
+            style={{
+              position: 'fixed',
+              top: 'max(15px, env(safe-area-inset-top, 15px))',
+              right: 'max(15px, env(safe-area-inset-right, 15px))',
+              padding: '10px 20px',
+              fontSize: '0.95rem',
+              fontWeight: 'bold',
+              background: '#00ff55',
+              color: '#000',
+              border: '2px solid #00ff88',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              zIndex: 9999,
+              boxShadow: '0 4px 12px rgba(0, 255, 85, 0.4)',
+              transition: 'all 0.3s ease'
+            }}
+            onMouseOver={(e) => e.target.style.transform = 'scale(1.05)'}
+            onMouseOut={(e) => e.target.style.transform = 'scale(1)'}
+          >
+            📱 INSTALLAZIONE
+          </button>
+
+          {/* 📋 POPUP ISTRUZIONI INSTALLAZIONE */}
+          {showInstallInstructions && (
+            <div 
+              onClick={() => setShowInstallInstructions(false)}
+              style={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                background: 'rgba(0, 0, 0, 0.9)',
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                zIndex: 10000,
+                padding: '20px'
+              }}
+            >
+              <div 
+                onClick={(e) => e.stopPropagation()}
+                style={{
+                  background: '#11131a',
+                  border: '3px solid #00ff55',
+                  borderRadius: '15px',
+                  padding: '30px',
+                  maxWidth: '500px',
+                  width: '90vw',
+                  maxHeight: '80vh',
+                  overflowY: 'auto',
+                  color: '#fff'
+                }}
+              >
+                <h2 style={{ 
+                  color: '#00ff55', 
+                  marginTop: 0,
+                  fontSize: '1.8rem',
+                  textAlign: 'center',
+                  marginBottom: '20px'
+                }}>
+                  📱 Come installare sulla Home
+                </h2>
+                
+                <div style={{ fontSize: '1.1rem', lineHeight: '1.6' }}>
+                  <h3 style={{ color: '#00ff55', fontSize: '1.4rem', marginTop: '20px' }}>
+                    🍎 iOS (iPhone/iPad)
+                  </h3>
+                  <ol style={{ paddingLeft: '20px' }}>
+                    <li>Apri il gioco in <strong>Safari</strong></li>
+                    <li>Tocca il pulsante <strong>"Condividi"</strong> (quadrato con freccia in alto) in basso</li>
+                    <li>Scorri e seleziona <strong>"Aggiungi a Home"</strong></li>
+                    <li>Tocca <strong>"Aggiungi"</strong> in alto a destra</li>
+                    <li>L'icona apparirà sulla tua Home! 🎉</li>
+                  </ol>
+
+                  <h3 style={{ color: '#00ff55', fontSize: '1.4rem', marginTop: '25px' }}>
+                    🤖 Android (Chrome)
+                  </h3>
+                  <ol style={{ paddingLeft: '20px' }}>
+                    <li>Apri il gioco in <strong>Chrome</strong></li>
+                    <li>Tocca il menu <strong>⋮</strong> (3 puntini) in alto a destra</li>
+                    <li>Seleziona <strong>"Aggiungi a schermata Home"</strong> o <strong>"Installa app"</strong></li>
+                    <li>Tocca <strong>"Aggiungi"</strong></li>
+                    <li>L'icona apparirà sulla tua Home! 🎉</li>
+                  </ol>
+
+                  <div style={{
+                    marginTop: '25px',
+                    padding: '15px',
+                    background: 'rgba(0, 255, 85, 0.1)',
+                    border: '2px solid #00ff55',
+                    borderRadius: '10px'
+                  }}>
+                    <strong>💡 Perché installare?</strong>
+                    <ul style={{ marginTop: '10px', paddingLeft: '20px' }}>
+                      <li>Accesso rapido senza browser</li>
+                      <li>Esperienza fullscreen</li>
+                      <li>Funziona offline</li>
+                      <li>Come un'app vera! 🚀</li>
+                    </ul>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => setShowInstallInstructions(false)}
+                  style={{
+                    width: '100%',
+                    marginTop: '25px',
+                    padding: '15px',
+                    fontSize: '1.3rem',
+                    fontWeight: 'bold',
+                    background: '#00ff55',
+                    color: '#000',
+                    border: 'none',
+                    borderRadius: '10px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  ✅ HO CAPITO
+                </button>
+              </div>
+            </div>
+          )}
+        
+          <div className="lobby-form-minimal">
           <h1>🎡 RUOTA DELLA FORTUNA</h1>
           <h2>ONLINE</h2>
           
@@ -518,6 +519,7 @@ export default function LobbyOnline({ onGameStart }) {
             </button>
           )}
         </div>
+        </>
       )}
 
       {/* MODALITÀ MULTI GIOCATORE - FORM ESISTENTE */}
