@@ -1125,7 +1125,7 @@ io.on("connection", (socket) => {
         
         // Reset counter e scegli prossima forzatura
         gs.spinCounter = 0;
-        gs.nextForcedSpin = Math.floor(Math.random() * 6) + 5; // 5-10
+        gs.nextForcedSpin = Math.floor(Math.random() * 6) + 8; // 5-10
       }
       
       // ✅ Genera seed per sincronizzazione animazione
