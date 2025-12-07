@@ -4,6 +4,7 @@
 // ✅ Cambio frase funzionante
 // ✅ Pulsante consonante gestito
 // ✅ Import dinamico phrases con set personalizzati
+// 🔧 MODIFICHE PERFORMANCE: Error handling MongoDB, Lock salvataggi, Cleanup room, Connection pooling, Rate limiting
 
 import express from "express";
 import http from "http";
@@ -23,7 +24,7 @@ import { testPhrases } from "./game/phrases.js";
 // ✅ Carica frasi modalità giocatore singolo
 import { singlePlayerPhrases } from "./phrases-singleplayer.js";
 
-// ✅ MONGODB CONFIGURATION
+// ✅ MONGODB CONFIGURATION CON POOLING
 const MONGODB_URI = process.env.MONGODB_URI || "mongodb+srv://Monkyfortuna:Monky.fortuna.31@clusterfortuna.njzzbl8.mongodb.net/?appName=Clusterfortuna";
 const DB_NAME = "fortuna_online";
 
@@ -31,24 +32,44 @@ let mongoClient;
 let db;
 let playersCollection;
 
-// ✅ Connetti a MongoDB
+// 🔧 MODIFICA 1: ERROR HANDLING + RETRY AUTOMATICO MONGODB
 async function connectMongoDB() {
-  try {
-    mongoClient = new MongoClient(MONGODB_URI);
-    await mongoClient.connect();
-    db = mongoClient.db(DB_NAME);
-    playersCollection = db.collection("players");
-    
-// console.log("✅ MongoDB connesso!");
-    
-    // Crea indice su ID per ricerche veloci
-    await playersCollection.createIndex({ id: 1 }, { unique: true });
-    
-    // Carica leaderboard all'avvio
-    await updateLeaderboard();
-  } catch (err) {
-    console.error("❌ Errore connessione MongoDB:", err);
-    process.exit(1);
+  const maxRetries = 3;
+  let retryCount = 0;
+  
+  while (retryCount < maxRetries) {
+    try {
+      mongoClient = new MongoClient(MONGODB_URI, {
+        maxPoolSize: 20, // 🔧 MODIFICA 4: Connection pooling (da 1 a 20 connessioni)
+        minPoolSize: 5,
+        maxIdleTimeMS: 30000,
+        serverSelectionTimeoutMS: 5000,
+      });
+      
+      await mongoClient.connect();
+      db = mongoClient.db(DB_NAME);
+      playersCollection = db.collection("players");
+      
+      console.log("✅ MongoDB connesso con pooling!");
+      
+      // Crea indice su ID per ricerche veloci
+      await playersCollection.createIndex({ id: 1 }, { unique: true });
+      
+      // Carica leaderboard all'avvio
+      await updateLeaderboard();
+      return true;
+    } catch (err) {
+      retryCount++;
+      console.error(`❌ Tentativo ${retryCount}/${maxRetries} connessione MongoDB fallito:`, err.message);
+      
+      if (retryCount >= maxRetries) {
+        console.error("❌ MongoDB non raggiungibile. Server continua senza database.");
+        return false;
+      }
+      
+      // Attendi prima di riprovare
+      await new Promise(resolve => setTimeout(resolve, 2000 * retryCount));
+    }
   }
 }
 
@@ -58,36 +79,78 @@ const singlePlayerDB = {
   leaderboard: [] // [ { id, totalScore, level }, ... ] ordinato
 };
 
+// 🔧 MODIFICA 2: LOCK PER SALVATAGGI (evita race condition)
+const saveLocks = new Map(); // playerId -> Promise
+
+async function acquireSaveLock(playerId) {
+  while (saveLocks.has(playerId)) {
+    await saveLocks.get(playerId);
+  }
+  
+  let releaseLock;
+  const lockPromise = new Promise(resolve => {
+    releaseLock = resolve;
+  });
+  
+  saveLocks.set(playerId, lockPromise);
+  return releaseLock;
+}
+
 // ✅ Carica tutti i giocatori da MongoDB all'avvio
 async function loadAllPlayers() {
   try {
+    if (!playersCollection) {
+      console.log("⚠️ MongoDB non disponibile, uso solo cache locale");
+      return;
+    }
+    
     const players = await playersCollection.find({}).toArray();
     
     players.forEach(player => {
       singlePlayerDB.players[player.id] = player;
     });
     
-// console.log(`✅ Database caricato: ${players.length} giocatori`);
+    console.log(`✅ Database caricato: ${players.length} giocatori`);
     
     // ✅ IMPORTANTE: Aggiorna leaderboard dopo caricamento
     await updateLeaderboard();
-// console.log(`📊 Leaderboard aggiornata: ${singlePlayerDB.leaderboard.length} giocatori in classifica`);
+    console.log(`📊 Leaderboard aggiornata: ${singlePlayerDB.leaderboard.length} giocatori in classifica`);
   } catch (err) {
-    console.error("❌ Errore caricamento players:", err);
+    console.error("❌ Errore caricamento players:", err.message);
   }
 }
 
-// ✅ Salva giocatore su MongoDB
+// 🔧 MODIFICA 1: Salva giocatore su MongoDB CON RETRY
 async function savePlayerToMongo(player) {
-  try {
-    await playersCollection.updateOne(
-      { id: player.id },
-      { $set: player },
-      { upsert: true }
-    );
-// console.log(`💾 Player salvato su MongoDB: ${player.id}`);
-  } catch (err) {
-    console.error("❌ Errore salvataggio player:", err);
+  const maxRetries = 3;
+  let retryCount = 0;
+  
+  while (retryCount < maxRetries) {
+    try {
+      if (!playersCollection) {
+        console.log("⚠️ MongoDB non disponibile, salvo solo in cache");
+        return;
+      }
+      
+      await playersCollection.updateOne(
+        { id: player.id },
+        { $set: player },
+        { upsert: true }
+      );
+      
+      console.log(`💾 Player salvato: ${player.id}`);
+      return;
+    } catch (err) {
+      retryCount++;
+      console.error(`❌ Tentativo ${retryCount}/${maxRetries} salvataggio fallito:`, err.message);
+      
+      if (retryCount >= maxRetries) {
+        console.error(`❌ Impossibile salvare ${player.id}. Dati restano in cache.`);
+        return;
+      }
+      
+      await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
+    }
   }
 }
 
@@ -343,6 +406,41 @@ function initGameState(players, totalRounds, phrase, category) {
 const rooms = {};
 const disconnectionTimeouts = {};
 
+// 🔧 MODIFICA 3: CLEANUP AUTOMATICO ROOM SINGLE PLAYER
+const roomLastActivity = new Map(); // roomCode -> timestamp
+
+function updateRoomActivity(roomCode) {
+  roomLastActivity.set(roomCode, Date.now());
+}
+
+function cleanupInactiveRooms() {
+  const now = Date.now();
+  const TIMEOUT = 5 * 60 * 1000; // 5 minuti
+  
+  for (const [roomCode, lastActivity] of roomLastActivity.entries()) {
+    if (now - lastActivity > TIMEOUT) {
+      const room = rooms[roomCode];
+      
+      // Elimina solo room singlePlayer senza giocatori connessi
+      if (room && room.gameMode === "singlePlayer") {
+        const hasConnectedPlayers = room.players?.some(p => {
+          const socket = io.sockets.sockets.get(p.id);
+          return socket && socket.connected;
+        });
+        
+        if (!hasConnectedPlayers) {
+          console.log(`🗑️ Cleanup room inattiva: ${roomCode}`);
+          delete rooms[roomCode];
+          roomLastActivity.delete(roomCode);
+        }
+      }
+    }
+  }
+}
+
+// Cleanup ogni 2 minuti
+setInterval(cleanupInactiveRooms, 2 * 60 * 1000);
+
 // ==================== DATABASE GIOCATORE SINGOLO ====================
 
 // ✅ Calcola punteggio caselle bianche consecutive (modalità singlePlayer)
@@ -407,7 +505,7 @@ function calculateWhiteCellsScore(phrase, revealedLetters) {
   };
 }
 
-// ✅ Crea nuovo giocatore
+// 🔧 MODIFICA 2: Crea nuovo giocatore CON LOCK
 async function createSinglePlayer(playerId, pin) {
   const upperID = String(playerId).toUpperCase().trim();
   
@@ -423,25 +521,32 @@ async function createSinglePlayer(playerId, pin) {
     return { ok: false, error: "ID già usato" };
   }
   
-  const newPlayer = {
-    id: upperID,
-    pin: String(pin),
-    level: 1,
-    totalScore: 0,
-    createdAt: new Date().toISOString(),
-    lastPlayedAt: new Date().toISOString()
-  };
+  const releaseLock = await acquireSaveLock(upperID);
   
-  singlePlayerDB.players[upperID] = newPlayer;
-  
-  // ✅ Salva su MongoDB
-  await savePlayerToMongo(newPlayer);
-  await updateLeaderboard();
-  
-  return { ok: true, player: newPlayer };
+  try {
+    const newPlayer = {
+      id: upperID,
+      pin: String(pin),
+      level: 1,
+      totalScore: 0,
+      createdAt: new Date().toISOString(),
+      lastPlayedAt: new Date().toISOString()
+    };
+    
+    singlePlayerDB.players[upperID] = newPlayer;
+    
+    // ✅ Salva su MongoDB
+    await savePlayerToMongo(newPlayer);
+    await updateLeaderboard();
+    
+    return { ok: true, player: newPlayer };
+  } finally {
+    releaseLock();
+    saveLocks.delete(upperID);
+  }
 }
 
-// ✅ Autentica giocatore
+// 🔧 MODIFICA 2: Autentica giocatore CON LOCK
 async function authenticateSinglePlayer(playerId, pin) {
   const upperID = String(playerId).toUpperCase().trim();
   const player = singlePlayerDB.players[upperID];
@@ -454,42 +559,59 @@ async function authenticateSinglePlayer(playerId, pin) {
     return { ok: false, error: "PIN errato" };
   }
   
-  player.lastPlayedAt = new Date().toISOString();
+  const releaseLock = await acquireSaveLock(upperID);
   
-  // ✅ Salva su MongoDB
-  await savePlayerToMongo(player);
-  
-  return { ok: true, player };
+  try {
+    player.lastPlayedAt = new Date().toISOString();
+    
+    // ✅ Salva su MongoDB
+    await savePlayerToMongo(player);
+    
+    return { ok: true, player };
+  } finally {
+    releaseLock();
+    saveLocks.delete(upperID);
+  }
 }
 
-// ✅ Salva progressi giocatore
+// 🔧 MODIFICA 2: Salva progressi giocatore CON LOCK
 async function saveSinglePlayerProgress(playerId, level, totalScore) {
   const upperID = String(playerId).toUpperCase().trim();
   const player = singlePlayerDB.players[upperID];
   
   if (!player) return { ok: false, error: "Giocatore non trovato" };
   
-  player.level = level;
-  player.totalScore = totalScore;
-  player.lastPlayedAt = new Date().toISOString();
+  const releaseLock = await acquireSaveLock(upperID);
   
-  // ✅ Salva su MongoDB
-  await savePlayerToMongo(player);
-  await updateLeaderboard();
-  
-  return { ok: true, player };
+  try {
+    player.level = level;
+    player.totalScore = totalScore;
+    player.lastPlayedAt = new Date().toISOString();
+    
+    // ✅ Salva su MongoDB
+    await savePlayerToMongo(player);
+    await updateLeaderboard();
+    
+    return { ok: true, player };
+  } finally {
+    releaseLock();
+    saveLocks.delete(upperID);
+  }
 }
 
 // ✅ Aggiorna classifica
 async function updateLeaderboard() {
-  singlePlayerDB.leaderboard = Object.values(singlePlayerDB.players)
-    .sort((a, b) => b.totalScore - a.totalScore)
-    .map(p => ({ id: p.id, totalScore: p.totalScore, level: p.level })); // ✅ Includi livello
+  try {
+    singlePlayerDB.leaderboard = Object.values(singlePlayerDB.players)
+      .sort((a, b) => b.totalScore - a.totalScore)
+      .map(p => ({ id: p.id, totalScore: p.totalScore, level: p.level })); // ✅ Includi livello
+  } catch (err) {
+    console.error("❌ Errore updateLeaderboard:", err.message);
+  }
 }
 
 // ✅ Ottieni classifica
 function getLeaderboard(limit = 30) {
-// console.log(`📊 Richiesta leaderboard: ${singlePlayerDB.leaderboard.length} giocatori totali, limit ${limit}`);
   return singlePlayerDB.leaderboard.slice(0, limit);
 }
 
@@ -511,8 +633,6 @@ async function loadPhrases(roomName) {
 
   const customPhrases = module.testPhrases;
   const mode = module.phraseMode === "sequential" ? "sequential" : "random";
-
-// console.log(`✅ Set personalizzato caricato: phrases-${normalized}.js [${mode}]`);
 
   return {
     phrases: customPhrases,
@@ -545,8 +665,6 @@ function findRoomBySocketId(socketId) {
 }
 
 function handleTemporaryDisconnect(socketId, code, room) {
-// console.log(`⏳ Timeout disconnessione per ${socketId} in ${code}`);
-  
   const player = room.players?.find(p => p.id === socketId);
   if (!player) return;
 
@@ -556,7 +674,6 @@ function handleTemporaryDisconnect(socketId, code, room) {
   });
 
   disconnectionTimeouts[socketId] = setTimeout(() => {
-// console.log(`❌ Timeout scaduto per ${socketId}, rimozione permanente`);
     
     const idx = room.players.findIndex((p) => p.id === socketId);
     if (idx !== -1) {
@@ -570,22 +687,68 @@ function handleTemporaryDisconnect(socketId, code, room) {
       io.to(code).emit("roomUpdate", { room, roomCode: code });
       
       if (room.players.length === 0) {
-// console.log(`🗑️ Stanza ${code} eliminata (nessun giocatore)`);
         delete rooms[code];
+        roomLastActivity.delete(code); // 🔧 MODIFICA 3: Cleanup tracking
       }
     }
   }, 30000);
 }
 
+// 🔧 MODIFICA 5: RATE LIMITING
+const eventLimits = new Map(); // socketId -> { event -> { count, resetTime } }
+
+function checkRateLimit(socketId, eventName, maxPerSecond = 2) {
+  const now = Date.now();
+  
+  if (!eventLimits.has(socketId)) {
+    eventLimits.set(socketId, {});
+  }
+  
+  const userLimits = eventLimits.get(socketId);
+  
+  if (!userLimits[eventName]) {
+    userLimits[eventName] = { count: 1, resetTime: now + 1000 };
+    return true;
+  }
+  
+  const limit = userLimits[eventName];
+  
+  if (now > limit.resetTime) {
+    limit.count = 1;
+    limit.resetTime = now + 1000;
+    return true;
+  }
+  
+  if (limit.count >= maxPerSecond) {
+    return false; // Rate limit exceeded
+  }
+  
+  limit.count++;
+  return true;
+}
+
+// Cleanup rate limits ogni minuto
+setInterval(() => {
+  const now = Date.now();
+  for (const [socketId, limits] of eventLimits.entries()) {
+    for (const [event, data] of Object.entries(limits)) {
+      if (now > data.resetTime + 60000) {
+        delete limits[event];
+      }
+    }
+    if (Object.keys(limits).length === 0) {
+      eventLimits.delete(socketId);
+    }
+  }
+}, 60000);
+
 // ==================== SOCKET.IO ====================
 
 io.on("connection", (socket) => {
-// console.log("🔌 Connessione:", socket.id);
 
   if (disconnectionTimeouts[socket.id]) {
     clearTimeout(disconnectionTimeouts[socket.id]);
     delete disconnectionTimeouts[socket.id];
-// console.log("✅ Giocatore riconnesso:", socket.id);
   }
 
   // CREA STANZA
@@ -619,7 +782,7 @@ io.on("connection", (socket) => {
       };
 
       socket.join(code);
-// console.log(`✅ Stanza creata: ${code} da ${name} [${mode.toUpperCase()}] [${phraseSet.mode === "sequential" ? `SET: ${phraseSet.customName}` : "RANDOM"}]`);
+      updateRoomActivity(code); // 🔧 MODIFICA 3: Tracking attività
 
       if (callback) callback({
         ok: true,
@@ -645,6 +808,7 @@ io.on("connection", (socket) => {
         return;
       }
 
+      updateRoomActivity(code); // 🔧 MODIFICA 3: Tracking attività
       const name = String(playerName || "").trim() || "Giocatore";
 
       if (room.players.some((p) => p.id === socket.id)) {
@@ -657,7 +821,6 @@ io.on("connection", (socket) => {
 
       // ✅ Se partita iniziata, chiedi approvazione a TUTTI
       if (room.gameState && !room.gameState.gameOver) {
-// console.log(`🔔 ${name} chiede di entrare a partita iniziata in ${code}`);
         
         // Manda richiesta a TUTTI i giocatori
         room.players.forEach(player => {
@@ -684,7 +847,6 @@ io.on("connection", (socket) => {
       if (existingPlayerByName) {
         existingPlayerByName.id = socket.id;
         socket.join(code);
-// console.log(`✅ ${name} ha ripreso il suo box in ${code}`);
         
         io.to(code).emit("roomUpdate", { room, roomCode: code });
         
@@ -700,8 +862,6 @@ io.on("connection", (socket) => {
       // ✅ Partita non iniziata, entra normalmente
       room.players.push({ name, id: socket.id, isHost: false });
       socket.join(code);
-
-// console.log(`✅ ${name} entra in ${code}`);
 
       io.to(code).emit("roomUpdate", { room, roomCode: code });
 
@@ -728,13 +888,13 @@ io.on("connection", (socket) => {
         return;
       }
 
+      updateRoomActivity(code); // 🔧 MODIFICA 3: Tracking attività
       const spectatorName = String(name || "").trim() || "Spettatore";
 
       if (!room.spectators) room.spectators = [];
 
       // ✅ Se partita iniziata, chiedi approvazione a TUTTI
       if (room.gameState && !room.gameState.gameOver) {
-// console.log(`🔔 ${spectatorName} chiede di entrare come spettatore a partita iniziata in ${code}`);
         
         room.players.forEach(player => {
           io.to(player.id).emit("joinRequest", {
@@ -757,7 +917,6 @@ io.on("connection", (socket) => {
       room.spectators.push({ name: spectatorName, id: socket.id });
 
       socket.join(code);
-// console.log(`👁️ ${spectatorName} entra come spettatore in ${code}`);
 
       io.to(code).emit("roomUpdate", { room, roomCode: code });
 
@@ -786,18 +945,16 @@ io.on("connection", (socket) => {
       const pIdx = room.players?.findIndex((p) => p.id === socket.id);
       if (pIdx !== -1) {
         room.players.splice(pIdx, 1);
-// console.log(`👋 Giocatore uscito: ${code}`);
       }
 
       const sIdx = room.spectators?.findIndex((s) => s.id === socket.id);
       if (sIdx !== -1) {
         room.spectators.splice(sIdx, 1);
-// console.log(`👋 Spettatore uscito: ${code}`);
       }
 
       if (room.players.length === 0) {
-// console.log(`🗑️ Stanza ${code} eliminata`);
         delete rooms[code];
+        roomLastActivity.delete(code); // 🔧 MODIFICA 3: Cleanup tracking
       } else {
         io.to(code).emit("roomUpdate", { room, roomCode: code });
       }
@@ -816,6 +973,8 @@ io.on("connection", (socket) => {
         if (callback) callback({ ok: false, error: "Stanza non trovata" });
         return;
       }
+
+      updateRoomActivity(code); // 🔧 MODIFICA 3: Tracking attività
 
       const hostPlayer = room.players.find((p) => p.isHost);
       if (!hostPlayer || hostPlayer.id !== socket.id) {
@@ -842,28 +1001,19 @@ io.on("connection", (socket) => {
         selectedPhrase = phrases[Math.floor(Math.random() * phrases.length)];
       }
 
-      room.gameState = initGameState(room.players, room.totalRounds, selectedPhrase.text, selectedPhrase.category);
-      room.gameState.phraseMode = mode; // ✅ Salva la modalità nel gameState
+      const gs = initGameState(room.players, room.totalRounds, selectedPhrase.text, selectedPhrase.category);
+      
+      // ✅ Inizializza contatore spin per forzatura PASSA/BANCAROTTA
+      gs.spinCounter = 0;
+      gs.nextForcedSpin = Math.floor(Math.random() * 6) + 5; // Primo tra 5-10 spin
 
-// console.log("🚀 START GAME:", code, `[${selectedPhrase.category}]`, selectedPhrase.text);
+      room.gameState = gs;
 
       io.to(code).emit("gameStart", {
         room,
         roomCode: code,
-        gameState: room.gameState,
+        gameState: gs,
       });
-            // 🔥 FIX: dopo che la schermata di gioco è montata,
-      // rimandiamo la stessa frase una volta sola con gameStateUpdate
-      setTimeout(() => {
-        const gs = room.gameState;
-        if (!gs) return;
-
-        // per sicurezza ricalcoliamo le righe dal testo
-        gs.rows = buildBoard(gs.phrase, 14, 5);
-
-        io.to(code).emit("gameStateUpdate", { gameState: gs });
-      }, 200);
-
 
       if (callback) callback({ ok: true });
     } catch (err) {
@@ -872,7 +1022,7 @@ io.on("connection", (socket) => {
     }
   });
 
-  // ✅ CAMBIA FRASE
+  // CAMBIA FRASE
   socket.on("changePhrase", ({ roomCode }, callback) => {
     try {
       const code = String(roomCode || "").trim().toUpperCase();
@@ -883,31 +1033,43 @@ io.on("connection", (socket) => {
         return;
       }
 
-      // ✅ BLOCCA se modalità sequenziale
-      if (room.gameState.phraseMode === "sequential") {
-        if (callback) callback({ ok: false, error: "Cambio frase disabilitato in modalità sequenziale" });
-        return;
-      }
+      updateRoomActivity(code); // 🔧 MODIFICA 3: Tracking attività
 
-      const hostPlayer = room.players.find((p) => p.isHost);
-      if (!hostPlayer || hostPlayer.id !== socket.id) {
-        if (callback) callback({ ok: false, error: "Solo l'host può cambiare la frase" });
-        return;
+      const gs = room.gameState;
+
+      // ✅ MODALITÀ GIOCATORE SINGOLO: Penalità -500
+      if (room.gameMode === "singlePlayer") {
+        const i = gs.currentPlayerIndex;
+        gs.players[i].roundScore = Math.max(0, gs.players[i].roundScore - 500);
+        gs.gameMessage = { type: "warning", text: "Frase saltata: -500 punti" };
+      } else {
+        gs.gameMessage = { type: "info", text: "Nuova frase caricata!" };
       }
 
       // ✅ Usa il set frasi della room
-      const { phrases } = room.phraseSet;
-      const random = phrases[Math.floor(Math.random() * phrases.length)];
+      const { phrases, mode } = room.phraseSet;
+      
+      let selectedPhrase;
+      if (mode === "sequential") {
+        // Frasi sequenziali (1-20)
+        const index = room.currentPhraseIndex % Math.min(phrases.length, 20);
+        selectedPhrase = phrases[index];
+        room.currentPhraseIndex++;
+      } else {
+        // Frasi random
+        selectedPhrase = phrases[Math.floor(Math.random() * phrases.length)];
+      }
 
-      const gs = room.gameState;
-      gs.phrase = random.text;
-      gs.rows = buildBoard(random.text, 14, 4);
-      gs.category = random.category;
+      gs.phrase = selectedPhrase.text;
+      gs.rows = buildBoard(selectedPhrase.text, 14, 4);
+      gs.category = selectedPhrase.category;
       gs.revealedLetters = [];
       gs.usedLetters = [];
+      gs.wheel = generateWheel();
       gs.mustSpin = true;
       gs.awaitingConsonant = false;
-      gs.gameMessage = { type: "info", text: "📝 Nuova frase caricata!" };
+      gs.pendingDouble = false;
+      gs.lastSpinTarget = 0;
 
       io.to(code).emit("gameStateUpdate", { gameState: gs });
 
@@ -918,9 +1080,15 @@ io.on("connection", (socket) => {
     }
   });
 
-  // GIRA RUOTA
+  // GIRA LA RUOTA
   socket.on("spinWheel", ({ roomCode }, callback) => {
     try {
+      // 🔧 MODIFICA 5: Rate limiting (max 2 spin al secondo)
+      if (!checkRateLimit(socket.id, "spinWheel", 2)) {
+        if (callback) callback({ ok: false, error: "Troppi click, rallenta!" });
+        return;
+      }
+
       const code = String(roomCode || "").trim().toUpperCase();
       const room = rooms[code];
 
@@ -928,6 +1096,8 @@ io.on("connection", (socket) => {
         if (callback) callback({ ok: false, error: "Partita non attiva" });
         return;
       }
+
+      updateRoomActivity(code); // 🔧 MODIFICA 3: Tracking attività
 
       const gs = room.gameState;
 
@@ -937,35 +1107,25 @@ io.on("connection", (socket) => {
       }
 
       if (!gs.mustSpin) {
-        if (callback) callback({ ok: false, error: "Devi prima giocare una lettera" });
+        if (callback) callback({ ok: false, error: "Non puoi girare ora" });
         return;
       }
 
       gs.spinning = true;
+      gs.gameMessage = null;
       
-      // 🎯 SISTEMA FORZATURA PASSA/BANCAROTTA
-      // ========================================
-      // Inizializza contatore se non esiste
-      if (!gs.spinCounter) {
-        gs.spinCounter = 0;
-        // Randomizza prossima forzatura: tra 5 e 10 spin
-        gs.nextForcedSpin = Math.floor(Math.random() * 6) + 5; // 5-10
-// console.log(`🎲 Prima forzatura tra ${gs.nextForcedSpin} spin`);
-      }
+      // ✅ Incrementa contatore spin
+      gs.spinCounter = (gs.spinCounter || 0) + 1;
       
-      gs.spinCounter++;
-      
-      // Controlla se è il momento di forzare PASSA/BANCAROTTA
+      // ✅ Controlla se forzare PASSA o BANCAROTTA
       let forcedTarget = null;
       if (gs.spinCounter >= gs.nextForcedSpin) {
         // Scegli random PASSA o BANCAROTTA
         forcedTarget = Math.random() < 0.5 ? "PASSA" : "BANCAROTTA";
-// console.log(`🎯 FORZATURA! Spin #${gs.spinCounter} → ${forcedTarget}`);
         
         // Reset counter e scegli prossima forzatura
         gs.spinCounter = 0;
         gs.nextForcedSpin = Math.floor(Math.random() * 6) + 5; // 5-10
-// console.log(`🎲 Prossima forzatura tra ${gs.nextForcedSpin} spin`);
       }
       
       // ✅ Genera seed per sincronizzazione animazione
@@ -998,10 +1158,10 @@ io.on("connection", (socket) => {
         return;
       }
 
+      updateRoomActivity(code); // 🔧 MODIFICA 3: Tracking attività
+
       const gs = room.gameState;
       const i = gs.currentPlayerIndex;
-
-// console.log("🎯 Outcome ricevuto dal client:", outcome);
 
       gs.spinning = false;
 
@@ -1101,6 +1261,12 @@ io.on("connection", (socket) => {
   // ✅ GIOCA CONSONANTE - RADDOPPIA CORRETTO
   socket.on("playConsonant", ({ roomCode, letter }, callback) => {
     try {
+      // 🔧 MODIFICA 5: Rate limiting (max 2 al secondo)
+      if (!checkRateLimit(socket.id, "playConsonant", 2)) {
+        if (callback) callback({ ok: false, error: "Troppi click, rallenta!" });
+        return;
+      }
+
       const code = String(roomCode || "").trim().toUpperCase();
       const room = rooms[code];
 
@@ -1108,6 +1274,8 @@ io.on("connection", (socket) => {
         if (callback) callback({ ok: false, error: "Partita non attiva" });
         return;
       }
+
+      updateRoomActivity(code); // 🔧 MODIFICA 3: Tracking attività
 
       const gs = room.gameState;
 
@@ -1283,6 +1451,12 @@ if (gs.usedLetters.includes(upper)) {
   // COMPRA VOCALE
   socket.on("playVowel", ({ roomCode, letter }, callback) => {
     try {
+      // 🔧 MODIFICA 5: Rate limiting (max 2 al secondo)
+      if (!checkRateLimit(socket.id, "playVowel", 2)) {
+        if (callback) callback({ ok: false, error: "Troppi click, rallenta!" });
+        return;
+      }
+
       const code = String(roomCode || "").trim().toUpperCase();
       const room = rooms[code];
 
@@ -1290,6 +1464,8 @@ if (gs.usedLetters.includes(upper)) {
         if (callback) callback({ ok: false, error: "Partita non attiva" });
         return;
       }
+
+      updateRoomActivity(code); // 🔧 MODIFICA 3: Tracking attività
 
       const gs = room.gameState;
 
@@ -1399,6 +1575,12 @@ if (gs.usedLetters.includes(upper)) {
   // RISOLVI FRASE
   socket.on("trySolution", ({ roomCode, text }, callback) => {
     try {
+      // 🔧 MODIFICA 5: Rate limiting (max 2 al secondo)
+      if (!checkRateLimit(socket.id, "trySolution", 2)) {
+        if (callback) callback({ ok: false, error: "Troppi tentativi, rallenta!" });
+        return;
+      }
+
       const code = String(roomCode || "").trim().toUpperCase();
       const room = rooms[code];
 
@@ -1406,6 +1588,8 @@ if (gs.usedLetters.includes(upper)) {
         if (callback) callback({ ok: false, error: "Partita non attiva" });
         return;
       }
+
+      updateRoomActivity(code); // 🔧 MODIFICA 3: Tracking attività
 
       const gs = room.gameState;
 
@@ -1437,9 +1621,9 @@ if (gs.usedLetters.includes(upper)) {
         }
       }
 
-      // ✅ MODALITÀ CLASSICA: Verifica automatica
-      const guess = normalizeText(text);
-      const target = normalizeText(gs.phrase);
+      // ✅ MODALITÀ CLASSICA/SINGLEPLAYER: Verifica automatica
+      const guess = normalizeText(text || "");
+      const target = normalizeText(gs.phrase || "");
 
       if (!guess) {
         if (callback) callback({ ok: false, error: "Scrivi una soluzione" });
@@ -1447,43 +1631,18 @@ if (gs.usedLetters.includes(upper)) {
       }
 
       if (guess === target) {
+        // ✅ Soluzione corretta
+        const winnerName = gs.players[gs.currentPlayerIndex].name;
         const i = gs.currentPlayerIndex;
-        const winnerName = gs.players[i].name;
         
-        // ✅ MODALITÀ GIOCATORE SINGOLO: Calcolo speciale punteggio
-        if (room.gameMode === "singlePlayer") {
-          // Calcola punteggio basato su caselle bianche rimaste
-          const scoreDetails = calculateWhiteCellsScore(gs.phrase, gs.revealedLetters);
-          
-          // ✅ Bonus: ogni 500 round score = +2pt
-          const roundScore = gs.players[i].roundScore;
-          const bonusMultiplier = Math.floor(roundScore / 500);
-          const bonusPoints = bonusMultiplier * 2;
-          
-          const finalScore = scoreDetails.totalScore + bonusPoints;
-          
-          gs.players[i].totalScore += finalScore;
-          gs.lastRoundScore = finalScore; // ✅ Salva per mostrare nel popup
-          gs.lastRoundDetails = { // ✅ Salva dettagli per popup
-            singleCells: scoreDetails.singleCells,
-            doubleCells: scoreDetails.doubleCells,
-            roundScore: roundScore,
-            bonusPoints: bonusPoints
-          };
-          
-// console.log(`🎯 Punteggio: ${scoreDetails.singleCells}x1 + ${scoreDetails.doubleCells}x2 = ${scoreDetails.totalScore} | Bonus 500: +${bonusPoints} | Totale: ${finalScore}`);
-          gs.gameMessage = { type: "success", text: `✅ Frase indovinata! +${finalScore} punti!` };
-        } else {
-          // Modalità multiplayer: round score + bonus
-          gs.players[i].totalScore += gs.players[i].roundScore;
-          const bonus = 1000;
-          gs.players[i].totalScore += bonus;
-          gs.gameMessage = { type: "success", text: `✅ ${winnerName} ha indovinato! +${bonus} BONUS!` };
-        }
+        gs.players[i].totalScore += gs.players[i].roundScore;
+        const bonus = 1000;
+        gs.players[i].totalScore += bonus;
 
         const allLetters = [...normalizeText(gs.phrase)].filter(ch => /[A-Z]/.test(ch));
         gs.revealedLetters = [...new Set(allLetters)];
 
+        gs.gameMessage = { type: "success", text: `✅ ${winnerName} ha indovinato! +${bonus} BONUS!` };
         gs.mustSpin = false;
         gs.awaitingConsonant = false;
         gs.pendingDouble = false;
@@ -1501,21 +1660,13 @@ if (gs.usedLetters.includes(upper)) {
             nextRound(code, room);
           }, 7000);
         }
-
       } else {
-        // ✅ MODALITÀ GIOCATORE SINGOLO: Penalità -200
-        if (room.gameMode === "singlePlayer") {
-          const i = gs.currentPlayerIndex;
-          gs.players[i].roundScore = Math.max(0, gs.players[i].roundScore - 200);
-          gs.gameMessage = { type: "error", text: "Soluzione non corretta. -200 punti." };
-        } else {
-          gs.gameMessage = { type: "error", text: "Soluzione non corretta. Turno al prossimo." };
-        }
-        
+        // ❌ Soluzione sbagliata
         nextPlayer(gs); // ✅ Salta presentatore
         gs.mustSpin = true;
         gs.awaitingConsonant = false;
         gs.pendingDouble = false;
+        gs.gameMessage = { type: "error", text: "Soluzione non corretta." };
 
         io.to(code).emit("gameStateUpdate", { gameState: gs });
       }
@@ -1527,7 +1678,7 @@ if (gs.usedLetters.includes(upper)) {
     }
   });
 
-  // PASSA TURNO
+  // PASSA IL TURNO
   socket.on("passTurn", ({ roomCode }, callback) => {
     try {
       const code = String(roomCode || "").trim().toUpperCase();
@@ -1537,6 +1688,8 @@ if (gs.usedLetters.includes(upper)) {
         if (callback) callback({ ok: false, error: "Partita non attiva" });
         return;
       }
+
+      updateRoomActivity(code); // 🔧 MODIFICA 3: Tracking attività
 
       const gs = room.gameState;
 
@@ -1549,7 +1702,8 @@ if (gs.usedLetters.includes(upper)) {
       gs.mustSpin = true;
       gs.awaitingConsonant = false;
       gs.pendingDouble = false;
-      gs.gameMessage = { type: "info", text: "⏩ Turno passato al prossimo giocatore." };
+      gs.lastSpinTarget = 0;
+      gs.gameMessage = { type: "info", text: "Turno passato" };
 
       io.to(code).emit("gameStateUpdate", { gameState: gs });
 
@@ -1560,20 +1714,19 @@ if (gs.usedLetters.includes(upper)) {
     }
   });
 
-  // ✅ NUOVO: Conferma animazione finita → aggiungi lettera a revealedLetters
+  // ✅ EVENTO: Animazione completata
   socket.on("animationComplete", ({ roomCode, letter }) => {
     try {
       const code = String(roomCode || "").trim().toUpperCase();
       const room = rooms[code];
       if (!room || !room.gameState) return;
-      
+
       const gs = room.gameState;
       const upper = String(letter || "").toUpperCase().trim();
       
       // ✅ Aggiungi lettera a revealedLetters
       if (upper && !gs.revealedLetters.includes(upper)) {
         gs.revealedLetters.push(upper);
-// console.log(`✅ Lettera ${upper} aggiunta a revealedLetters dopo animazione`);
         
         // ✅ Manda gameState aggiornato SENZA revealQueue
         io.to(code).emit("gameStateUpdate", { gameState: gs });
@@ -1589,6 +1742,8 @@ if (gs.usedLetters.includes(upper)) {
       const code = String(roomCode || "").trim().toUpperCase();
       const room = rooms[code];
       if (!room) return;
+
+      updateRoomActivity(code); // 🔧 MODIFICA 3: Tracking attività
 
       // Verifica che chi accetta sia un giocatore della stanza
       const acceptingPlayer = room.players.find(p => p.id === socket.id);
@@ -1610,12 +1765,10 @@ if (gs.usedLetters.includes(upper)) {
               const gsPlayer = room.gameState.players.find(p => p.id === oldSocketId || p.name === playerName);
               if (gsPlayer) {
                 gsPlayer.id = playerId;
-// console.log(`🔄 ${playerName} ha ripreso il suo box in gameState`);
               }
             }
             
             targetSocket.join(code);
-// console.log(`✅ ${playerName} ha ripreso il suo box approvato da ${acceptingPlayer.name}`);
             
             // Notifica TUTTI che richiesta risolta
             room.players.forEach(player => {
@@ -1638,7 +1791,6 @@ if (gs.usedLetters.includes(upper)) {
         
         // ✅ Altrimenti crea nuovo giocatore
         if (room.players.some(p => p.id === playerId)) {
-// console.log(`⚠️ ${playerName} già aggiunto`);
           return;
         }
         
@@ -1666,7 +1818,6 @@ if (gs.usedLetters.includes(upper)) {
       }
 
       targetSocket.join(code);
-// console.log(`✅ ${playerName} approvato da ${acceptingPlayer.name} in ${code}`);
 
       // Notifica TUTTI che richiesta risolta
       room.players.forEach(player => {
@@ -1723,7 +1874,6 @@ if (gs.usedLetters.includes(upper)) {
           message: message,
           timestamp: Date.now()
         });
-// console.log(`💬 Messaggio da ${fromName} a ${toPlayerId}: ${message}`);
       }
     } catch (err) {
       console.error("Errore sendMessageToPlayer:", err);
@@ -1738,6 +1888,8 @@ if (gs.usedLetters.includes(upper)) {
 
       if (!room || !room.gameState) return;
       if (room.gameMode !== "presenter") return;
+
+      updateRoomActivity(code); // 🔧 MODIFICA 3: Tracking attività
 
       const gs = room.gameState;
       const i = gs.currentPlayerIndex;
@@ -1782,7 +1934,6 @@ if (gs.usedLetters.includes(upper)) {
         io.to(code).emit("gameStateUpdate", { gameState: gs });
       }
 
-// console.log(`🎯 Presentatore verifica soluzione: ${isCorrect ? "CORRETTA" : "SBAGLIATA"}`);
     } catch (err) {
       console.error("Errore presenterSolutionCheck:", err);
     }
@@ -1796,7 +1947,6 @@ if (gs.usedLetters.includes(upper)) {
       
       if (room && room.gameState) {
         socket.emit("gameStateUpdate", { gameState: room.gameState });
-// console.log(`🔄 Stato gioco inviato a ${socket.id} per room ${code}`);
       }
     } catch (err) {
       console.error("Errore requestGameState:", err);
@@ -1814,7 +1964,6 @@ if (gs.usedLetters.includes(upper)) {
         return callback({ ok: false, error: result.error });
       }
       
-// console.log(`✨ Nuovo giocatore singolo: ${result.player.id}`);
       callback({ 
         ok: true, 
         player: {
@@ -1838,7 +1987,6 @@ if (gs.usedLetters.includes(upper)) {
         return callback({ ok: false, error: result.error });
       }
       
-// console.log(`🔐 Giocatore autenticato: ${result.player.id} (livello ${result.player.level})`);
       callback({ 
         ok: true, 
         player: {
@@ -1862,7 +2010,6 @@ if (gs.usedLetters.includes(upper)) {
         return callback({ ok: false, error: result.error });
       }
       
-// console.log(`💾 Progressi salvati: ${playerId} - Livello ${level}, Punteggio ${totalScore}`);
       callback({ ok: true });
     } catch (err) {
       console.error("Errore singlePlayerSave:", err);
@@ -1891,7 +2038,6 @@ if (gs.usedLetters.includes(upper)) {
         return callback({ ok: false, error: "Frase non trovata" });
       }
       
-// console.log(`📖 Frase livello ${level}: "${phrase.text}"`);
       callback({ 
         ok: true, 
         phrase: phrase.text,
@@ -1913,6 +2059,8 @@ if (gs.usedLetters.includes(upper)) {
       if (!room || room.gameMode !== "singlePlayer") {
         return callback({ ok: false, error: "Room non trovata" });
       }
+
+      updateRoomActivity(code); // 🔧 MODIFICA 3: Tracking attività
       
       const gs = room.gameState;
       if (!gs) {
@@ -1931,7 +2079,7 @@ if (gs.usedLetters.includes(upper)) {
       if (playerId) {
         const saveResult = await saveSinglePlayerProgress(playerId, newLevel, totalScore);
         if (saveResult.ok) {
-// console.log(`💾 Progressi auto-salvati: ${playerId} - Livello ${newLevel}, Punteggio ${totalScore}`);
+          console.log(`💾 Progressi auto-salvati: ${playerId} - Livello ${newLevel}`);
         }
       }
       
@@ -1957,8 +2105,6 @@ if (gs.usedLetters.includes(upper)) {
       gs.lastSpinTarget = 0;
       gs.spinning = false;
       gs.gameMessage = { type: "info", text: `🎮 Livello ${newLevel} - ${selectedPhrase.category}` };
-      
-// console.log(`➡️ Livello ${newLevel} caricato: "${selectedPhrase.text}"`);
       
       io.to(code).emit("gameStateUpdate", { gameState: gs });
       
@@ -1991,6 +2137,8 @@ if (gs.usedLetters.includes(upper)) {
           mode: "sequential"
         }
       };
+
+      updateRoomActivity(roomCode); // 🔧 MODIFICA 3: Tracking attività
       
       // ✅ Carica frase per livello corrente
       const phraseIndex = (level - 1) % singlePlayerPhrases.length;
@@ -2017,8 +2165,6 @@ if (gs.usedLetters.includes(upper)) {
       
       socket.join(roomCode);
       
-// console.log(`🎮 Partita singolo avviata: ${playerId} - Livello ${level}`);
-      
       callback({
         ok: true,
         roomCode: roomCode,
@@ -2042,7 +2188,6 @@ if (gs.usedLetters.includes(upper)) {
   socket.on("disconnect", () => {
     const info = findRoomBySocketId(socket.id);
     if (!info) {
-// console.log("❌ Disconnessione:", socket.id);
       return;
     }
 
@@ -2057,19 +2202,19 @@ if (gs.usedLetters.includes(upper)) {
         const idx = room.spectators?.findIndex((s) => s.id === socket.id);
         if (idx !== -1) {
           room.spectators.splice(idx, 1);
-// console.log(`👋 Spettatore uscito: ${code}`);
           io.to(code).emit("roomUpdate", { room, roomCode: code });
         }
       }
     } catch (err) {
       console.error("Errore disconnect:", err);
     }
-
-// console.log("❌ Disconnessione:", socket.id);
   });
 });
 
 server.listen(PORT, () => {
-// console.log(`🚀 Server su porta ${PORT}`);
-// console.log("✅ CORS abilitato per localhost e Vercel");
+  console.log(`🚀 Server su porta ${PORT}`);
+  console.log("✅ CORS abilitato");
+  console.log("✅ MongoDB connection pooling attivo");
+  console.log("✅ Rate limiting attivo");
+  console.log("✅ Auto-cleanup room attivo");
 });
