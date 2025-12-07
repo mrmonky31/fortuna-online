@@ -35,12 +35,43 @@ export default function Controls({
     }
   }, [panel, onPanelChange]);
 
-  // ✅ PRESENTATORE: Non mostra pannelli input, solo pulsanti azione
+  // ✅ FOCUS AGGRESSIVO sui pannelli input
   useEffect(() => {
-    if (!isPresenter) {
-      if (panel === "cons" && consRef.current) consRef.current.focus();
-      if (panel === "vow" && vowRef.current) vowRef.current.focus();
-      if (panel === "sol" && solRef.current) solRef.current.focus();
+    if (isPresenter) return; // Presentatore non ha pannelli
+
+    let focusTarget = null;
+    
+    if (panel === "cons" && consRef.current) {
+      focusTarget = consRef.current;
+    } else if (panel === "vow" && vowRef.current) {
+      focusTarget = vowRef.current;
+    } else if (panel === "sol" && solRef.current) {
+      focusTarget = solRef.current;
+    }
+
+    if (focusTarget) {
+      // Focus immediato
+      focusTarget.focus();
+      
+      // Focus ritardato per mobile (50ms)
+      const timer1 = setTimeout(() => {
+        if (focusTarget) {
+          focusTarget.focus();
+          focusTarget.select();
+        }
+      }, 50);
+      
+      // Terzo tentativo (150ms)
+      const timer2 = setTimeout(() => {
+        if (focusTarget) {
+          focusTarget.focus();
+        }
+      }, 150);
+
+      return () => {
+        clearTimeout(timer1);
+        clearTimeout(timer2);
+      };
     }
   }, [panel, isPresenter]);
 
@@ -236,6 +267,7 @@ export default function Controls({
                 disabled={disabled}
                 className="panel-input panel-input-game"
                 placeholder="Inserisci consonante"
+                autoFocus
                 autoComplete="off"
                 autoCorrect="off"
                 autoCapitalize="characters"
@@ -264,6 +296,7 @@ export default function Controls({
                 disabled={disabled}
                 className="panel-input panel-input-game"
                 placeholder="A, E, I, O, U"
+                autoFocus
                 autoComplete="off"
                 autoCorrect="off"
                 autoCapitalize="characters"
@@ -289,6 +322,7 @@ export default function Controls({
                 disabled={disabled}
                 className="panel-input panel-input-game"
                 placeholder="Scrivi la frase"
+                autoFocus
                 autoComplete="off"
                 autoCorrect="off"
                 autoCapitalize="characters"

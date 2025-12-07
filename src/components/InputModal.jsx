@@ -12,9 +12,34 @@ export default function InputModal({
   const [value, setValue] = useState("");
   const inputRef = useRef(null);
 
-  // Autofocus
+  // Autofocus AGGRESSIVO - focus immediato e reattivo
   useEffect(() => {
-    if (inputRef.current) inputRef.current.focus();
+    if (inputRef.current) {
+      // Focus immediato
+      inputRef.current.focus();
+      
+      // Focus ritardato per mobile/browser lenti (50ms)
+      const timer1 = setTimeout(() => {
+        if (inputRef.current) {
+          inputRef.current.focus();
+          // Seleziona tutto il testo (utile se c'è già qualcosa)
+          inputRef.current.select();
+        }
+      }, 50);
+      
+      // Terzo tentativo dopo 150ms (per sicurezza massima)
+      const timer2 = setTimeout(() => {
+        if (inputRef.current) {
+          inputRef.current.focus();
+        }
+      }, 150);
+
+      // Cleanup timers
+      return () => {
+        clearTimeout(timer1);
+        clearTimeout(timer2);
+      };
+    }
   }, []);
 
   // Gestione tastiera
@@ -67,6 +92,11 @@ export default function InputModal({
               onChange={handleChange}
               onKeyDown={handleKeyDown}
               className="modal-input"
+              autoFocus
+              autoComplete="off"
+              autoCorrect="off"
+              autoCapitalize="characters"
+              spellCheck="false"
             />
           ) : (
             <textarea
@@ -76,6 +106,11 @@ export default function InputModal({
               onKeyDown={handleKeyDown}
               maxLength={80}
               className="modal-textarea"
+              autoFocus
+              autoComplete="off"
+              autoCorrect="off"
+              autoCapitalize="characters"
+              spellCheck="false"
             />
           )}
         </div>
