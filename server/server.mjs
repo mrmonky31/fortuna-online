@@ -1631,18 +1631,42 @@ if (gs.usedLetters.includes(upper)) {
       }
 
       if (guess === target) {
-        // ✅ Soluzione corretta
-        const winnerName = gs.players[gs.currentPlayerIndex].name;
         const i = gs.currentPlayerIndex;
+        const winnerName = gs.players[i].name;
         
-        gs.players[i].totalScore += gs.players[i].roundScore;
-        const bonus = 1000;
-        gs.players[i].totalScore += bonus;
+        // ✅ MODALITÀ GIOCATORE SINGOLO: Calcolo speciale punteggio
+        if (room.gameMode === "singlePlayer") {
+          // Calcola punteggio basato su caselle bianche rimaste
+          const scoreDetails = calculateWhiteCellsScore(gs.phrase, gs.revealedLetters);
+          
+          // ✅ Bonus: ogni 500 round score = +2pt
+          const roundScore = gs.players[i].roundScore;
+          const bonusMultiplier = Math.floor(roundScore / 500);
+          const bonusPoints = bonusMultiplier * 2;
+          
+          const finalScore = scoreDetails.totalScore + bonusPoints;
+          
+          gs.players[i].totalScore += finalScore;
+          gs.lastRoundScore = finalScore; // ✅ Salva per mostrare nel popup
+          gs.lastRoundDetails = { // ✅ Salva dettagli per popup
+            singleCells: scoreDetails.singleCells,
+            doubleCells: scoreDetails.doubleCells,
+            roundScore: roundScore,
+            bonusPoints: bonusPoints
+          };
+          
+          gs.gameMessage = { type: "success", text: `✅ Frase indovinata! +${finalScore} punti!` };
+        } else {
+          // Modalità multiplayer: round score + bonus
+          gs.players[i].totalScore += gs.players[i].roundScore;
+          const bonus = 1000;
+          gs.players[i].totalScore += bonus;
+          gs.gameMessage = { type: "success", text: `✅ ${winnerName} ha indovinato! +${bonus} BONUS!` };
+        }
 
         const allLetters = [...normalizeText(gs.phrase)].filter(ch => /[A-Z]/.test(ch));
         gs.revealedLetters = [...new Set(allLetters)];
 
-        gs.gameMessage = { type: "success", text: `✅ ${winnerName} ha indovinato! +${bonus} BONUS!` };
         gs.mustSpin = false;
         gs.awaitingConsonant = false;
         gs.pendingDouble = false;
