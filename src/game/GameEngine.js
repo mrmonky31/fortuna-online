@@ -1,17 +1,19 @@
 // VERSIONE CON COORDINATE XY - MOD by MARCO
 // src/game/GameEngine.js
+// 🔧 FIX: Apostrofi da soli vengono skippati invece di creare celle separate
 
 export const normalize = (s) =>
   String(s || "")
     .toUpperCase()
     .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/['`´']/g, "");
+    .replace(/[\u0300-\u036f]/g, "") // Rimuove accenti
+    .replace(/[\u0027\u0060\u00B4\u02B9\u02BB\u02BC\u02BD\u02C8\u02CA\u02CB\u02D9\u0300\u0301\u2018\u2019\u201A\u201B\u2032\u2035\u2039\u203A\uFF07]/g, ""); // ✅ Rimuove TUTTI gli apostrofi
 
 const isLetter = (ch) => /^[A-ZÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝÞ]$/i.test(ch);
 const isSpace  = (ch) => ch === " ";
 const isPunct  = (ch) => ":!?".includes(ch);
-const isApostrophe = (ch) => "'`´'".includes(ch);
+// ✅ Riconosce TUTTI i tipi di apostrofi del mondo
+const isApostrophe = (ch) => /[\u0027\u0060\u00B4\u02B9\u02BB\u02BC\u02BD\u02C8\u02CA\u02CB\u02D9\u0300\u0301\u2018\u2019\u201A\u201B\u2032\u2035\u2039\u203A\uFF07]/.test(ch);
 const isAccented = (ch) => /[ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝÞ]/i.test(ch);
 
 export const eqMatch = (a, b) => normalize(a) === normalize(b);
@@ -147,6 +149,7 @@ export function buildGridWithCoordinates(text, maxCols = 14, maxRows = 4) {
         }
       }
       else {
+        // Altri caratteri (non lettere, non apostrofi, non punteggiatura)
         if (!addCell("other", ch, ch)) break;
         charIndex++;
       }
@@ -208,8 +211,8 @@ export function maskGrid(grid, revealedLetters) {
     const newCell = { ...cell };
     
     if (cell.type === "letter") {
-      // Estrai lettera base (senza apostrofo)
-      const baseLetter = cell.original.replace(/['`´']/g, "");
+      // Estrai lettera base (senza apostrofo) - rimuove TUTTI gli apostrofi
+      const baseLetter = cell.original.replace(/[\u0027\u0060\u00B4\u02B9\u02BB\u02BC\u02BD\u02C8\u02CA\u02CB\u02D9\u0300\u0301\u2018\u2019\u201A\u201B\u2032\u2035\u2039\u203A\uFF07]/g, "");
       
       if (set.has(normalize(baseLetter))) {
         newCell.masked = cell.original; // Rivelata
@@ -240,8 +243,8 @@ export function findLetterCoordinates(grid, targetLetter) {
   
   grid.cells.forEach(cell => {
     if (cell.type === "letter") {
-      // Estrai lettera base
-      const baseLetter = cell.original.replace(/['`´']/g, "");
+      // Estrai lettera base - rimuove TUTTI gli apostrofi
+      const baseLetter = cell.original.replace(/[\u0027\u0060\u00B4\u02B9\u02BB\u02BC\u02BD\u02C8\u02CA\u02CB\u02D9\u0300\u0301\u2018\u2019\u201A\u201B\u2032\u2035\u2039\u203A\uFF07]/g, "");
       
       if (eqMatch(norm, baseLetter)) {
         coordinates.push({

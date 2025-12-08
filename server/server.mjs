@@ -196,8 +196,8 @@ function normalizeText(str = "") {
   return String(str)
     .toUpperCase()
     .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/['´`']/g, "")
+    .replace(/[\u0300-\u036f]/g, "") // Rimuove accenti
+    .replace(/[\u0027\u0060\u00B4\u02B9\u02BB\u02BC\u02BD\u02C8\u02CA\u02CB\u02D9\u0300\u0301\u2018\u2019\u201A\u201B\u2032\u2035\u2039\u203A\uFF07]/g, "") // ✅ Rimuove TUTTI gli apostrofi Unicode
     .replace(/\s+/g, " ")
     .trim();
 }
@@ -1125,7 +1125,7 @@ io.on("connection", (socket) => {
         
         // Reset counter e scegli prossima forzatura
         gs.spinCounter = 0;
-        gs.nextForcedSpin = Math.floor(Math.random() * 6) + 8; // 5-10
+        gs.nextForcedSpin = Math.floor(Math.random() * 6) + 5; // 5-10
       }
       
       // ✅ Genera seed per sincronizzazione animazione
