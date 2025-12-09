@@ -1,0 +1,27 @@
+# SISTEMA ACHIEVEMENTS 🏅
+
+## OBIETTIVO GENERALE
+Premiare il giocatore per il progresso generale (livelli completati e lettere trovate) e per l'accuratezza (serie senza errori), fornendo risorse chiave (Jolly e Scudi) e Punti Totali.
+
+## 1. PROGRESSO (Livelli Completati e Lettere Trovate)
+
+Questa sezione premia la progressione costante.
+
+| Obiettivo | Condizione | Ricompensa (Risorse e Punti Totali) | Frequenza |
+| :--- | :--- | :--- | :--- |
+| Jolly Regolare | Ogni **10 livelli** completati | **+1 Jolly** | Ricorrente (L10, L20, L30, ecc.) |
+| Scudo Regolare | Ogni **20 livelli** completati | **+1 Scudo** | Ricorrente (L20, L40, L60, ecc.) |
+| Milestone 100 | **Livello 100** completato | **+2 Jolly** e **+2 Scudi** | Milestone |
+| Punti Base Lettere | Ogni **500 lettere** trovate | **+20 punti** | Ricorrente |
+| Punti Alti Lettere I | **5000 lettere** trovate in totale | **+50 punti** | Milestone |
+| Punti Alti Lettere II | **10000 lettere** trovate in totale | **+100 punti**, **+1 Jolly**, **+1 Scudo** | Milestone Massima |
+
+## 2. ACCURATEZZA (Serie senza Errori)
+
+Questa sezione premia la precisione (serie di livelli completati senza commettere errori).
+
+| Obiettivo | Condizione | Ricompensa (Risorse e Punti Totali) | Serie |
+| :--- | :--- | :--- | :--- |
+| Precisione 3x | **3 livelli** consecutivi senza errori | **+1 Scudo** | Breve Serie |
+| Precisione 5x | **5 livelli** consecutivi senza errori | **+1 Scudo** e **+20 punti** | Media Serie |
+| Precisione 10x | **10 livelli** consecutivi senza errori | **+2 Scudi**, **+2 Jolly**, e **+100 punti** | Serie Estrema |

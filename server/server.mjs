@@ -24,6 +24,62 @@ import { testPhrases } from "./game/phrases.js";
 // ✅ Carica frasi modalità giocatore singolo
 import { singlePlayerPhrases } from "./phrases-singleplayer.js";
 
+// ✅ NUOVO: Import frasi custom per tornei
+import { phrasesSfidaNatale } from "./phrases-sfidanatale.js";
+
+// ✅ NUOVO: Funzione per caricare frasi custom in base al nome stanza
+function loadCustomPhrases(roomName) {
+  if (!roomName) return null;
+  
+  const name = String(roomName).toLowerCase().trim();
+  
+  // Parse formato: "sfidanatale" o "sfidanatale_2"
+  const match = name.match(/^([a-z]+)(?:_(\d+))?$/);
+  if (!match) return null;
+  
+  const baseName = match[1]; // es. "sfidanatale"
+  const setNumber = match[2] ? parseInt(match[2], 10) : null; // es. 2
+  
+  // Map nomi file
+  const phraseFiles = {
+    'sfidanatale': phrasesSfidaNatale,
+    // Aggiungi qui altri file custom in futuro
+    // 'sfidapasqua': phrasesSfidaPasqua,
+  };
+  
+  const phraseData = phraseFiles[baseName];
+  if (!phraseData) return null;
+  
+  // Se setNumber specificato, carica set specifico
+  if (setNumber !== null) {
+    const set = phraseData.sets?.[setNumber];
+    if (!set || !Array.isArray(set)) {
+      console.log(`⚠️ Set ${setNumber} non trovato in ${baseName}`);
+      return null;
+    }
+    
+    console.log(`✅ Caricato set ${setNumber} da ${baseName}: ${set.length} frasi`);
+    return {
+      phrases: set,
+      mode: 'sequential', // Set predefiniti sono sempre sequenziali
+      customName: `${baseName}_${setNumber}`
+    };
+  }
+  
+  // Altrimenti usa fullPhraseList
+  if (!phraseData.fullPhraseList || !Array.isArray(phraseData.fullPhraseList)) {
+    console.log(`⚠️ fullPhraseList non trovata in ${baseName}`);
+    return null;
+  }
+  
+  console.log(`✅ Caricato fullPhraseList da ${baseName}: ${phraseData.fullPhraseList.length} frasi, mode: ${phraseData.mode}`);
+  return {
+    phrases: phraseData.fullPhraseList,
+    mode: phraseData.mode || 'random',
+    customName: baseName
+  };
+}
+
 // ✅ MONGODB CONFIGURATION CON POOLING
 const MONGODB_URI = process.env.MONGODB_URI || "mongodb+srv://Monkyfortuna:Monky.fortuna.31@clusterfortuna.njzzbl8.mongodb.net/?appName=Clusterfortuna";
 const DB_NAME = "fortuna_online";
@@ -625,6 +681,13 @@ async function loadPhrases(roomName) {
     return { phrases: testPhrases, mode: "random", customName: null };
   }
   
+  // ✅ NUOVO: Prova prima con loadCustomPhrases (formato torneo)
+  const customData = loadCustomPhrases(normalized);
+  if (customData) {
+    return customData;
+  }
+  
+  // ✅ Fallback: Prova con file nella cartella game/ (vecchio sistema)
   const customPath = join(__dirname, "game", `phrases-${normalized}.js`);
   
   if (existsSync(customPath)) {

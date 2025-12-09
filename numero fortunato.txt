@@ -1,0 +1,20 @@
+# SISTEMA NUMERO FORTUNATO 🍀
+
+## OBIETTIVO E ATTIVAZIONE
+
+* **Obiettivo:** Creare un obiettivo secondario per premiare l'abilità del giocatore nel risolvere le frasi rivelando il minor numero di lettere possibile (Precisione Inversa).
+* **Attivazione:** Casuale all'inizio di un livello, con una probabilità del **8%**.
+* **Premio:** I punti guadagnati vengono aggiunti al **punteggio totale** del giocatore.
+
+## REGOLE E BONUS (CASSELLE BIANCHE RIMASTE)
+
+Il bonus è basato unicamente sul numero di caselle bianche (lettere non rivelate) rimaste sul tabellone al momento in cui il giocatore fornisce la soluzione (risoluzione).
+
+| Caselle Bianche Rimaste | Bonus Punti Totali |
+| :--- | :--- |
+| **10 caselle** | **+100 punti** |
+| **9 caselle** | **+80 punti** |
+| **8 caselle** | **+60 punti** |
+| **7 caselle** | **+40 punti** |
+| **6 caselle** | **+30 punti** |
+| **5 o meno caselle** | **+10 punti** |

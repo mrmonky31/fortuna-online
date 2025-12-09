@@ -1,0 +1,33 @@
+# SISTEMA LETTERA D'ORO E MALEDETTA 🏆💀
+
+## 1. OBIETTIVO E ATTIVAZIONE
+
+* **Meccanica:** Offre grandi bonus (Oro) o pesanti malus (Maledetta), a seconda della performance recente del giocatore.
+* **Contatore:** Si attiva quando il giocatore supera le **200 lettere totali trovate** nel gioco.
+* **Inserimento:** La Lettera Speciale appare **casualmente** nel tabellone del **livello immediatamente successivo** all'attivazione del contatore.
+* **Regola: Uso Unico:** Se la Lettera non viene trovata in quel livello, l'opportunità è persa e il contatore "200 lettere" si azzera.
+
+## 2. TRASFORMAZIONE IN MALEDETTA
+
+* **Condizione:** La Lettera Speciale diventa **Maledetta** (tessere rosse) se, al momento dell'attivazione, il giocatore ha accumulato **10 errori totali non corretti** (lettera sbagliata, già usata o soluzione errata) dall'ultima volta che il contatore degli errori è stato azzerato.
+
+## 3. PREMI LETTERA D'ORO (Tessere Dorate)
+
+Il giocatore sceglie uno dei 3 spicchi. La distribuzione delle probabilità totali è la seguente:
+
+| Effetto | Descrizione e Dettaglio | Frequenza |
+| :--- | :--- | :--- |
+| **Punti Comuni (Totali)** | Guadagni **+10 / +20 / +30 / +50 Punti** (Punteggio Totale). | **40%** |
+| **Risorsa Jolly** | Guadagni **+1 Jolly** (Vocale gratis). | **25%** |
+| **Grande Vittoria (Round Score)** | Guadagni **Punti Round** (da **+200** fino al Jackpot di **+1000**). | **20%** |
+| **Scudo (Immunità)** | Ottieni **+1 Scudo** (Protegge dalla prossima penalità Bancarotta/Passa). *Unica fonte di Scudo nel gioco.* | **15%** |
+
+## 4. MALUS LETTERA MALEDETTA (Tessere Rosse)
+
+| Effetto | Descrizione e Dettaglio | Frequenza |
+| :--- | :--- | :--- |
+| **Punti Negativi Alti (Round Score)** | Perdita severa: **-300, -400, -800, -1000 Punti Round**. | **35%** |
+| **Punti Negativi Basi (Totali)** | Perdi **-10** a **-100 Punti Totali**. | **20%** |
+| **Vocal-Spike** | Costo Vocali: **1000 Punti Round** ciascuna per i successivi **3 turni**. | **15%** |
+| **Jolly Nascosto** | Perdi **1 Jolly** (se posseduto). | **10%** |
+| **Zero** | Nessun effetto. | **20%** |

@@ -1,0 +1,44 @@
+# SISTEMA LIVELLI A TEMPO (TIME ATTACK) - V2
+
+## OBIETTIVO E CADENZA
+
+* **Nome Modalità:** TIME ATTACK
+* **Cadenza:** Si attiva **ogni 30 livelli** completati (es. Livello 30, 60, 90, ecc.).
+* **Tempo Limite:** Il giocatore ha un massimo di **90 secondi** per indovinare e risolvere il livello.
+
+## SEQUENZA DI ATTIVAZIONE
+
+1.  **Avviso Pop-up:** Countdown di 5 secondi.
+2.  **Rivelazione Iniziale (Default):** Il tabellone rivela automaticamente le 4 lettere predefinite: **C, N, T, E** (3 Consonanti, 1 Vocale).
+3.  **Avvio Timer:** Il timer di **90 secondi** parte immediatamente.
+
+## REGOLE DI GIOCO DURANTE TIME ATTACK
+
+* **Restrizione Inserimento Lettere:** Durante il round, il giocatore è limitato a inserire un totale di sole **3 Consonanti** e **1 Vocale** aggiuntive.
+    * **Esempio Corretto:** Il giocatore può inserire in qualsiasi ordine 4 lettere che rispettino il totale (es. P, O, L, S).
+    * L'ordine di inserimento è libero (es. C-C-C-V o V-C-C-C).
+* **Input Box:** La casella di testo per l'inserimento delle lettere è attiva fin dall'inizio del timer.
+
+## FASE DI SOLUZIONE FINALE
+
+* **Azione del Giocatore:** Il giocatore preme il pulsante "**Do la soluzione**" per interrompere il timer e inserire la frase.
+* **Blocco Tabellone:** Il tabellone viene immediatamente **coperto**.
+* **Transizione:** Indipendentemente dalla correttezza della soluzione, si passa al livello successivo.
+
+## BONUS PUNTI VELOCITÀ
+
+Il bonus è calcolato in base al tempo impiegato fino alla pressione del pulsante "Do la soluzione":
+
+| Tempo di Pressione | Bonus Punti Round |
+| :--- | :--- |
+| $\le 10$ secondi | **+400 punti** |
+| $\le 20$ secondi | **+300 punti** |
+| $\le 30$ secondi | **+250 punti** |
+| $\le 40$ secondi | **+200 punti** |
+| $\le 50$ secondi | **+100 punti** |
+| $\le 60$ secondi | **+50 punti** |
+| $\le 70$ secondi | **+20 punti** |
+| $\le 90$ secondi | **0 punti** |
+
+---
+
