@@ -49,6 +49,11 @@ export default function Game({
   
   // ✅ NUOVO: Time Challenge - copre tabellone quando pannello soluzione aperto
   const [solutionPanelOpen, setSolutionPanelOpen] = useState(false);
+  
+  // ✅ NUOVO: Time Challenge - timer e penalità
+  const [timeChallengeTimer, setTimeChallengeTimer] = useState(0);
+  const [timeChallengePenalties, setTimeChallengePenalties] = useState(0);
+  const timeChallengeTimerRef = useRef(null);
 
   const [gameState, setGameState] = useState(() => {
     if (!state) return null;
@@ -295,6 +300,20 @@ export default function Game({
       if (serverState) {
         setGameState(serverState);
         
+        // ✅ TIME CHALLENGE: Traccia penalità su errori
+        const isTimeChallenge = serverState?.isTimeChallenge === true;
+        if (isTimeChallenge && serverState.gameMessage) {
+          const msg = serverState.gameMessage.text || "";
+          // Errori che danno +5s penalità
+          if (
+            msg.includes("già usata") ||
+            msg.includes("Nessuna") ||
+            msg.includes("non corretta")
+          ) {
+            setTimeChallengePenalties(prev => prev + 5);
+          }
+        }
+        
         // ✅ Aggiorna revealQueue se presente
         if (newRevealQueue && newRevealQueue.length > 0) {
           // ✅ CONVERSIONE: {r, c, ch} → {x, y, char}
@@ -481,6 +500,34 @@ export default function Game({
 
     return () => clearInterval(id);
   }, [gameState, timerPaused, mySocketId, isSinglePlayerMode]);
+
+  // ✅ TIME CHALLENGE: Timer locale
+  useEffect(() => {
+    if (!gameState) return;
+    const isTimeChallenge = gameState?.isTimeChallenge === true;
+    if (!isTimeChallenge) return;
+
+    // Avvia timer
+    timeChallengeTimerRef.current = setInterval(() => {
+      setTimeChallengeTimer(prev => prev + 1);
+    }, 1000);
+
+    return () => {
+      if (timeChallengeTimerRef.current) {
+        clearInterval(timeChallengeTimerRef.current);
+      }
+    };
+  }, [gameState]);
+  
+  // ✅ TIME CHALLENGE: Reset timer quando cambia frase
+  useEffect(() => {
+    if (!gameState) return;
+    const isTimeChallenge = gameState?.isTimeChallenge === true;
+    if (!isTimeChallenge) return;
+    
+    setTimeChallengeTimer(0);
+    setTimeChallengePenalties(0);
+  }, [gameState?.phrase]);
 
   const handleRevealDone = () => {
     // ✅ Manda conferma al server
@@ -679,6 +726,22 @@ export default function Game({
       setActiveLetterType("solution"); // Illumina pulsante
       socket.emit("trySolution", { roomCode, text: "" }, (res) => {
         if (!res?.ok) alert(res?.error || "Errore soluzione");
+      });
+      return;
+    }
+    
+    // ✅ TIME CHALLENGE: Passa tempo e penalità
+    const isTimeChallenge = gameState?.isTimeChallenge === true;
+    if (isTimeChallenge) {
+      socket.emit("trySolution", { 
+        roomCode, 
+        text,
+        timeChallengeData: {
+          time: timeChallengeTimer,
+          penalties: timeChallengePenalties
+        }
+      }, (res) => {
+        if (!res?.ok && res?.error) alert(res.error);
       });
       return;
     }

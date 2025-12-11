@@ -1628,7 +1628,7 @@ if (gs.usedLetters.includes(upper)) {
   });
 
   // RISOLVI FRASE
-  socket.on("trySolution", ({ roomCode, text }, callback) => {
+  socket.on("trySolution", ({ roomCode, text, timeChallengeData }, callback) => {
     try {
       // 🔧 MODIFICA 5: Rate limiting (max 2 al secondo)
       if (!checkRateLimit(socket.id, "trySolution", 2)) {
@@ -1707,9 +1707,9 @@ if (gs.usedLetters.includes(upper)) {
           const completion = gs.timeChallengeData.completions[socket.id];
           completion.phrasesCompleted++;
           
-          // Calcola tempo dalla frase (TODO: implementare timer reale)
-          const phraseTime = 60; // placeholder
-          const penalties = 0; // placeholder
+          // ✅ Usa dati reali dal client
+          const phraseTime = timeChallengeData?.time || 0;
+          const penalties = timeChallengeData?.penalties || 0;
           
           completion.totalTime += phraseTime;
           completion.totalPenalties += penalties;
