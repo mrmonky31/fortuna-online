@@ -1,5 +1,5 @@
 // src/pages/Game.jsx - MODALITÀ PRESENTATOREe
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import "../styles/game-layout.css";
 import "../styles/controls.css";
 import "../styles/tiles.css";
