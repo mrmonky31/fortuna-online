@@ -3,12 +3,12 @@ import React, { useEffect, useState, useRef } from "react";
 import "../styles/game-layout.css";
 import "../styles/controls.css";
 import "../styles/tiles.css";
-import "../styles/letter-grid.css";
 
+import PhraseManager from "../components/PhraseManager";
 import Wheel from "../components/Wheel";
-import LetterGrid from "../components/LetterGrid";
+import Controls from "../components/Controls";
 
-import { buildGridWithCoordinates, maskGrid } from "../game/GameEngine";
+import { buildGridWithCoordinates, maskGrid, findLetterCoordinates } from "../game/GameEngine";
 import { normalizeText } from "../game/GameLogic";
 import socket from "../socket";
 
@@ -28,19 +28,17 @@ export default function GameTimeChallenge({
     mustSpin: true,
     spinning: false,
     lastSpinTarget: 0,
-    awaitingConsonant: false
+    awaitingConsonant: false,
+    wheel: wheel || []
   });
 
   const [elapsedTime, setElapsedTime] = useState(0);
   const [penalties, setPenalties] = useState(0);
   const [wheelSpinning, setWheelSpinning] = useState(false);
-  const [revealingLetters, setRevealingLetters] = useState([]);
-  const [consInput, setConsInput] = useState("");
-  const [vowInput, setVowInput] = useState("");
-  const [solInput, setSolInput] = useState("");
-  const [showConsPanel, setShowConsPanel] = useState(false);
-  const [showVowPanel, setShowVowPanel] = useState(false);
-  const [showSolPanel, setShowSolPanel] = useState(false);
+  const [wheelSpinSeed, setWheelSpinSeed] = useState(Math.random());
+  const [revealQueue, setRevealQueue] = useState([]);
+  const [grid, setGrid] = useState(null);
+  const [maskedGrid, setMaskedGrid] = useState(null);
   const timerRef = useRef(null);
 
   // Timer
@@ -66,56 +64,73 @@ export default function GameTimeChallenge({
         mustSpin: true,
         spinning: false,
         lastSpinTarget: 0,
-        awaitingConsonant: false
+        awaitingConsonant: false,
+        wheel: wheel || prev.wheel
       }));
       setElapsedTime(0);
       setPenalties(0);
+      setRevealQueue([]);
     }
-  }, [phrase, category]);
+  }, [phrase, category, wheel]);
 
-  const grid = buildGridWithCoordinates(gameState.phrase);
-  const maskedGrid = maskGrid(grid, gameState.revealedLetters);
+  // Costruisci grid
+  useEffect(() => {
+    if (!gameState.phrase) {
+      setGrid(null);
+      setMaskedGrid(null);
+      return;
+    }
+
+    try {
+      const newGrid = buildGridWithCoordinates(gameState.phrase, 16, 5);
+      setGrid(newGrid);
+      
+      const masked = maskGrid(newGrid, gameState.revealedLetters);
+      setMaskedGrid(masked);
+    } catch (error) {
+      console.error("Errore costruzione grid:", error);
+      setGrid(null);
+      setMaskedGrid(null);
+    }
+  }, [gameState.phrase, gameState.revealedLetters]);
 
   // Gira ruota LOCALMENTE
   const handleSpin = () => {
     if (!gameState.mustSpin || gameState.spinning) return;
     
     setWheelSpinning(true);
+    setWheelSpinSeed(Math.random());
     setGameState(prev => ({ ...prev, spinning: true }));
+  };
 
-    setTimeout(() => {
-      const randomIndex = Math.floor(Math.random() * wheel.length);
-      const outcome = wheel[randomIndex];
+  const handleWheelStop = (outcome) => {
+    setWheelSpinning(false);
 
-      setWheelSpinning(false);
-
-      if (outcome.type === "points") {
-        setGameState(prev => ({
-          ...prev,
-          spinning: false,
-          lastSpinTarget: outcome.value,
-          mustSpin: false,
-          awaitingConsonant: true
-        }));
-        setShowConsPanel(true);
-      } else if (outcome.type === "pass") {
-        setPenalties(prev => prev + 5);
-        setGameState(prev => ({
-          ...prev,
-          spinning: false,
-          mustSpin: true,
-          awaitingConsonant: false
-        }));
-      } else if (outcome.type === "bankrupt") {
-        setPenalties(prev => prev + 5);
-        setGameState(prev => ({
-          ...prev,
-          spinning: false,
-          mustSpin: true,
-          awaitingConsonant: false
-        }));
-      }
-    }, 3000);
+    if (outcome.type === "points") {
+      setGameState(prev => ({
+        ...prev,
+        spinning: false,
+        lastSpinTarget: outcome.value,
+        mustSpin: false,
+        awaitingConsonant: true
+      }));
+    } else if (outcome.type === "pass") {
+      setPenalties(prev => prev + 5);
+      setGameState(prev => ({
+        ...prev,
+        spinning: false,
+        mustSpin: true,
+        awaitingConsonant: false
+      }));
+    } else if (outcome.type === "bankrupt") {
+      setPenalties(prev => prev + 5);
+      setGameState(prev => ({
+        ...prev,
+        spinning: false,
+        mustSpin: true,
+        awaitingConsonant: false
+      }));
+    }
   };
 
   // Gioca consonante LOCALMENTE
@@ -124,9 +139,6 @@ export default function GameTimeChallenge({
 
     const upper = normalizeText(letter).charAt(0);
     if (!upper || !/^[A-Z]$/.test(upper) || "AEIOU".includes(upper)) return;
-
-    setShowConsPanel(false);
-    setConsInput("");
 
     const used = [...gameState.usedLetters];
     if (used.includes(upper)) {
@@ -146,14 +158,20 @@ export default function GameTimeChallenge({
     const hits = [...phrase].filter(ch => normalizeText(ch) === upper && !/[AEIOU]/.test(ch)).length;
 
     if (hits > 0) {
-      const revealed = [...gameState.revealedLetters, upper];
-      setGameState(prev => ({
-        ...prev,
-        revealedLetters: revealed,
-        usedLetters: used,
-        mustSpin: true,
-        awaitingConsonant: false
-      }));
+      const coords = findLetterCoordinates(grid, upper);
+      setRevealQueue(coords);
+
+      setTimeout(() => {
+        const revealed = [...gameState.revealedLetters, upper];
+        setGameState(prev => ({
+          ...prev,
+          revealedLetters: revealed,
+          usedLetters: used,
+          mustSpin: true,
+          awaitingConsonant: false
+        }));
+        setRevealQueue([]);
+      }, coords.length * 250 + 1200);
     } else {
       setPenalties(prev => prev + 5);
       setGameState(prev => ({
@@ -172,9 +190,6 @@ export default function GameTimeChallenge({
     const upper = normalizeText(letter).charAt(0);
     if (!upper || !/^[A-Z]$/.test(upper) || !"AEIOU".includes(upper)) return;
 
-    setShowVowPanel(false);
-    setVowInput("");
-
     const used = [...gameState.usedLetters];
     if (used.includes(upper)) {
       return;
@@ -186,12 +201,18 @@ export default function GameTimeChallenge({
     const hits = [...phrase].filter(ch => normalizeText(ch) === upper && "AEIOU".includes(ch)).length;
 
     if (hits > 0) {
-      const revealed = [...gameState.revealedLetters, upper];
-      setGameState(prev => ({
-        ...prev,
-        revealedLetters: revealed,
-        usedLetters: used
-      }));
+      const coords = findLetterCoordinates(grid, upper);
+      setRevealQueue(coords);
+
+      setTimeout(() => {
+        const revealed = [...gameState.revealedLetters, upper];
+        setGameState(prev => ({
+          ...prev,
+          revealedLetters: revealed,
+          usedLetters: used
+        }));
+        setRevealQueue([]);
+      }, coords.length * 250 + 1200);
     } else {
       setGameState(prev => ({
         ...prev,
@@ -206,9 +227,6 @@ export default function GameTimeChallenge({
     const target = normalizeText(gameState.phrase || "");
 
     if (!guess) return;
-
-    setShowSolPanel(false);
-    setSolInput("");
 
     if (guess === target) {
       // FRASE CORRETTA
@@ -235,12 +253,6 @@ export default function GameTimeChallenge({
     }
   };
 
-  const formatTime = (seconds) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-  };
-
   return (
     <div className="game-page">
       {/* Header con info */}
@@ -262,140 +274,40 @@ export default function GameTimeChallenge({
         </div>
       </div>
 
-      {/* Categoria */}
-      {gameState.category && (
-        <div className="category-display">
-          {gameState.category}
-        </div>
-      )}
-
       {/* Tabellone */}
-      <LetterGrid 
-        grid={maskedGrid}
-        revealingCoords={revealingLetters}
-      />
+      <div className="game-board-area">
+        <PhraseManager
+          grid={maskedGrid}
+          revealQueue={revealQueue}
+          onRevealDone={() => setRevealQueue([])}
+          category={gameState.category || "-"}
+          phrase={gameState.phrase || ""}
+          isSinglePlayer={false}
+        />
+      </div>
 
       {/* Ruota */}
-      <Wheel
-        spinning={wheelSpinning}
-        onSpinEnd={() => {}}
-        pattern={wheel}
-      />
+      <div className="game-wheel-area">
+        <Wheel
+          slices={gameState.wheel}
+          spinning={wheelSpinning}
+          spinSeed={wheelSpinSeed}
+          onStop={handleWheelStop}
+        />
+      </div>
 
       {/* Controlli */}
-      <div className="controls-root">
-        <div className="controls-buttons">
-          <button
-            className="btn-primary"
-            onClick={handleSpin}
-            disabled={!gameState.mustSpin || gameState.spinning}
-          >
-            Gira la ruota
-          </button>
-
-          <div className="target-box">
-            <div className="target-title">Target:</div>
-            <div className="target-value">{gameState.lastSpinTarget || "-"}</div>
-          </div>
-        </div>
-
-        <div className="controls-row-secondary">
-          <button
-            className="btn-secondary btn-compact"
-            onClick={() => setShowConsPanel(!showConsPanel)}
-            disabled={!gameState.awaitingConsonant}
-          >
-            Consonante
-          </button>
-
-          <button
-            className="btn-secondary btn-compact"
-            onClick={() => setShowVowPanel(!showVowPanel)}
-          >
-            Vocali
-          </button>
-
-          <button
-            className="btn-secondary btn-compact"
-            onClick={() => setShowSolPanel(!showSolPanel)}
-          >
-            Soluzione
-          </button>
-        </div>
-
-        {/* Pannelli input */}
-        <div className="controls-panels">
-          {showConsPanel && (
-            <div className="panel panel-cons panel-game">
-              <label className="panel-label">Consonante</label>
-              <input
-                type="text"
-                maxLength={1}
-                value={consInput}
-                onChange={(e) => setConsInput(e.target.value.replace(/[^A-Za-z]/g, ""))}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") handleConsonant(consInput);
-                }}
-                className="panel-input panel-input-game"
-                placeholder="Inserisci consonante"
-                autoFocus
-              />
-              <button 
-                className="btn-ok" 
-                onClick={() => handleConsonant(consInput)}
-              >
-                OK
-              </button>
-            </div>
-          )}
-
-          {showVowPanel && (
-            <div className="panel panel-vow panel-game">
-              <label className="panel-label">Vocale</label>
-              <input
-                type="text"
-                maxLength={1}
-                value={vowInput}
-                onChange={(e) => setVowInput(e.target.value.replace(/[^AEIOUaeiou]/g, ""))}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") handleVowel(vowInput);
-                }}
-                className="panel-input panel-input-game"
-                placeholder="A, E, I, O, U"
-                autoFocus
-              />
-              <button 
-                className="btn-ok" 
-                onClick={() => handleVowel(vowInput)}
-              >
-                OK
-              </button>
-            </div>
-          )}
-
-          {showSolPanel && (
-            <div className="panel panel-sol panel-game">
-              <label className="panel-label">Soluzione</label>
-              <input
-                type="text"
-                value={solInput}
-                onChange={(e) => setSolInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") handleSolution(solInput);
-                }}
-                className="panel-input panel-input-game"
-                placeholder="Scrivi la frase"
-                autoFocus
-              />
-              <button 
-                className="btn-ok" 
-                onClick={() => handleSolution(solInput)}
-              >
-                OK
-              </button>
-            </div>
-          )}
-        </div>
+      <div className="controls-area">
+        <Controls
+          onSpin={handleSpin}
+          onConsonant={handleConsonant}
+          onVowel={handleVowel}
+          onSolution={handleSolution}
+          onPassTurn={() => {}}
+          lastTarget={gameState.lastSpinTarget}
+          forceConsonant={gameState.awaitingConsonant === true}
+          disabled={false}
+        />
       </div>
     </div>
   );
