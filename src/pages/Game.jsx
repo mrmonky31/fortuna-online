@@ -46,6 +46,9 @@ export default function Game({
   
   // ✅ NUOVO: Animazione punteggio
   const [animatedScore, setAnimatedScore] = useState(0);
+  
+  // ✅ NUOVO: Time Challenge - copre tabellone quando pannello soluzione aperto
+  const [solutionPanelOpen, setSolutionPanelOpen] = useState(false);
 
   const [gameState, setGameState] = useState(() => {
     if (!state) return null;
@@ -457,6 +460,10 @@ export default function Game({
     
     // ✅ MODALITÀ SINGOLO: Timer disabilitato
     if (isSinglePlayerMode) return;
+    
+    // ✅ MODALITÀ TIME CHALLENGE: Timer disabilitato (turni disabilitati)
+    const isTimeChallenge = gameState?.isTimeChallenge === true;
+    if (isTimeChallenge) return;
 
     const isMyTurn = gameState.currentPlayerId === mySocketId;
     if (!isMyTurn) return;
@@ -489,6 +496,7 @@ export default function Game({
 
   const handlePanelChange = (panelName) => {
     setTimerPaused(panelName !== null);
+    setSolutionPanelOpen(panelName === "sol"); // ✅ TIME CHALLENGE: copre tabellone
   };
 
   const handleExitRoom = () => {
@@ -791,6 +799,13 @@ export default function Game({
   }
 
   if (gameState.gameOver) {
+    // ✅ TIME CHALLENGE: Non mostra FinalScoreboard (usa TimeChallengeResults in App.jsx)
+    const isTimeChallenge = gameState?.isTimeChallenge === true;
+    if (isTimeChallenge) {
+      // Non renderizzare nulla, App.jsx gestisce TimeChallengeResults
+      return null;
+    }
+    
     return (
       <div className="game-wrapper">
         <FinalScoreboard 
@@ -802,7 +817,9 @@ export default function Game({
     );
   }
 
-  const isMyTurn = gameState.currentPlayerId === mySocketId;
+  // ✅ TIME CHALLENGE: Sempre il tuo turno (turni disabilitati)
+  const isTimeChallenge = gameState?.isTimeChallenge === true;
+  const isMyTurn = isTimeChallenge ? true : (gameState.currentPlayerId === mySocketId);
   
   // ✅ DEBUG modalità singlePlayer
   if (isSinglePlayerMode && !isMyTurn) {
@@ -1175,6 +1192,19 @@ export default function Game({
         )}
 
         <div className="game-board-area">
+          {/* ✅ TIME CHALLENGE: Copre tabellone quando pannello soluzione aperto */}
+          {isTimeChallenge && solutionPanelOpen && (
+            <div style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              width: '100vw',
+              height: '100vh',
+              background: '#000',
+              zIndex: 9998
+            }} />
+          )}
+          
           <PhraseManager
             grid={showPhrase && isPresenter ? grid : maskedGrid}
             revealQueue={revealQueue}

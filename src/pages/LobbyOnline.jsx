@@ -163,11 +163,11 @@ export default function LobbyOnline({ onGameStart }) {
     };
   }, [onGameStart]);
 
-  const handleCreate = (name, rounds, customRoomName, gameMode = "classic") => {
+  const handleCreate = (name, rounds, customRoomName, gameMode = "classic", timeChallengeSettings = null) => {
     setError("");
     socket.emit(
       "createRoom",
-      { playerName: name, totalRounds: rounds, roomName: customRoomName, gameMode },
+      { playerName: name, totalRounds: rounds, roomName: customRoomName, gameMode, timeChallengeSettings },
       (res) => {
         if (!res || !res.ok) {
           setError(res?.error || "Errore creazione stanza");

@@ -1,7 +1,7 @@
 // src/components/TimeChallengeResults.jsx
 import React from "react";
 
-export default function TimeChallengeResults({ results, onBackToLobby }) {
+export default function TimeChallengeResults({ results, onBackToLobby, currentMatch, totalMatches }) {
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -16,11 +16,13 @@ export default function TimeChallengeResults({ results, onBackToLobby }) {
   };
 
   const getPlaceEmoji = (index) => {
-    if (index === 0) return "1";
-    if (index === 1) return "2";
-    if (index === 2) return "3";
-    return `${index + 1}`;
+    if (index === 0) return "🥇";
+    if (index === 1) return "🥈";
+    if (index === 2) return "🥉";
+    return `${index + 1}°`;
   };
+
+  const isLastMatch = currentMatch >= totalMatches;
 
   return (
     <div style={{
@@ -35,12 +37,23 @@ export default function TimeChallengeResults({ results, onBackToLobby }) {
       <h1 style={{
         fontSize: '3rem',
         color: '#00ff55',
-        marginBottom: '40px',
+        marginBottom: '20px',
         textAlign: 'center',
         textShadow: '0 0 20px rgba(0, 255, 85, 0.5)'
       }}>
-        CLASSIFICA FINALE
+        {isLastMatch ? '🏆 CLASSIFICA FINALE 🏆' : `📊 CLASSIFICA MATCH ${currentMatch}`}
       </h1>
+
+      {!isLastMatch && (
+        <div style={{
+          fontSize: '1.2rem',
+          color: '#ffcc00',
+          marginBottom: '30px',
+          textAlign: 'center'
+        }}>
+          Match {currentMatch} / {totalMatches}
+        </div>
+      )}
 
       <div style={{
         width: '100%',
@@ -93,7 +106,7 @@ export default function TimeChallengeResults({ results, onBackToLobby }) {
                   color: index < 3 ? '#333' : '#aaa',
                   marginTop: '5px'
                 }}>
-                  Frasi completate: {player.phrasesCompleted}/5
+                  Frasi completate: {player.phrasesCompleted}
                 </div>
               </div>
             </div>
@@ -111,7 +124,7 @@ export default function TimeChallengeResults({ results, onBackToLobby }) {
                 color: index < 3 ? '#444' : '#888',
                 marginTop: '5px'
               }}>
-                Tempo: {formatTime(player.totalTime)} | Penalita: +{player.totalPenalties}s
+                Tempo: {formatTime(player.totalTime)} | Penalità: +{player.totalPenalties}s
               </div>
             </div>
           </div>
@@ -142,7 +155,7 @@ export default function TimeChallengeResults({ results, onBackToLobby }) {
           e.target.style.boxShadow = '0 4px 15px rgba(0, 255, 85, 0.4)';
         }}
       >
-        TORNA ALLA LOBBY
+        {isLastMatch ? 'TORNA ALLA LOBBY' : 'PROSSIMO MATCH ➜'}
       </button>
     </div>
   );

@@ -8,7 +8,13 @@ export default function LobbyFormMinimal({ onCreate, onJoin, onSpectate, error }
   const [playerName, setPlayerName] = useState("");
   const [loading, setLoading] = useState(false);
   const [totalRounds, setTotalRounds] = useState(3);
-  const [gameMode, setGameMode] = useState("classic"); // classic | presenter
+  const [gameMode, setGameMode] = useState("classic"); // classic | presenter | timeChallenge
+  
+  // Time Challenge settings
+  const [numFrasi, setNumFrasi] = useState(1);
+  const [numMatch, setNumMatch] = useState(1);
+  const [timerFrase, setTimerFrase] = useState(0);
+  const [timerMatch, setTimerMatch] = useState(0);
   
   // Refs per auto-focus
   const roomNameInputRef = useRef(null);
@@ -48,7 +54,14 @@ export default function LobbyFormMinimal({ onCreate, onJoin, onSpectate, error }
     if (isJoin) {
       onJoin(playerName, roomCode);
     } else {
-      onCreate(playerName, totalRounds, roomName, gameMode); // Passa gameMode
+      const timeChallengeSettings = gameMode === "timeChallenge" ? {
+        numFrasi,
+        numMatch,
+        timerFrase,
+        timerMatch
+      } : null;
+      
+      onCreate(playerName, totalRounds, roomName, gameMode, timeChallengeSettings);
     }
   };
 
@@ -195,7 +208,7 @@ export default function LobbyFormMinimal({ onCreate, onJoin, onSpectate, error }
           <button 
             onClick={() => {
               setGameMode("timeChallenge");
-              setStep("create-role");
+              setStep("time-challenge-settings");
             }}
             style={{
               padding: '20px',
@@ -228,6 +241,191 @@ export default function LobbyFormMinimal({ onCreate, onJoin, onSpectate, error }
           )}
           
           <button onClick={() => setStep("create-name")} className="btn-secondary">
+            ⬅️ INDIETRO
+          </button>
+        </div>
+      )}
+
+      {step === "time-challenge-settings" && (
+        <div className="inputs-row">
+          <h2>Configura Partita:</h2>
+          
+          <label className="form-label">Numero di FRASI</label>
+          <div style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center',
+            gap: '20px',
+            margin: '10px 0'
+          }}>
+            <button 
+              onClick={() => setNumFrasi(prev => Math.max(1, prev - 1))}
+              style={{
+                width: '60px',
+                height: '60px',
+                fontSize: '2rem',
+                padding: '0',
+                minWidth: 'auto'
+              }}
+            >
+              −
+            </button>
+            <div style={{
+              fontSize: '3rem',
+              fontWeight: '900',
+              color: '#00ff55',
+              minWidth: '80px',
+              textAlign: 'center'
+            }}>
+              {numFrasi}
+            </div>
+            <button 
+              onClick={() => setNumFrasi(prev => Math.min(50, prev + 1))}
+              style={{
+                width: '60px',
+                height: '60px',
+                fontSize: '2rem',
+                padding: '0',
+                minWidth: 'auto'
+              }}
+            >
+              +
+            </button>
+          </div>
+
+          <label className="form-label" style={{ marginTop: '20px' }}>Numero di MATCH</label>
+          <div style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center',
+            gap: '20px',
+            margin: '10px 0'
+          }}>
+            <button 
+              onClick={() => setNumMatch(prev => Math.max(1, prev - 1))}
+              style={{
+                width: '60px',
+                height: '60px',
+                fontSize: '2rem',
+                padding: '0',
+                minWidth: 'auto'
+              }}
+            >
+              −
+            </button>
+            <div style={{
+              fontSize: '3rem',
+              fontWeight: '900',
+              color: '#00ff55',
+              minWidth: '80px',
+              textAlign: 'center'
+            }}>
+              {numMatch}
+            </div>
+            <button 
+              onClick={() => setNumMatch(prev => Math.min(10, prev + 1))}
+              style={{
+                width: '60px',
+                height: '60px',
+                fontSize: '2rem',
+                padding: '0',
+                minWidth: 'auto'
+              }}
+            >
+              +
+            </button>
+          </div>
+
+          <label className="form-label" style={{ marginTop: '20px' }}>Timer FRASE (secondi)</label>
+          <div style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center',
+            gap: '20px',
+            margin: '10px 0'
+          }}>
+            <button 
+              onClick={() => setTimerFrase(prev => Math.max(0, prev - 30))}
+              style={{
+                width: '60px',
+                height: '60px',
+                fontSize: '2rem',
+                padding: '0',
+                minWidth: 'auto'
+              }}
+            >
+              −
+            </button>
+            <div style={{
+              fontSize: '3rem',
+              fontWeight: '900',
+              color: '#00ff55',
+              minWidth: '120px',
+              textAlign: 'center'
+            }}>
+              {timerFrase === 0 ? '∞' : timerFrase}
+            </div>
+            <button 
+              onClick={() => setTimerFrase(prev => prev + 30)}
+              style={{
+                width: '60px',
+                height: '60px',
+                fontSize: '2rem',
+                padding: '0',
+                minWidth: 'auto'
+              }}
+            >
+              +
+            </button>
+          </div>
+
+          <label className="form-label" style={{ marginTop: '20px' }}>Timer MATCH (secondi)</label>
+          <div style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center',
+            gap: '20px',
+            margin: '10px 0'
+          }}>
+            <button 
+              onClick={() => setTimerMatch(prev => Math.max(0, prev - 60))}
+              style={{
+                width: '60px',
+                height: '60px',
+                fontSize: '2rem',
+                padding: '0',
+                minWidth: 'auto'
+              }}
+            >
+              −
+            </button>
+            <div style={{
+              fontSize: '3rem',
+              fontWeight: '900',
+              color: '#00ff55',
+              minWidth: '120px',
+              textAlign: 'center'
+            }}>
+              {timerMatch === 0 ? '∞' : timerMatch}
+            </div>
+            <button 
+              onClick={() => setTimerMatch(prev => prev + 60)}
+              style={{
+                width: '60px',
+                height: '60px',
+                fontSize: '2rem',
+                padding: '0',
+                minWidth: 'auto'
+              }}
+            >
+              +
+            </button>
+          </div>
+
+          <button onClick={() => setStep("create-role")} style={{ marginTop: '30px' }}>
+            CONTINUA ➜
+          </button>
+          <button onClick={() => setStep("select-mode")} className="btn-secondary">
             ⬅️ INDIETRO
           </button>
         </div>

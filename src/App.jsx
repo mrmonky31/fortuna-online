@@ -3,7 +3,6 @@ import "./App.css";
 import Setup from "./pages/Setup";
 import LobbyOnline from "./pages/LobbyOnline.jsx";
 import Game from "./pages/Game";
-import GameTimeChallenge from "./pages/GameTimeChallenge";
 import TimeChallengeResults from "./components/TimeChallengeResults";
 import socket from "./socket";
 
@@ -12,9 +11,6 @@ function App() {
   const [players, setPlayers] = useState([]);
   const [rounds, setRounds] = useState(1);
   const [gameState, setGameState] = useState(null);
-  
-  // Time Challenge states
-  const [timeChallengeData, setTimeChallengeData] = useState(null);
   const [timeChallengeResults, setTimeChallengeResults] = useState(null);
 
   // Offline (Setup)
@@ -54,24 +50,17 @@ function App() {
     setPlayers([]);
     setRounds(1);
     setGameState(null);
-    setTimeChallengeData(null);
     setTimeChallengeResults(null);
   };
 
-  // Socket listeners per Time Challenge
+  // ✅ Socket listener per Time Challenge Results
   useEffect(() => {
-    socket.on("startTimeChallengeGame", (data) => {
-      setTimeChallengeData(data);
-      setScreen("timeChallenge");
-    });
-
     socket.on("showTimeChallengeResults", (data) => {
-      setTimeChallengeResults(data.results);
+      setTimeChallengeResults(data);
       setScreen("timeChallengeResults");
     });
 
     return () => {
-      socket.off("startTimeChallengeGame");
       socket.off("showTimeChallengeResults");
     };
   }, []);
@@ -92,19 +81,11 @@ function App() {
           singlePlayerLevel={gameState?.gameState?.singlePlayerLevel || 1}
         />
       )}
-      {screen === "timeChallenge" && timeChallengeData && (
-        <GameTimeChallenge
-          phrase={timeChallengeData.phrase}
-          category={timeChallengeData.category}
-          wheel={timeChallengeData.wheel}
-          phraseIndex={timeChallengeData.phraseIndex}
-          totalPhrases={timeChallengeData.totalPhrases}
-          playerName={players[0]?.name}
-        />
-      )}
       {screen === "timeChallengeResults" && timeChallengeResults && (
         <TimeChallengeResults
-          results={timeChallengeResults}
+          results={timeChallengeResults.results}
+          currentMatch={timeChallengeResults.currentMatch}
+          totalMatches={timeChallengeResults.totalMatches}
           onBackToLobby={handleExitToLobby}
         />
       )}
