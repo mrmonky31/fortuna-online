@@ -192,6 +192,25 @@ export default function LobbyFormMinimal({ onCreate, onJoin, onSpectate, error }
             <div style={{ fontSize: '0.9rem', opacity: 0.8 }}>L'host gestisce il gioco</div>
           </button>
           
+          <button 
+            onClick={() => {
+              setGameMode("timeChallenge");
+              setStep("create-role");
+            }}
+            style={{
+              padding: '20px',
+              fontSize: '1.2rem',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '10px'
+            }}
+          >
+            <div style={{ fontSize: '2rem' }}>⏱️</div>
+            <div style={{ fontWeight: 'bold' }}>SFIDA A TEMPO</div>
+            <div style={{ fontSize: '0.9rem', opacity: 0.8 }}>Gara contro il tempo</div>
+          </button>
+          
           {loading && (
             <div style={{
               margin: '15px 0',

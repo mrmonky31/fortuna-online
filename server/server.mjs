@@ -783,7 +783,7 @@ io.on("connection", (socket) => {
       }
 
       const name = String(playerName || "").trim() || "Giocatore";
-      const mode = gameMode === "presenter" ? "presenter" : "classic"; // ✅ NUOVO
+      const mode = gameMode === "presenter" ? "presenter" : gameMode === "timeChallenge" ? "timeChallenge" : "classic";
       
       // ✅ Carica set frasi (personalizzato o random)
       const phraseSet = await loadPhrases(rawName);
@@ -1017,6 +1017,30 @@ io.on("connection", (socket) => {
       } else {
         // Frasi random
         selectedPhrase = phrases[Math.floor(Math.random() * phrases.length)];
+      }
+
+      
+      // ✅ MODALITÀ TIME CHALLENGE
+      if (room.gameMode === "timeChallenge") {
+        const firstPhrase = singlePlayerPhrases[0];
+        const wheel = generateWheel();
+        
+        room.timeChallengeData = {
+          totalPhrases: 5,
+          completions: {},
+          startTime: Date.now()
+        };
+
+        io.to(code).emit("startTimeChallengeGame", {
+          phrase: firstPhrase.text,
+          category: firstPhrase.category,
+          wheel: wheel,
+          phraseIndex: 0,
+          totalPhrases: 5
+        });
+
+        if (callback) callback({ ok: true });
+        return;
       }
 
       const gs = initGameState(room.players, room.totalRounds, selectedPhrase.text, selectedPhrase.category);
@@ -2223,6 +2247,86 @@ if (gs.usedLetters.includes(upper)) {
     } catch (err) {
       console.error("Errore startSinglePlayerGame:", err);
       callback({ ok: false, error: "Errore server" });
+    }
+  });
+
+  // TIME CHALLENGE COMPLETE
+  socket.on("timeChallengeComplete", ({ phraseIndex, time, penalties }) => {
+    try {
+      const info = findRoomBySocketId(socket.id);
+      if (!info) return;
+
+      const { code, room } = info;
+      if (room.gameMode !== "timeChallenge") return;
+
+      const player = room.players.find(p => p.id === socket.id);
+      if (!player) return;
+
+      // Salva completamento
+      if (!room.timeChallengeData.completions[socket.id]) {
+        room.timeChallengeData.completions[socket.id] = {
+          playerName: player.name,
+          phrases: []
+        };
+      }
+
+      room.timeChallengeData.completions[socket.id].phrases.push({
+        phraseIndex,
+        time,
+        penalties
+      });
+
+      const phrasesCompleted = room.timeChallengeData.completions[socket.id].phrases.length;
+
+      // Se ci sono altre frasi da completare
+      if (phrasesCompleted < room.timeChallengeData.totalPhrases) {
+        const nextPhrase = singlePlayerPhrases[phrasesCompleted];
+        const wheel = generateWheel();
+
+        io.to(socket.id).emit("startTimeChallengeGame", {
+          phrase: nextPhrase.text,
+          category: nextPhrase.category,
+          wheel: wheel,
+          phraseIndex: phrasesCompleted,
+          totalPhrases: room.timeChallengeData.totalPhrases
+        });
+      } else {
+        // Giocatore ha finito tutte le frasi
+        room.timeChallengeData.completions[socket.id].matchCompleted = true;
+
+        // Controlla se TUTTI hanno finito
+        const allCompleted = room.players.every(p => 
+          room.timeChallengeData.completions[p.id]?.matchCompleted === true
+        );
+
+        if (allCompleted) {
+          // Calcola classifica
+          const results = room.players.map(p => {
+            const data = room.timeChallengeData.completions[p.id];
+            if (!data) return null;
+
+            const totalTime = data.phrases.reduce((sum, ph) => sum + ph.time, 0);
+            const totalPenalties = data.phrases.reduce((sum, ph) => sum + ph.penalties, 0);
+            const finalTime = totalTime + totalPenalties;
+
+            return {
+              playerName: data.playerName,
+              phrasesCompleted: data.phrases.length,
+              totalTime,
+              totalPenalties,
+              finalTime
+            };
+          }).filter(Boolean);
+
+          // Ordina per finalTime crescente
+          results.sort((a, b) => a.finalTime - b.finalTime);
+
+          // Invia risultati a tutti
+          io.to(code).emit("showTimeChallengeResults", { results });
+        }
+      }
+    } catch (err) {
+      console.error("Errore timeChallengeComplete:", err);
     }
   });
 

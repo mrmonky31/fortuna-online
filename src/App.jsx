@@ -1,14 +1,21 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "./App.css";
 import Setup from "./pages/Setup";
 import LobbyOnline from "./pages/LobbyOnline.jsx";
 import Game from "./pages/Game";
+import GameTimeChallenge from "./pages/GameTimeChallenge";
+import TimeChallengeResults from "./components/TimeChallengeResults";
+import socket from "./socket";
 
 function App() {
   const [screen, setScreen] = useState("setup");
   const [players, setPlayers] = useState([]);
   const [rounds, setRounds] = useState(1);
   const [gameState, setGameState] = useState(null);
+  
+  // Time Challenge states
+  const [timeChallengeData, setTimeChallengeData] = useState(null);
+  const [timeChallengeResults, setTimeChallengeResults] = useState(null);
 
   // Offline (Setup)
   const startGame = (playersList, totalRounds) => {
@@ -47,7 +54,27 @@ function App() {
     setPlayers([]);
     setRounds(1);
     setGameState(null);
+    setTimeChallengeData(null);
+    setTimeChallengeResults(null);
   };
+
+  // Socket listeners per Time Challenge
+  useEffect(() => {
+    socket.on("startTimeChallengeGame", (data) => {
+      setTimeChallengeData(data);
+      setScreen("timeChallenge");
+    });
+
+    socket.on("showTimeChallengeResults", (data) => {
+      setTimeChallengeResults(data.results);
+      setScreen("timeChallengeResults");
+    });
+
+    return () => {
+      socket.off("startTimeChallengeGame");
+      socket.off("showTimeChallengeResults");
+    };
+  }, []);
 
   return (
     <div className="app-fullscreen">
@@ -63,6 +90,22 @@ function App() {
           isSinglePlayer={gameState?.room?.gameMode === "singlePlayer" || false}
           singlePlayerId={gameState?.gameState?.singlePlayerId || null}
           singlePlayerLevel={gameState?.gameState?.singlePlayerLevel || 1}
+        />
+      )}
+      {screen === "timeChallenge" && timeChallengeData && (
+        <GameTimeChallenge
+          phrase={timeChallengeData.phrase}
+          category={timeChallengeData.category}
+          wheel={timeChallengeData.wheel}
+          phraseIndex={timeChallengeData.phraseIndex}
+          totalPhrases={timeChallengeData.totalPhrases}
+          playerName={players[0]?.name}
+        />
+      )}
+      {screen === "timeChallengeResults" && timeChallengeResults && (
+        <TimeChallengeResults
+          results={timeChallengeResults}
+          onBackToLobby={handleExitToLobby}
         />
       )}
     </div>
