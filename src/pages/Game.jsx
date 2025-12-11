@@ -1,4 +1,4 @@
-// src/pages/Game.jsx - MODALITÀ PRESENTATORE
+// src/pages/Game.jsx - MODALITÀ PRESENTATOREe
 import React, { useEffect, useState } from "react";
 import "../styles/game-layout.css";
 import "../styles/controls.css";
