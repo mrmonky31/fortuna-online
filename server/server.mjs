@@ -760,6 +760,20 @@ setInterval(() => {
   }
 }, 60000);
 
+// ==================== HELPER FUNCTIONS ====================
+
+// ✅ Helper per emit basato su modalità
+function emitGameStateUpdate(io, room, roomCode, socketId, gameState, extraData = {}) {
+  if (room.gameMode === "timeChallenge") {
+    // Time Challenge: emetti solo al giocatore e salva stato
+    room.playerGameStates[socketId] = gameState;
+    io.to(socketId).emit("gameStateUpdate", { gameState, ...extraData });
+  } else {
+    // Altre modalità: emit in broadcast
+    io.to(roomCode).emit("gameStateUpdate", { gameState, ...extraData });
+  }
+}
+
 // ==================== SOCKET.IO ====================
 
 io.on("connection", (socket) => {
@@ -1021,36 +1035,41 @@ io.on("connection", (socket) => {
       }
 
       
-      // ✅ MODALITÀ TIME CHALLENGE - USA initGameState come classica
+      // ✅ MODALITÀ TIME CHALLENGE - Stati privati per ogni giocatore
       if (room.gameMode === "timeChallenge") {
-        const gs = initGameState(room.players, room.totalRounds, selectedPhrase.text, selectedPhrase.category);
-        
-        // Aggiungi SOLO flag e settings time challenge
-        gs.isTimeChallenge = true;
-        gs.timeChallengeSettings = room.timeChallengeSettings || {
+        const settings = room.timeChallengeSettings || {
           numFrasi: 1,
           numMatch: 1,
           timerFrase: 0,
           timerMatch: 0
         };
         
-        // Inizializza tracking completamenti
-        gs.timeChallengeData = {
-          currentMatch: 1,
-          completions: {},
-          startTime: Date.now()
+        // Inizializza mappa stati privati
+        room.playerGameStates = {};
+        room.sharedPhraseData = {
+          phrase: selectedPhrase.text,
+          category: selectedPhrase.category
         };
         
-        gs.spinCounter = 0;
-        gs.nextForcedSpin = Math.floor(Math.random() * 6) + 5;
-        
-        room.gameState = gs;
-        
-        io.to(code).emit("gameStart", {
-          room,
-          roomCode: code,
-          gameState: gs,
-        });
+        // Crea stato privato per OGNI giocatore
+        for (const player of room.players) {
+          const playerState = initGameState([player], room.totalRounds, selectedPhrase.text, selectedPhrase.category);
+          
+          playerState.isTimeChallenge = true;
+          playerState.timeChallengeSettings = settings;
+          playerState.spinCounter = 0;
+          playerState.nextForcedSpin = Math.floor(Math.random() * 6) + 5;
+          
+          // Salva stato privato
+          room.playerGameStates[player.id] = playerState;
+          
+          // Invia gameStart SOLO a questo giocatore
+          io.to(player.id).emit("gameStart", {
+            room,
+            roomCode: code,
+            gameState: playerState,
+          });
+        }
 
         if (callback) callback({ ok: true });
         return;
@@ -1147,18 +1166,32 @@ io.on("connection", (socket) => {
       const code = String(roomCode || "").trim().toUpperCase();
       const room = rooms[code];
 
-      if (!room || !room.gameState) {
-        if (callback) callback({ ok: false, error: "Partita non attiva" });
+      if (!room) {
+        if (callback) callback({ ok: false, error: "Stanza non trovata" });
         return;
       }
 
-      updateRoomActivity(code); // 🔧 MODIFICA 3: Tracking attività
+      updateRoomActivity(code);
 
-      const gs = room.gameState;
-
-      if (gs.currentPlayerId !== socket.id) {
-        if (callback) callback({ ok: false, error: "Non è il tuo turno" });
-        return;
+      // ✅ TIME CHALLENGE: Usa stato privato
+      let gs;
+      if (room.gameMode === "timeChallenge") {
+        gs = room.playerGameStates?.[socket.id];
+        if (!gs) {
+          if (callback) callback({ ok: false, error: "Stato gioco non trovato" });
+          return;
+        }
+      } else {
+        gs = room.gameState;
+        if (!gs) {
+          if (callback) callback({ ok: false, error: "Partita non attiva" });
+          return;
+        }
+        
+        if (gs.currentPlayerId !== socket.id) {
+          if (callback) callback({ ok: false, error: "Non è il tuo turno" });
+          return;
+        }
       }
 
       if (!gs.mustSpin) {
@@ -1186,11 +1219,20 @@ io.on("connection", (socket) => {
       // ✅ Genera seed per sincronizzazione animazione
       const spinSeed = Date.now();
       
-      io.to(code).emit("wheelSpinStart", { 
-        spinning: true,
-        spinSeed: spinSeed,
-        forcedTarget: forcedTarget // ← Invia target forzato se presente
-      });
+      // ✅ TIME CHALLENGE: Emetti solo al giocatore
+      if (room.gameMode === "timeChallenge") {
+        io.to(socket.id).emit("wheelSpinStart", { 
+          spinning: true,
+          spinSeed: spinSeed,
+          forcedTarget: forcedTarget
+        });
+      } else {
+        io.to(code).emit("wheelSpinStart", { 
+          spinning: true,
+          spinSeed: spinSeed,
+          forcedTarget: forcedTarget
+        });
+      }
 
       // ✅ Il server ora ASPETTA che il client invii l'outcome tramite evento "wheelOutcome"
       // Non più timeout - il client determina lo spicchio vincente in base alla posizione finale
@@ -1208,14 +1250,29 @@ io.on("connection", (socket) => {
       const code = String(roomCode || "").trim().toUpperCase();
       const room = rooms[code];
 
-      if (!room || !room.gameState) {
-        if (callback) callback({ ok: false, error: "Partita non attiva" });
+      if (!room) {
+        if (callback) callback({ ok: false, error: "Stanza non trovata" });
         return;
       }
 
-      updateRoomActivity(code); // 🔧 MODIFICA 3: Tracking attività
+      updateRoomActivity(code);
 
-      const gs = room.gameState;
+      // ✅ TIME CHALLENGE: Usa stato privato
+      let gs;
+      if (room.gameMode === "timeChallenge") {
+        gs = room.playerGameStates?.[socket.id];
+        if (!gs) {
+          if (callback) callback({ ok: false, error: "Stato gioco non trovato" });
+          return;
+        }
+      } else {
+        gs = room.gameState;
+        if (!gs) {
+          if (callback) callback({ ok: false, error: "Partita non attiva" });
+          return;
+        }
+      }
+
       const i = gs.currentPlayerIndex;
 
       gs.spinning = false;
@@ -1272,39 +1329,58 @@ io.on("connection", (socket) => {
           }
         }
       } else if (outcome.type === "pass") {
+        // ✅ TIME CHALLENGE: Rigira subito
+        if (room.gameMode === "timeChallenge") {
+          gs.gameMessage = { type: "warning", text: "PASSA: gira di nuovo!" };
+          gs.mustSpin = true;
+          gs.lastSpinTarget = 0;
+        }
         // ✅ MODALITÀ GIOCATORE SINGOLO: Penalità -200
-        if (room.gameMode === "singlePlayer") {
+        else if (room.gameMode === "singlePlayer") {
           const i = gs.currentPlayerIndex;
           gs.players[i].roundScore = Math.max(0, gs.players[i].roundScore - 200);
           gs.gameMessage = { type: "warning", text: "PASSA: -200 punti. Turno al prossimo." };
+          nextPlayer(gs);
+          gs.mustSpin = true;
+          gs.lastSpinTarget = 0;
         } else {
           gs.gameMessage = { type: "warning", text: "PASSA: turno al prossimo." };
+          nextPlayer(gs);
+          gs.mustSpin = true;
+          gs.lastSpinTarget = 0;
         }
-        
-        nextPlayer(gs); // ✅ Salta presentatore
-        gs.mustSpin = true;
-        gs.lastSpinTarget = 0;
       } else if (outcome.type === "bankrupt") {
         const i = gs.currentPlayerIndex;
         gs.players[i].roundScore = 0;
         
-        // ✅ MODALITÀ GIOCATORE SINGOLO: NON azzera total score
-        if (room.gameMode !== "singlePlayer") {
-          gs.players[i].totalScore = 0;
+        // ✅ TIME CHALLENGE: Rigira subito, azzera solo round score
+        if (room.gameMode === "timeChallenge") {
+          gs.mustSpin = true;
+          gs.lastSpinTarget = 0;
+          gs.gameMessage = { type: "error", text: "BANCAROTTA: punteggio azzerato! Gira di nuovo." };
         }
-        
-        nextPlayer(gs); // ✅ Salta presentatore
-        gs.mustSpin = true;
-        gs.lastSpinTarget = 0;
-        gs.gameMessage = { 
-          type: "error", 
-          text: room.gameMode === "singlePlayer" 
-            ? "BANCAROTTA: round score azzerato!" 
-            : "BANCAROTTA: punteggi azzerati!" 
-        };
+        // ✅ MODALITÀ GIOCATORE SINGOLO: NON azzera total score
+        else if (room.gameMode === "singlePlayer") {
+          nextPlayer(gs);
+          gs.mustSpin = true;
+          gs.lastSpinTarget = 0;
+          gs.gameMessage = { type: "error", text: "BANCAROTTA: round score azzerato!" };
+        } else {
+          gs.players[i].totalScore = 0;
+          nextPlayer(gs);
+          gs.mustSpin = true;
+          gs.lastSpinTarget = 0;
+          gs.gameMessage = { type: "error", text: "BANCAROTTA: punteggi azzerati!" };
+        }
       }
 
-      io.to(code).emit("gameStateUpdate", { gameState: gs });
+      // ✅ TIME CHALLENGE: Emetti solo al giocatore e salva stato
+      if (room.gameMode === "timeChallenge") {
+        room.playerGameStates[socket.id] = gs;
+        io.to(socket.id).emit("gameStateUpdate", { gameState: gs });
+      } else {
+        io.to(code).emit("gameStateUpdate", { gameState: gs });
+      }
 
       if (callback) callback({ ok: true });
     } catch (err) {
@@ -1325,14 +1401,28 @@ io.on("connection", (socket) => {
       const code = String(roomCode || "").trim().toUpperCase();
       const room = rooms[code];
 
-      if (!room || !room.gameState) {
-        if (callback) callback({ ok: false, error: "Partita non attiva" });
+      if (!room) {
+        if (callback) callback({ ok: false, error: "Stanza non trovata" });
         return;
       }
 
-      updateRoomActivity(code); // 🔧 MODIFICA 3: Tracking attività
+      updateRoomActivity(code);
 
-      const gs = room.gameState;
+      // ✅ TIME CHALLENGE: Usa stato privato
+      let gs;
+      if (room.gameMode === "timeChallenge") {
+        gs = room.playerGameStates?.[socket.id];
+        if (!gs) {
+          if (callback) callback({ ok: false, error: "Stato gioco non trovato" });
+          return;
+        }
+      } else {
+        gs = room.gameState;
+        if (!gs) {
+          if (callback) callback({ ok: false, error: "Partita non attiva" });
+          return;
+        }
+      }
 
       // ✅ MODALITÀ PRESENTATORE: Mostra griglia al presentatore
       if (room.gameMode === "presenter" && !letter) {
@@ -1348,7 +1438,8 @@ io.on("connection", (socket) => {
         }
       }
 
-      if (gs.currentPlayerId !== socket.id && room.gameMode !== "presenter") {
+      // ✅ TIME CHALLENGE: NO check turno
+      if (room.gameMode !== "timeChallenge" && gs.currentPlayerId !== socket.id && room.gameMode !== "presenter") {
         if (callback) callback({ ok: false, error: "Non è il tuo turno" });
         return;
       }
@@ -1378,9 +1469,11 @@ if (gs.usedLetters.includes(upper)) {
   }
 
   // passa al prossimo giocatore
-  nextPlayer(gs); // ✅ Salta presentatore
+  if (room.gameMode !== "timeChallenge") {
+    nextPlayer(gs);
+  }
 
-  io.to(code).emit("gameStateUpdate", { gameState: gs });
+  emitGameStateUpdate(io, room, code, socket.id, gs);
   if (callback) callback({ ok: true });
   return;
 }
@@ -1425,10 +1518,9 @@ if (gs.usedLetters.includes(upper)) {
       
       // ✅ Calcola posizioni lettere per animazione
       const revealQueue = letterOccurrences(gs.phrase, upper);
-      io.to(code).emit("gameStateUpdate", { 
-        gameState: gs,
+      emitGameStateUpdate(io, room, code, socket.id, gs, { 
         revealQueue: revealQueue,
-        letterToReveal: upper // ✅ Passa la lettera da rivelare
+        letterToReveal: upper
       });
       
       if (callback) callback({ ok: true });
@@ -1439,13 +1531,15 @@ if (gs.usedLetters.includes(upper)) {
     gs.pendingDouble = false;
     gs.awaitingConsonant = false;
     gs.mustSpin = true;
-    nextPlayer(gs); // ✅ Salta presentatore
+    if (room.gameMode !== "timeChallenge") {
+      nextPlayer(gs);
+    }
     gs.gameMessage = {
       type: "error",
       text: "❌ Nessuna lettera. RADDOPPIA annullato, turno al prossimo."
     };
 
-    io.to(code).emit("gameStateUpdate", { gameState: gs });
+    emitGameStateUpdate(io, room, code, socket.id, gs);
     if (callback) callback({ ok: true });
     return;
   }
@@ -1469,10 +1563,9 @@ if (gs.usedLetters.includes(upper)) {
         
         // ✅ Calcola posizioni lettere rivelate per animazione
         const revealQueue = letterOccurrences(gs.phrase, upper);
-        io.to(code).emit("gameStateUpdate", { 
-          gameState: gs,
+        emitGameStateUpdate(io, room, code, socket.id, gs, {
           revealQueue: revealQueue,
-          letterToReveal: upper // ✅ Passa la lettera da rivelare
+          letterToReveal: upper
         });
         
         if (callback) callback({ ok: true });
@@ -1487,13 +1580,15 @@ if (gs.usedLetters.includes(upper)) {
           gs.gameMessage = { type: "error", text: `Nessuna ${upper}. Turno al prossimo.` };
         }
         
-        nextPlayer(gs); // ✅ Salta presentatore
+        if (room.gameMode !== "timeChallenge") {
+          nextPlayer(gs);
+        }
         gs.mustSpin = true;
         gs.awaitingConsonant = false;
         gs.pendingDouble = false;
         gs.lastSpinTarget = 0;
         
-        io.to(code).emit("gameStateUpdate", { gameState: gs });
+        emitGameStateUpdate(io, room, code, socket.id, gs);
         if (callback) callback({ ok: true });
         return;
       }
@@ -1515,14 +1610,28 @@ if (gs.usedLetters.includes(upper)) {
       const code = String(roomCode || "").trim().toUpperCase();
       const room = rooms[code];
 
-      if (!room || !room.gameState) {
-        if (callback) callback({ ok: false, error: "Partita non attiva" });
+      if (!room) {
+        if (callback) callback({ ok: false, error: "Stanza non trovata" });
         return;
       }
 
-      updateRoomActivity(code); // 🔧 MODIFICA 3: Tracking attività
+      updateRoomActivity(code);
 
-      const gs = room.gameState;
+      // ✅ TIME CHALLENGE: Usa stato privato
+      let gs;
+      if (room.gameMode === "timeChallenge") {
+        gs = room.playerGameStates?.[socket.id];
+        if (!gs) {
+          if (callback) callback({ ok: false, error: "Stato gioco non trovato" });
+          return;
+        }
+      } else {
+        gs = room.gameState;
+        if (!gs) {
+          if (callback) callback({ ok: false, error: "Partita non attiva" });
+          return;
+        }
+      }
 
       // ✅ MODALITÀ PRESENTATORE: Mostra griglia al presentatore
       if (room.gameMode === "presenter" && !letter) {
@@ -1538,7 +1647,8 @@ if (gs.usedLetters.includes(upper)) {
         }
       }
 
-      if (gs.currentPlayerId !== socket.id && room.gameMode !== "presenter") {
+      // ✅ TIME CHALLENGE: NO check turno
+      if (room.gameMode !== "timeChallenge" && gs.currentPlayerId !== socket.id && room.gameMode !== "presenter") {
         if (callback) callback({ ok: false, error: "Non è il tuo turno" });
         return;
       }
@@ -1568,9 +1678,11 @@ if (gs.usedLetters.includes(upper)) {
   }
 
   // Passa turno
-  nextPlayer(gs); // ✅ Salta presentatore
+  if (room.gameMode !== "timeChallenge") {
+    nextPlayer(gs);
+  }
 
-  io.to(code).emit("gameStateUpdate", { gameState: gs });
+  emitGameStateUpdate(io, room, code, socket.id, gs);
   if (callback) callback({ ok: true });
   return;
 }
@@ -1599,10 +1711,9 @@ if (gs.usedLetters.includes(upper)) {
         
         // ✅ Calcola posizioni per animazione
         const revealQueue = letterOccurrences(gs.phrase, upper);
-        io.to(code).emit("gameStateUpdate", { 
-          gameState: gs,
+        emitGameStateUpdate(io, room, code, socket.id, gs, {
           revealQueue: revealQueue,
-          letterToReveal: upper // ✅ Passa la lettera da rivelare
+          letterToReveal: upper
         });
       } else {
         gs.mustSpin = true;
@@ -1617,7 +1728,7 @@ if (gs.usedLetters.includes(upper)) {
           gs.gameMessage = { type: "error", text: `Nessuna ${upper}. (-${cost} pt)` };
         }
         
-        io.to(code).emit("gameStateUpdate", { gameState: gs });
+        emitGameStateUpdate(io, room, code, socket.id, gs);
       }
 
       if (callback) callback({ ok: true });
@@ -1639,18 +1750,32 @@ if (gs.usedLetters.includes(upper)) {
       const code = String(roomCode || "").trim().toUpperCase();
       const room = rooms[code];
 
-      if (!room || !room.gameState) {
-        if (callback) callback({ ok: false, error: "Partita non attiva" });
+      if (!room) {
+        if (callback) callback({ ok: false, error: "Stanza non trovata" });
         return;
       }
 
-      updateRoomActivity(code); // 🔧 MODIFICA 3: Tracking attività
+      updateRoomActivity(code);
 
-      const gs = room.gameState;
-
-      if (gs.currentPlayerId !== socket.id) {
-        if (callback) callback({ ok: false, error: "Non è il tuo turno" });
-        return;
+      // ✅ TIME CHALLENGE: Usa stato privato
+      let gs;
+      if (room.gameMode === "timeChallenge") {
+        gs = room.playerGameStates?.[socket.id];
+        if (!gs) {
+          if (callback) callback({ ok: false, error: "Stato gioco non trovato" });
+          return;
+        }
+      } else {
+        gs = room.gameState;
+        if (!gs) {
+          if (callback) callback({ ok: false, error: "Partita non attiva" });
+          return;
+        }
+        
+        if (gs.currentPlayerId !== socket.id) {
+          if (callback) callback({ ok: false, error: "Non è il tuo turno" });
+          return;
+        }
       }
 
       // ✅ MODALITÀ PRESENTATORE: Notifica presentatore e attendi verifica
@@ -1691,45 +1816,51 @@ if (gs.usedLetters.includes(upper)) {
         
         // ✅ MODALITÀ TIME CHALLENGE: Traccia completamento frase
         if (gs.isTimeChallenge) {
-          if (!gs.timeChallengeData) {
-            gs.timeChallengeData = { completions: {} };
-          }
-          
-          if (!gs.timeChallengeData.completions[socket.id]) {
-            gs.timeChallengeData.completions[socket.id] = {
-              playerName: winnerName,
-              phrasesCompleted: 0,
-              totalTime: 0,
-              totalPenalties: 0
+          // Inizializza tracking globale se non esiste
+          if (!room.timeChallengeData) {
+            room.timeChallengeData = {
+              currentMatch: 1,
+              completions: {}
             };
           }
           
-          const completion = gs.timeChallengeData.completions[socket.id];
-          completion.phrasesCompleted++;
+          // Inizializza tracking giocatore se non esiste
+          if (!room.timeChallengeData.completions[socket.id]) {
+            room.timeChallengeData.completions[socket.id] = {
+              playerName: winnerName,
+              phrasesCompleted: 0,
+              totalTime: 0,
+              totalPenalties: 0,
+              finished: false
+            };
+          }
           
-          // ✅ Usa dati reali dal client
+          const completion = room.timeChallengeData.completions[socket.id];
+          
+          // ✅ Aggiungi tempo e penalità
           const phraseTime = timeChallengeData?.time || 0;
           const penalties = timeChallengeData?.penalties || 0;
           
           completion.totalTime += phraseTime;
           completion.totalPenalties += penalties;
+          completion.phrasesCompleted++;
           
           const settings = gs.timeChallengeSettings || {};
           const totalFrasi = settings.numFrasi || 1;
           
-          // Se ha finito tutte le frasi
+          // ✅ Controlla se ha finito tutte le frasi
           if (completion.phrasesCompleted >= totalFrasi) {
             completion.finished = true;
             
-            // Controlla se TUTTI hanno finito
+            // ✅ Controlla se TUTTI hanno finito
             const allFinished = room.players.every(p => 
-              gs.timeChallengeData.completions[p.id]?.finished === true
+              room.timeChallengeData.completions[p.id]?.finished === true
             );
             
             if (allFinished) {
-              // Calcola classifica
+              // ✅ TUTTI HANNO FINITO - Calcola classifica
               const results = room.players.map(p => {
-                const data = gs.timeChallengeData.completions[p.id];
+                const data = room.timeChallengeData.completions[p.id];
                 if (!data) return null;
                 
                 const finalTime = data.totalTime + data.totalPenalties;
@@ -1743,13 +1874,13 @@ if (gs.usedLetters.includes(upper)) {
                 };
               }).filter(Boolean);
               
-              // Ordina per finalTime crescente
+              // Ordina per finalTime crescente (più veloce vince)
               results.sort((a, b) => a.finalTime - b.finalTime);
               
-              const currentMatch = gs.timeChallengeData.currentMatch || 1;
+              const currentMatch = room.timeChallengeData.currentMatch || 1;
               const totalMatches = settings.numMatch || 1;
               
-              // Invia risultati a tutti
+              // Invia risultati a TUTTI i giocatori
               io.to(code).emit("showTimeChallengeResults", {
                 results,
                 currentMatch,
@@ -1758,13 +1889,37 @@ if (gs.usedLetters.includes(upper)) {
               
               if (callback) callback({ ok: true });
               return;
+            } else {
+              // ✅ Questo giocatore ha finito, ma altri no
+              // Manda messaggio di attesa
+              gs.gameMessage = { 
+                type: "success", 
+                text: `✅ Hai completato tutte le frasi! Attendi gli altri giocatori...` 
+              };
+              gs.gameOver = false; // NON è game over per lui, ma non può più giocare
+              
+              room.playerGameStates[socket.id] = gs;
+              io.to(socket.id).emit("gameStateUpdate", { gameState: gs });
+              
+              if (callback) callback({ ok: true });
+              return;
             }
           } else {
-            // Carica prossima frase per questo giocatore
-            const nextPhraseIndex = completion.phrasesCompleted;
-            const nextPhrase = singlePlayerPhrases[nextPhraseIndex % singlePlayerPhrases.length];
+            // ✅ Carica PROSSIMA frase per questo giocatore
+            const nextPhraseIndex = completion.phrasesCompleted; // 0-based dopo increment
             
-            // Aggiorna gameState con nuova frase per questo giocatore
+            // Prendi frase dal phraseSet della room
+            const phrases = room.phraseSet || [];
+            if (phrases.length === 0) {
+              console.error("❌ Nessuna frase disponibile in room.phraseSet");
+              if (callback) callback({ ok: false, error: "Nessuna frase disponibile" });
+              return;
+            }
+            
+            // Usa modulo per ciclare se necessario
+            const nextPhrase = phrases[nextPhraseIndex % phrases.length];
+            
+            // ✅ Aggiorna gameState PRIVATO con nuova frase
             gs.phrase = nextPhrase.text;
             gs.rows = buildBoard(nextPhrase.text, 14, 4);
             gs.category = nextPhrase.category;
@@ -1776,7 +1931,15 @@ if (gs.usedLetters.includes(upper)) {
             gs.pendingDouble = false;
             gs.lastSpinTarget = 0;
             gs.players[i].roundScore = 0; // Reset punteggio round
+            gs.gameMessage = { 
+              type: "success", 
+              text: `✅ Frase ${completion.phrasesCompleted} completata! Carico la prossima...` 
+            };
             
+            // ✅ Salva stato privato aggiornato
+            room.playerGameStates[socket.id] = gs;
+            
+            // ✅ Emetti SOLO a questo giocatore
             io.to(socket.id).emit("gameStateUpdate", { gameState: gs });
             
             if (callback) callback({ ok: true });
@@ -1821,28 +1984,38 @@ if (gs.usedLetters.includes(upper)) {
         gs.awaitingConsonant = false;
         gs.pendingDouble = false;
 
-        io.to(code).emit("roundWon", {
-          winnerName,
-          countdown: room.gameMode === "singlePlayer" ? 0 : 7 // ✅ No countdown per singlePlayer
-        });
+        // ✅ TIME CHALLENGE: roundWon solo al giocatore
+        if (room.gameMode === "timeChallenge") {
+          io.to(socket.id).emit("roundWon", {
+            winnerName,
+            countdown: 0
+          });
+        } else {
+          io.to(code).emit("roundWon", {
+            winnerName,
+            countdown: room.gameMode === "singlePlayer" ? 0 : 7
+          });
+        }
 
-        io.to(code).emit("gameStateUpdate", { gameState: gs });
+        emitGameStateUpdate(io, room, code, socket.id, gs);
 
-        // ✅ In singlePlayer NON avviare automaticamente prossimo round
-        if (room.gameMode !== "singlePlayer") {
+        // ✅ In singlePlayer e timeChallenge NON avviare automaticamente prossimo round
+        if (room.gameMode !== "singlePlayer" && room.gameMode !== "timeChallenge") {
           setTimeout(() => {
             nextRound(code, room);
           }, 7000);
         }
       } else {
         // ❌ Soluzione sbagliata
-        nextPlayer(gs); // ✅ Salta presentatore
+        if (room.gameMode !== "timeChallenge") {
+          nextPlayer(gs);
+        }
         gs.mustSpin = true;
         gs.awaitingConsonant = false;
         gs.pendingDouble = false;
         gs.gameMessage = { type: "error", text: "Soluzione non corretta." };
 
-        io.to(code).emit("gameStateUpdate", { gameState: gs });
+        emitGameStateUpdate(io, room, code, socket.id, gs);
       }
 
       if (callback) callback({ ok: true });
@@ -1858,21 +2031,31 @@ if (gs.usedLetters.includes(upper)) {
       const code = String(roomCode || "").trim().toUpperCase();
       const room = rooms[code];
 
-      if (!room || !room.gameState) {
-        if (callback) callback({ ok: false, error: "Partita non attiva" });
+      if (!room) {
+        if (callback) callback({ ok: false, error: "Stanza non trovata" });
         return;
       }
 
-      updateRoomActivity(code); // 🔧 MODIFICA 3: Tracking attività
+      updateRoomActivity(code);
+
+      // ✅ TIME CHALLENGE: Non esiste "passa turno"
+      if (room.gameMode === "timeChallenge") {
+        if (callback) callback({ ok: false, error: "Non puoi passare in Time Challenge" });
+        return;
+      }
 
       const gs = room.gameState;
+      if (!gs) {
+        if (callback) callback({ ok: false, error: "Partita non attiva" });
+        return;
+      }
 
       if (gs.currentPlayerId !== socket.id) {
         if (callback) callback({ ok: false, error: "Non è il tuo turno" });
         return;
       }
 
-      nextPlayer(gs); // ✅ Salta presentatore
+      nextPlayer(gs);
       gs.mustSpin = true;
       gs.awaitingConsonant = false;
       gs.pendingDouble = false;
@@ -1893,17 +2076,31 @@ if (gs.usedLetters.includes(upper)) {
     try {
       const code = String(roomCode || "").trim().toUpperCase();
       const room = rooms[code];
-      if (!room || !room.gameState) return;
+      if (!room) return;
 
-      const gs = room.gameState;
+      // ✅ TIME CHALLENGE: Usa stato privato
+      let gs;
+      if (room.gameMode === "timeChallenge") {
+        gs = room.playerGameStates?.[socket.id];
+        if (!gs) return;
+      } else {
+        gs = room.gameState;
+        if (!gs) return;
+      }
+
       const upper = String(letter || "").toUpperCase().trim();
       
       // ✅ Aggiungi lettera a revealedLetters
       if (upper && !gs.revealedLetters.includes(upper)) {
         gs.revealedLetters.push(upper);
         
-        // ✅ Manda gameState aggiornato SENZA revealQueue
-        io.to(code).emit("gameStateUpdate", { gameState: gs });
+        // ✅ Emetti aggiornamento
+        if (room.gameMode === "timeChallenge") {
+          room.playerGameStates[socket.id] = gs;
+          io.to(socket.id).emit("gameStateUpdate", { gameState: gs });
+        } else {
+          io.to(code).emit("gameStateUpdate", { gameState: gs });
+        }
       }
     } catch (err) {
       console.error("❌ Errore in animationComplete:", err);
