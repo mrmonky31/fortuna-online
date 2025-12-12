@@ -19,6 +19,8 @@ export default function Controls({
   onWrongSolution,       // ✅ Callback soluzione sbagliata
   awaitingSolutionCheck = false, // ✅ In attesa di verifica soluzione
   activeLetterType = null, // ✅ NUOVO: tipo pulsante attivo per sincronizzazione
+  onCancelSolution,      // ✅ TIME CHALLENGE: Callback chiusura pannello (+5s penalità)
+  isTimeChallenge = false, // ✅ TIME CHALLENGE: Flag per mostrare warning penalità
 }) {
   const [panel, setPanel] = useState(null);
   const [cons, setCons] = useState("");
@@ -313,6 +315,24 @@ export default function Controls({
           {panel === "sol" && (
             <div className="panel panel-sol panel-game">
               <label className="panel-label">Soluzione</label>
+              
+              {/* ✅ TIME CHALLENGE: Warning penalità */}
+              {isTimeChallenge && (
+                <div style={{
+                  background: 'rgba(255, 68, 68, 0.15)',
+                  border: '2px solid #ff4444',
+                  borderRadius: '8px',
+                  padding: '8px 12px',
+                  marginBottom: '10px',
+                  color: '#ff6666',
+                  fontSize: '0.9rem',
+                  fontWeight: 'bold',
+                  textAlign: 'center'
+                }}>
+                  ⚠️ Chiudere senza rispondere: +5s penalità
+                </div>
+              )}
+              
               <input
                 ref={solRef}
                 type="text"
@@ -329,9 +349,49 @@ export default function Controls({
                 spellCheck="false"
                 inputMode="text"
               />
-              <button className="btn-ok" onClick={submitSolution} disabled={disabled}>
-                OK
-              </button>
+              
+              <div style={{ display: 'flex', gap: '10px', width: '100%' }}>
+                <button 
+                  className="btn-ok" 
+                  onClick={submitSolution} 
+                  disabled={disabled}
+                  style={{ flex: 1 }}
+                >
+                  OK
+                </button>
+                
+                {/* ✅ TIME CHALLENGE: Pulsante CHIUDI con penalità */}
+                {isTimeChallenge && onCancelSolution && (
+                  <button 
+                    onClick={() => {
+                      setPanel(null);
+                      onCancelSolution();
+                    }}
+                    style={{
+                      background: 'linear-gradient(135deg, #ff4444 0%, #cc0000 100%)',
+                      border: '2px solid #ff6666',
+                      color: '#fff',
+                      fontWeight: 'bold',
+                      padding: '12px 20px',
+                      fontSize: '1rem',
+                      cursor: 'pointer',
+                      borderRadius: '8px',
+                      flex: 1,
+                      transition: 'all 0.2s ease'
+                    }}
+                    onMouseOver={(e) => {
+                      e.target.style.transform = 'scale(1.05)';
+                      e.target.style.boxShadow = '0 4px 12px rgba(255, 68, 68, 0.4)';
+                    }}
+                    onMouseOut={(e) => {
+                      e.target.style.transform = 'scale(1)';
+                      e.target.style.boxShadow = 'none';
+                    }}
+                  >
+                    ✖ CHIUDI (+5s)
+                  </button>
+                )}
+              </div>
             </div>
           )}
         </div>

@@ -752,6 +752,14 @@ export default function Game({
     });
   };
 
+  // ✅ TIME CHALLENGE: Chiusura pannello soluzione con penalità +5s
+  const handleCancelSolution = () => {
+    const isTimeChallenge = gameState?.isTimeChallenge === true;
+    if (isTimeChallenge) {
+      setTimeChallengePenalties(prev => prev + 5);
+    }
+  };
+
   const handlePassTurn = () => {
     if (!roomCode) return;
     socket.emit("passTurn", { roomCode }, (res) => {
@@ -1138,6 +1146,8 @@ export default function Game({
             onWrongSolution={handleWrongSolution}
             awaitingSolutionCheck={awaitingSolutionCheck}
             activeLetterType={activeLetterType}
+            isTimeChallenge={isTimeChallenge}
+            onCancelSolution={handleCancelSolution}
           />
         </div>
         
