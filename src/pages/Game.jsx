@@ -1258,9 +1258,9 @@ export default function Game({
           {/* ✅ TIME CHALLENGE: Copre tabellone quando pannello soluzione aperto */}
           {isTimeChallenge && solutionPanelOpen && (
             <div style={{
-              position: 'fixed',
+              position: 'absolute',
               top: 0,
-              left: 0,
+              left: '20%',
               width: '100vw',
               height: '100vh',
               background: '#000',
