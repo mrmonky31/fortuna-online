@@ -368,7 +368,24 @@ export default function Game({
     }
 
     socket.on("roundWon", handleRoundWon);
-    return () => socket.off("roundWon", handleRoundWon);
+    
+    // ✅ TIME CHALLENGE: Listener per nuova frase
+    socket.on("timeChallengeNextPhrase", ({ phraseNumber, totalPhrases, gameState: newState }) => {
+      console.log(`✅ Frase ${phraseNumber}/${totalPhrases} completata! Carico prossima...`);
+      
+      // Aggiorna gameState con nuova frase
+      if (newState) {
+        setGameState(newState);
+      }
+      
+      // Reset timer per nuova frase
+      setTimeChallengeTimer(0);
+    });
+    
+    return () => {
+      socket.off("roundWon", handleRoundWon);
+      socket.off("timeChallengeNextPhrase");
+    };
   }, []);
 
   useEffect(() => {
@@ -1274,8 +1291,27 @@ export default function Game({
               width: '300vw',
               height: '120vh',
               background: '#000',
-              zIndex: 9998
-            }} />
+              zIndex: 9998,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              {/* ⚠️ WARNING BOX CENTRATO */}
+              <div style={{
+                background: 'rgba(255, 68, 68, 0.2)',
+                border: '3px solid #ff4444',
+                borderRadius: '12px',
+                padding: '20px 40px',
+                color: '#ff6666',
+                fontSize: '1.5rem',
+                fontWeight: 'bold',
+                textAlign: 'center',
+                boxShadow: '0 8px 32px rgba(255, 68, 68, 0.3)',
+                animation: 'pulse 2s infinite'
+              }}>
+                ⚠️ CHIUDERE SENZA RISPONDERE<br/>COSTA +5 SECONDI
+              </div>
+            </div>
           )}
           
           <PhraseManager

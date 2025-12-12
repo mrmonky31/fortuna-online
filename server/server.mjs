@@ -1939,8 +1939,12 @@ if (gs.usedLetters.includes(upper)) {
             // ✅ Salva stato privato aggiornato
             room.playerGameStates[socket.id] = gs;
             
-            // ✅ Emetti SOLO a questo giocatore
-            io.to(socket.id).emit("gameStateUpdate", { gameState: gs });
+            // ✅ TIME CHALLENGE: Evento dedicato per nuova frase (NON roundWon)
+            io.to(socket.id).emit("timeChallengeNextPhrase", {
+              phraseNumber: completion.phrasesCompleted,
+              totalPhrases: totalFrasi,
+              gameState: gs
+            });
             
             if (callback) callback({ ok: true });
             return;

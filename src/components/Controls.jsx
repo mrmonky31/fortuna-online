@@ -316,23 +316,6 @@ export default function Controls({
             <div className="panel panel-sol panel-game">
               <label className="panel-label">Soluzione</label>
               
-              {/* ✅ TIME CHALLENGE: Warning penalità */}
-              {isTimeChallenge && (
-                <div style={{
-                  background: 'rgba(255, 68, 68, 0.15)',
-                  border: '2px solid #ff4444',
-                  borderRadius: '8px',
-                  padding: '8px 12px',
-                  marginBottom: '10px',
-                  color: '#ff6666',
-                  fontSize: '0.9rem',
-                  fontWeight: 'bold',
-                  textAlign: 'center'
-                }}>
-                  ⚠️ Chiudere senza rispondere: +5s penalità
-                </div>
-              )}
-              
               <input
                 ref={solRef}
                 type="text"
