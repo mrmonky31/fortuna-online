@@ -368,24 +368,7 @@ export default function Game({
     }
 
     socket.on("roundWon", handleRoundWon);
-    
-    // ✅ TIME CHALLENGE: Listener per nuova frase
-    socket.on("timeChallengeNextPhrase", ({ phraseNumber, totalPhrases, gameState: newState }) => {
-      console.log(`✅ Frase ${phraseNumber}/${totalPhrases} completata! Carico prossima...`);
-      
-      // Aggiorna gameState con nuova frase
-      if (newState) {
-        setGameState(newState);
-      }
-      
-      // Reset timer per nuova frase
-      setTimeChallengeTimer(0);
-    });
-    
-    return () => {
-      socket.off("roundWon", handleRoundWon);
-      socket.off("timeChallengeNextPhrase");
-    };
+    return () => socket.off("roundWon", handleRoundWon);
   }, []);
 
   useEffect(() => {
@@ -1298,6 +1281,9 @@ export default function Game({
             }}>
               {/* ⚠️ WARNING BOX CENTRATO */}
               <div style={{
+                position: 'absolute',
+                top: '10%',        // ← Cambia qui per verticale
+                left: '0%',        // ← Cambia qui per orizzontale 
                 background: 'rgba(255, 68, 68, 0.2)',
                 border: '3px solid #ff4444',
                 borderRadius: '12px',
