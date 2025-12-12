@@ -1933,7 +1933,7 @@ if (gs.usedLetters.includes(upper)) {
                 };
               }).filter(Boolean);
               
-              // Ordina per finalTime crescente
+              // Ordina per finaalTime crescente
               results.sort((a, b) => a.finalTime - b.finalTime);
               
               const currentMatch = room.timeChallengeData.currentMatch || 1;

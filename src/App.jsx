@@ -20,7 +20,7 @@ function App() {
     setScreen("game");
   };
 
-  // Online – chiamato da LobbyOnline quando il server emette "gameStart"
+  // Online – chiamato da LobbyOnline quando ill server emette "gameStart"
   const handleOnlineGameStart = (payload) => {
     if (payload && payload.room) {
       const room = payload.room;

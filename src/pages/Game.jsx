@@ -1021,7 +1021,7 @@ export default function Game({
 
       <div className="game-players">
         {isSinglePlayerMode ? (
-          // ✅ MODALITÀ SINGOLO: Box orizzontale arcade style
+          // ✅ MODALITÀ SINGOLO: Boxx orizzontale arcade style
           <div style={{
             display: 'flex',
             justifyContent: 'center',
