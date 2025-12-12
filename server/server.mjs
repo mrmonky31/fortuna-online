@@ -1825,6 +1825,9 @@ if (gs.usedLetters.includes(upper)) {
           gs.awaitingConsonant = false;
           gs.pendingDouble = false;
           
+          // 🔥 CRITICO: Setta isPhraseSolved = true per triggerare useEffect client
+          gs.isPhraseSolved = true;
+          
           // 3. Messaggio successo
           gs.gameMessage = { type: "success", text: `✅ Frase completata!` };
           
@@ -1849,9 +1852,11 @@ if (gs.usedLetters.includes(upper)) {
           
           const completion = room.timeChallengeData.completions[socket.id];
           
-          console.log("🎯 TIME CHALLENGE - VALIDAZIONE SOLUZIONE:");
-          console.log("   Player:", socket.id);
+          console.log("🎯 ============================================");
+          console.log("🎯 TIME CHALLENGE - VALIDAZIONE SOLUZIONE CORRETTA");
+          console.log("   Player:", socket.id, "-", winnerName);
           console.log("   phrasesCompleted PRIMA incremento:", completion.phrasesCompleted);
+          console.log("   🔥 isPhraseSolved settato a:", gs.isPhraseSolved);
           
           // 6. Aggiungi tempo e penalità
           const phraseTime = timeChallengeData?.time || 0;
@@ -1882,7 +1887,9 @@ if (gs.usedLetters.includes(upper)) {
           room.playerGameStates[socket.id] = gs;
           io.to(socket.id).emit("gameStateUpdate", { gameState: gs });
           
-          console.log("   ✅ Emesso gameStateUpdate con isPhraseSolved:", gs.isPhraseSolved);
+          console.log("   ✅ Emesso gameStateUpdate con:");
+          console.log("      isPhraseSolved:", gs.isPhraseSolved);
+          console.log("      isTimeChallenge:", gs.isTimeChallenge);
           
           // 9. Controlla se ha finito tutte le frasi (considera la frase appena completata)
           const nextPhraseNumber = completion.phrasesCompleted + 1; // Prossima frase da caricare
@@ -1900,7 +1907,7 @@ if (gs.usedLetters.includes(upper)) {
             completion.phrasesCompleted = totalFrasi; // Imposta al valore finale
             
             console.log("   ✅ completion.finished = true");
-            console.log("   ✅ completion.phrasesCompleted = ", totalFrasi);
+            console.log("   ✅ completion.phrasesCompleted =", totalFrasi);
             
             // Controlla se TUTTI hanno finito
             const allFinished = room.players.every(p => 
@@ -1945,6 +1952,7 @@ if (gs.usedLetters.includes(upper)) {
             console.log("   ➡️ Player ha ancora frasi da completare");
             console.log("   ⏳ Aspetto che il CLIENT chiami timeChallengeNextPhrase...");
           }
+          console.log("🎯 ============================================");
           
           // ✅ Il CLIENT chiamerà "timeChallengeNextPhrase" per caricare la prossima frase
           
