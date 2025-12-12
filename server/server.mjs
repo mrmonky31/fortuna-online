@@ -2562,15 +2562,17 @@ if (gs.usedLetters.includes(upper)) {
       console.log("   📥 Caricamento frase:");
       console.log("      nextPhraseIndex (array):", nextPhraseIndex);
       
-      // Carica nuova frase da phraseSet
-      const phrases = room.phraseSet?.phrases || [];
-      if (phrases.length === 0) {
+      // ✅ USA LO STESSO CODICE DI startGame - Usa il set frasi della room
+      const { phrases, mode } = room.phraseSet;
+      
+      if (!phrases || phrases.length === 0) {
         console.log("   ❌ ERRORE: Nessuna frase disponibile");
         console.log("      room.phraseSet:", room.phraseSet);
         return callback({ ok: false, error: "Nessuna frase disponibile" });
       }
       
-      console.log("      phraseSet.phrases.length:", phrases.length);
+      console.log("      phrases.length:", phrases.length);
+      console.log("      mode:", mode);
       
       const selectedPhrase = phrases[nextPhraseIndex % phrases.length];
       if (!selectedPhrase) {
