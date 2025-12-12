@@ -352,8 +352,13 @@ export default function Game({
     function handleRoundWon({ winnerName, countdown }) {
 // console.log("🎉 Round vinto da:", winnerName);
       setWinnerName(winnerName);
-      setBetweenRounds(true);
-      setRoundCountdown(countdown);
+      
+      // ✅ TIME CHALLENGE: NON attivare betweenRounds (countdown disabilitato)
+      const isTimeChallenge = gameState?.isTimeChallenge === true;
+      if (!isTimeChallenge) {
+        setBetweenRounds(true);
+        setRoundCountdown(countdown);
+      }
       
       // ✅ Reset animazione punteggio
       setAnimatedScore(0);
@@ -374,6 +379,10 @@ export default function Game({
   useEffect(() => {
     // ✅ In modalità singlePlayer NON avviare countdown automatico
     if (isSinglePlayerMode) return;
+    
+    // ✅ TIME CHALLENGE: NON avviare countdown automatico
+    const isTimeChallenge = gameState?.isTimeChallenge === true;
+    if (isTimeChallenge) return;
     
     if (!betweenRounds || roundCountdown <= 0) return;
 
@@ -1281,9 +1290,6 @@ export default function Game({
             }}>
               {/* ⚠️ WARNING BOX CENTRATO */}
               <div style={{
-                position: 'absolute',
-                top: '10%',        // ← Cambia qui per verticale
-                left: '20%',        // ← Cambia qui per orizzontale 
                 background: 'rgba(255, 68, 68, 0.2)',
                 border: '3px solid #ff4444',
                 borderRadius: '12px',
@@ -1336,7 +1342,8 @@ export default function Game({
         <div className="turn-timer">{turnTimer}</div>
       )}
 
-      {betweenRounds && (
+      {/* ✅ TIME CHALLENGE: NON mostrare popup betweenRounds */}
+      {betweenRounds && !isTimeChallenge && (
         <div className="round-won-overlay">
           <div className="round-won-box">
             {isSinglePlayerMode ? (

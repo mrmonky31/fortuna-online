@@ -1943,7 +1943,7 @@ if (gs.usedLetters.includes(upper)) {
               // Salva e invia
               room.playerGameStates[socket.id] = newGs;
               io.to(socket.id).emit("gameStateUpdate", { gameState: newGs });
-            }, 4000); // 1.5s delay per vedere roundWon
+            }, 1500); // 1.5s delay per vedere roundWon
           }
           
           if (callback) callback({ ok: true });
