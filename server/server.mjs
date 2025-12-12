@@ -1909,57 +1909,9 @@ if (gs.usedLetters.includes(upper)) {
                 totalMatches
               });
             }
-          } else {
-            // 10. Carica PROSSIMA frase dopo un breve delay (come nextRound ma immediato)
-            // ✅ Salva variabili per setTimeout (closure)
-            const playerIndex = i;
-            const roomCode = code;
-            const socketIdToUpdate = socket.id;
-            
-            setTimeout(() => {
-              // ✅ Riprendi room aggiornata
-              const currentRoom = rooms[roomCode];
-              if (!currentRoom) {
-                console.error("❌ Room non trovata:", roomCode);
-                return;
-              }
-              
-              const nextPhraseIndex = completion.phrasesCompleted;
-              
-              // Prendi frase dal phraseSet
-              const phrases = currentRoom.phraseSet || [];
-              if (phrases.length === 0) {
-                console.error("❌ Nessuna frase disponibile");
-                return;
-              }
-              
-              const nextPhrase = phrases[nextPhraseIndex % phrases.length];
-              
-              // Aggiorna gameState PRIVATO con nuova frase
-              const newGs = currentRoom.playerGameStates[socketIdToUpdate];
-              if (!newGs) {
-                console.error("❌ gameState non trovato per:", socketIdToUpdate);
-                return;
-              }
-              
-              newGs.phrase = nextPhrase.text;
-              newGs.rows = buildBoard(nextPhrase.text, 14, 4);
-              newGs.category = nextPhrase.category;
-              newGs.revealedLetters = [];
-              newGs.usedLetters = [];
-              newGs.wheel = generateWheel();
-              newGs.mustSpin = true;
-              newGs.awaitingConsonant = false;
-              newGs.pendingDouble = false;
-              newGs.lastSpinTarget = 0;
-              newGs.players[playerIndex].roundScore = 0; // ✅ Usa playerIndex salvato
-              newGs.gameMessage = null;
-              
-              // Salva e invia
-              currentRoom.playerGameStates[socketIdToUpdate] = newGs;
-              io.to(socketIdToUpdate).emit("gameStateUpdate", { gameState: newGs });
-            }, 5000); // 5s delay per vedere roundWon
           }
+          
+          // ✅ Il CLIENT chiamerà "timeChallengeNextPhrase" per caricare la prossima frase
           
           if (callback) callback({ ok: true });
           return;
@@ -2500,6 +2452,72 @@ if (gs.usedLetters.includes(upper)) {
       callback({ ok: true, level: newLevel });
     } catch (err) {
       console.error("Errore nextLevel:", err);
+      callback({ ok: false, error: "Errore server" });
+    }
+  });
+
+  // ✅ TIME CHALLENGE: Carica prossima frase (come nextLevel ma per Time Challenge)
+  socket.on("timeChallengeNextPhrase", ({ roomCode }, callback) => {
+    try {
+      const code = String(roomCode || "").trim().toUpperCase();
+      const room = rooms[code];
+      
+      if (!room || room.gameMode !== "timeChallenge") {
+        return callback({ ok: false, error: "Room non trovata o non è Time Challenge" });
+      }
+
+      updateRoomActivity(code);
+      
+      // ✅ Usa gameState PRIVATO del giocatore
+      const gs = room.playerGameStates?.[socket.id];
+      if (!gs) {
+        return callback({ ok: false, error: "GameState non trovato" });
+      }
+      
+      // Prendi tracking completamenti
+      const completion = room.timeChallengeData?.completions[socket.id];
+      if (!completion) {
+        return callback({ ok: false, error: "Tracking non trovato" });
+      }
+      
+      const nextPhraseIndex = completion.phrasesCompleted;
+      
+      // Carica nuova frase da phraseSet
+      const phrases = room.phraseSet || [];
+      if (phrases.length === 0) {
+        return callback({ ok: false, error: "Nessuna frase disponibile" });
+      }
+      
+      const selectedPhrase = phrases[nextPhraseIndex % phrases.length];
+      if (!selectedPhrase) {
+        return callback({ ok: false, error: "Frase non trovata" });
+      }
+      
+      // ✅ Incrementa currentRound (per infobox)
+      gs.currentRound = completion.phrasesCompleted + 1;
+      
+      // Reset gameState per nuova frase (COPIA ESATTA DA SINGLE PLAYER)
+      gs.phrase = selectedPhrase.text;
+      gs.rows = buildBoard(selectedPhrase.text, 14, 4);
+      gs.category = selectedPhrase.category;
+      gs.revealedLetters = [];
+      gs.usedLetters = [];
+      gs.players[gs.currentPlayerIndex].roundScore = 0;
+      gs.wheel = generateWheel();
+      gs.mustSpin = true;
+      gs.awaitingConsonant = false;
+      gs.pendingDouble = false;
+      gs.lastSpinTarget = 0;
+      gs.spinning = false;
+      gs.gameMessage = null;
+      
+      // Salva e invia SOLO a questo giocatore
+      room.playerGameStates[socket.id] = gs;
+      io.to(socket.id).emit("gameStateUpdate", { gameState: gs });
+      
+      callback({ ok: true, phraseNumber: completion.phrasesCompleted + 1 });
+    } catch (err) {
+      console.error("Errore timeChallengeNextPhrase:", err);
       callback({ ok: false, error: "Errore server" });
     }
   });

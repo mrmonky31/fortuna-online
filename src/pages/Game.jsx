@@ -358,6 +358,24 @@ export default function Game({
       if (!isTimeChallenge) {
         setBetweenRounds(true);
         setRoundCountdown(countdown);
+      } else {
+        // ✅ TIME CHALLENGE: Dopo 3s chiama server per caricare nuova frase
+        setTimeout(() => {
+          const completion = gameState?.timeChallengeData?.completions?.[socket.id];
+          const totalFrasi = gameState?.timeChallengeSettings?.numFrasi || 1;
+          
+          // Se ha ancora frasi da completare
+          if (completion && completion.phrasesCompleted < totalFrasi) {
+            socket.emit("timeChallengeNextPhrase", { roomCode }, (res) => {
+              if (!res?.ok) {
+                console.error("❌ Errore caricamento frase:", res?.error);
+              } else {
+                // Reset timer per nuova frase
+                setTimeChallengeTimer(0);
+              }
+            });
+          }
+        }, 3000); // 3 secondi per vedere lettere rivelate
       }
       
       // ✅ Reset animazione punteggio
