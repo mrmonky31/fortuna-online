@@ -2563,13 +2563,14 @@ if (gs.usedLetters.includes(upper)) {
       console.log("      nextPhraseIndex (array):", nextPhraseIndex);
       
       // Carica nuova frase da phraseSet
-      const phrases = room.phraseSet || [];
+      const phrases = room.phraseSet?.phrases || [];
       if (phrases.length === 0) {
         console.log("   ❌ ERRORE: Nessuna frase disponibile");
+        console.log("      room.phraseSet:", room.phraseSet);
         return callback({ ok: false, error: "Nessuna frase disponibile" });
       }
       
-      console.log("      phraseSet.length:", phrases.length);
+      console.log("      phraseSet.phrases.length:", phrases.length);
       
       const selectedPhrase = phrases[nextPhraseIndex % phrases.length];
       if (!selectedPhrase) {
