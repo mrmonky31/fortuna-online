@@ -358,25 +358,8 @@ export default function Game({
       if (!isTimeChallenge) {
         setBetweenRounds(true);
         setRoundCountdown(countdown);
-      } else {
-        // ✅ TIME CHALLENGE: Dopo 3s chiama server per caricare nuova frase
-        setTimeout(() => {
-          const completion = gameState?.timeChallengeData?.completions?.[socket.id];
-          const totalFrasi = gameState?.timeChallengeSettings?.numFrasi || 1;
-          
-          // Se ha ancora frasi da completare
-          if (completion && completion.phrasesCompleted < totalFrasi) {
-            socket.emit("timeChallengeNextPhrase", { roomCode }, (res) => {
-              if (!res?.ok) {
-                console.error("❌ Errore caricamento frase:", res?.error);
-              } else {
-                // Reset timer per nuova frase
-                setTimeChallengeTimer(0);
-              }
-            });
-          }
-        }, 3000); // 3 secondi per vedere lettere rivelate
       }
+      // NOTA: L'avanzamento Time Challenge è ora gestito da useEffect dedicato
       
       // ✅ Reset animazione punteggio
       setAnimatedScore(0);
@@ -445,6 +428,39 @@ export default function Game({
     
     return () => clearInterval(animation);
   }, [betweenRounds, isSinglePlayerMode, gameState?.lastRoundScore]);
+
+  // ✅ NUOVO: Avanzamento automatico Time Challenge dopo risoluzione frase
+  useEffect(() => {
+    if (!gameState || !roomCode) return;
+    
+    // Verifica se siamo in modalità Time Challenge
+    const isTimeChallenge = gameState?.isTimeChallenge === true;
+    if (!isTimeChallenge) return;
+    
+    // Verifica se la frase è stata risolta
+    if (!gameState.isPhraseSolved) return;
+    
+    // Delay di 2 secondi per mostrare la soluzione
+    const timer = setTimeout(() => {
+      console.log("⏭️ Time Challenge: Carico frase successiva...");
+      
+      socket.emit("timeChallengeNextPhrase", { roomCode }, (res) => {
+        if (!res?.ok) {
+          if (res?.finished) {
+            console.log("🏁 Time Challenge completato!");
+            return;
+          }
+          console.error("❌ Errore caricamento frase successiva:", res?.error || "Sconosciuto");
+        } else {
+          console.log("✅ Frase successiva caricata:", res.phraseNumber);
+          // Reset timer per nuova frase
+          setTimeChallengeTimer(0);
+        }
+      });
+    }, 2000);
+    
+    return () => clearTimeout(timer);
+  }, [gameState?.isPhraseSolved, gameState?.isTimeChallenge, roomCode]);
 
   // ✅ NUOVO: Costruisci grid dalla frase
   useEffect(() => {

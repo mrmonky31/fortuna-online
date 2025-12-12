@@ -2510,6 +2510,7 @@ if (gs.usedLetters.includes(upper)) {
       gs.lastSpinTarget = 0;
       gs.spinning = false;
       gs.gameMessage = null;
+      gs.isPhraseSolved = false; // ✅ CRITICO: Reset flag risoluzione
       
       // Salva e invia SOLO a questo giocatore
       room.playerGameStates[socket.id] = gs;
