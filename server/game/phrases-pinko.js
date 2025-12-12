@@ -6,15 +6,15 @@ export const phraseMode = "random"; // "random" o "sequential"
 
 // Lista completa frasi disponibili (usata quando roomName = "sfidanatale")
 export const testPhrases = [
-  { category: 'TRADIZIONI', text: 'ALBERO DI NATALE' },
-  { category: 'TRADIZIONI', text: 'PRESEPE VIVENTE' },
-  { category: 'TRADIZIONI', text: 'CALZA DELLA BEFANA' },
-  { category: 'TRADIZIONI', text: 'CORONA DI AVVENTO' },
-  { category: 'CIBO', text: 'PANETTONE E PANDORO' },
+  { category: 'TRADIZIONI NOSTRE ', text: 'GIOCARE A MAZZETTI' },
+  { category: 'TRADIZIONI', text: 'PARLARE TUTTI ALLO STESSO MOMENTO' },
+  { category: 'TRADIZIONI', text: 'NON SAPERE COSA MANGIARE' },
+  { category: 'TRAMONTI ', text: 'PER TERESINA SONO SEMPRE SUGGESTIVI' },
+  { category: 'CIBO', text: 'I BOCCONCINI DI MIRACOLINI' },
   { category: 'CIBO', text: 'TORRONE CROCCANTE' },
   { category: 'CIBO', text: 'ZAMPONE E LENTICCHIE' },
   { category: 'CIBO', text: 'COTECHINO CON PURÈ' },
-  { category: 'PERSONAGGI', text: 'BABBO NATALE' },
+  { category: 'LIDO', text: 'DISSE IL CINESE DIVERTITO' },
   { category: 'PERSONAGGI', text: 'RENNA RUDOLPH' },
   { category: 'PERSONAGGI', text: 'ELFI DI BABBO NATALE' },
   { category: 'PERSONAGGI', text: 'LA BEFANA' },
