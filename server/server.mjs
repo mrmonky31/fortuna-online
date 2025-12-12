@@ -1911,11 +1911,23 @@ if (gs.usedLetters.includes(upper)) {
             }
           } else {
             // 10. Carica PROSSIMA frase dopo un breve delay (come nextRound ma immediato)
+            // ✅ Salva variabili per setTimeout (closure)
+            const playerIndex = i;
+            const roomCode = code;
+            const socketIdToUpdate = socket.id;
+            
             setTimeout(() => {
+              // ✅ Riprendi room aggiornata
+              const currentRoom = rooms[roomCode];
+              if (!currentRoom) {
+                console.error("❌ Room non trovata:", roomCode);
+                return;
+              }
+              
               const nextPhraseIndex = completion.phrasesCompleted;
               
               // Prendi frase dal phraseSet
-              const phrases = room.phraseSet || [];
+              const phrases = currentRoom.phraseSet || [];
               if (phrases.length === 0) {
                 console.error("❌ Nessuna frase disponibile");
                 return;
@@ -1924,8 +1936,11 @@ if (gs.usedLetters.includes(upper)) {
               const nextPhrase = phrases[nextPhraseIndex % phrases.length];
               
               // Aggiorna gameState PRIVATO con nuova frase
-              const newGs = room.playerGameStates[socket.id];
-              if (!newGs) return;
+              const newGs = currentRoom.playerGameStates[socketIdToUpdate];
+              if (!newGs) {
+                console.error("❌ gameState non trovato per:", socketIdToUpdate);
+                return;
+              }
               
               newGs.phrase = nextPhrase.text;
               newGs.rows = buildBoard(nextPhrase.text, 14, 4);
@@ -1937,13 +1952,13 @@ if (gs.usedLetters.includes(upper)) {
               newGs.awaitingConsonant = false;
               newGs.pendingDouble = false;
               newGs.lastSpinTarget = 0;
-              newGs.players[i].roundScore = 0;
+              newGs.players[playerIndex].roundScore = 0; // ✅ Usa playerIndex salvato
               newGs.gameMessage = null;
               
               // Salva e invia
-              room.playerGameStates[socket.id] = newGs;
-              io.to(socket.id).emit("gameStateUpdate", { gameState: newGs });
-            }, 1500); // 1.5s delay per vedere roundWon
+              currentRoom.playerGameStates[socketIdToUpdate] = newGs;
+              io.to(socketIdToUpdate).emit("gameStateUpdate", { gameState: newGs });
+            }, 5000); // 5s delay per vedere roundWon
           }
           
           if (callback) callback({ ok: true });
