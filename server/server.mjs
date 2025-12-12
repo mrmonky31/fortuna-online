@@ -1849,6 +1849,10 @@ if (gs.usedLetters.includes(upper)) {
           
           const completion = room.timeChallengeData.completions[socket.id];
           
+          console.log("🎯 TIME CHALLENGE - VALIDAZIONE SOLUZIONE:");
+          console.log("   Player:", socket.id);
+          console.log("   phrasesCompleted PRIMA incremento:", completion.phrasesCompleted);
+          
           // 6. Aggiungi tempo e penalità
           const phraseTime = timeChallengeData?.time || 0;
           const penalties = timeChallengeData?.penalties || 0;
@@ -1857,8 +1861,14 @@ if (gs.usedLetters.includes(upper)) {
           completion.totalPenalties += penalties;
           // ✅ NON incrementare phrasesCompleted qui - lo farà timeChallengeNextPhrase
           
+          console.log("   totalTime:", completion.totalTime);
+          console.log("   totalPenalties:", completion.totalPenalties);
+          console.log("   ⚠️ NON incremento phrasesCompleted qui (corretto)");
+          
           const settings = gs.timeChallengeSettings || {};
           const totalFrasi = settings.numFrasi || 1;
+          
+          console.log("   totalFrasi configurate:", totalFrasi);
           
           // 7. Emetti roundWon (come classica)
           io.to(socket.id).emit("roundWon", {
@@ -1866,22 +1876,38 @@ if (gs.usedLetters.includes(upper)) {
             countdown: 0 // Time Challenge non ha countdown
           });
           
+          console.log("   ✅ Emesso roundWon al player");
+          
           // 8. Salva stato e emetti update
           room.playerGameStates[socket.id] = gs;
           io.to(socket.id).emit("gameStateUpdate", { gameState: gs });
           
+          console.log("   ✅ Emesso gameStateUpdate con isPhraseSolved:", gs.isPhraseSolved);
+          
           // 9. Controlla se ha finito tutte le frasi (considera la frase appena completata)
           const nextPhraseNumber = completion.phrasesCompleted + 1; // Prossima frase da caricare
           
+          console.log("   📊 CHECK FINE PARTITA:");
+          console.log("      phrasesCompleted:", completion.phrasesCompleted);
+          console.log("      nextPhraseNumber:", nextPhraseNumber);
+          console.log("      totalFrasi:", totalFrasi);
+          console.log("      Condizione (nextPhraseNumber > totalFrasi):", nextPhraseNumber > totalFrasi);
+          
           if (nextPhraseNumber > totalFrasi) {
             // ✅ Questo era l'ULTIMA frase - giocatore ha finito
+            console.log("   🏁 ULTIMA FRASE COMPLETATA - Player ha finito!");
             completion.finished = true;
             completion.phrasesCompleted = totalFrasi; // Imposta al valore finale
+            
+            console.log("   ✅ completion.finished = true");
+            console.log("   ✅ completion.phrasesCompleted = ", totalFrasi);
             
             // Controlla se TUTTI hanno finito
             const allFinished = room.players.every(p => 
               room.timeChallengeData.completions[p.id]?.finished === true
             );
+            
+            console.log("   🔍 Tutti i player hanno finito?", allFinished);
             
             if (allFinished) {
               // TUTTI HANNO FINITO - Calcola classifica
@@ -1912,7 +1938,12 @@ if (gs.usedLetters.includes(upper)) {
                 currentMatch,
                 totalMatches
               });
+              
+              console.log("   📊 Inviati risultati a tutti i player");
             }
+          } else {
+            console.log("   ➡️ Player ha ancora frasi da completare");
+            console.log("   ⏳ Aspetto che il CLIENT chiami timeChallengeNextPhrase...");
           }
           
           // ✅ Il CLIENT chiamerà "timeChallengeNextPhrase" per caricare la prossima frase
@@ -2462,11 +2493,17 @@ if (gs.usedLetters.includes(upper)) {
 
   // ✅ TIME CHALLENGE: Carica prossima frase (come nextLevel ma per Time Challenge)
   socket.on("timeChallengeNextPhrase", ({ roomCode }, callback) => {
+    console.log("🔄 ============================================");
+    console.log("🔄 RICEVUTA RICHIESTA timeChallengeNextPhrase");
+    console.log("   Player:", socket.id);
+    console.log("   Room:", roomCode);
+    
     try {
       const code = String(roomCode || "").trim().toUpperCase();
       const room = rooms[code];
       
       if (!room || room.gameMode !== "timeChallenge") {
+        console.log("   ❌ ERRORE: Room non trovata o non è Time Challenge");
         return callback({ ok: false, error: "Room non trovata o non è Time Challenge" });
       }
 
@@ -2475,46 +2512,76 @@ if (gs.usedLetters.includes(upper)) {
       // ✅ Usa gameState PRIVATO del giocatore
       const gs = room.playerGameStates?.[socket.id];
       if (!gs) {
+        console.log("   ❌ ERRORE: GameState non trovato");
         return callback({ ok: false, error: "GameState non trovato" });
       }
+      
+      console.log("   ✅ GameState trovato");
       
       // Prendi tracking completamenti
       const completion = room.timeChallengeData?.completions[socket.id];
       if (!completion) {
+        console.log("   ❌ ERRORE: Tracking non trovato");
         return callback({ ok: false, error: "Tracking non trovato" });
       }
+      
+      console.log("   ✅ Tracking trovato");
+      console.log("   📊 Stato PRIMA del caricamento:");
+      console.log("      phrasesCompleted:", completion.phrasesCompleted);
       
       // ✅ Prendi settings per verificare quante frasi totali
       const settings = gs.timeChallengeSettings || {};
       const totalFrasi = settings.numFrasi || 1;
       
+      console.log("      totalFrasi:", totalFrasi);
+      
       // ✅ VERIFICA: Il giocatore ha ancora frasi da completare?
       const nextPhraseNumber = completion.phrasesCompleted + 1; // Prossima frase (1-indexed)
       
+      console.log("      nextPhraseNumber:", nextPhraseNumber);
+      console.log("      Condizione (nextPhraseNumber > totalFrasi):", nextPhraseNumber > totalFrasi);
+      
       if (nextPhraseNumber > totalFrasi) {
         // Ha già completato tutte le frasi - non dovrebbe arrivare qui
-        console.log(`⚠️ Giocatore ${socket.id} ha già completato tutte le frasi`);
+        console.log("   ⚠️ Player ha già completato tutte le frasi - NON carico nuova frase");
         return callback({ ok: false, finished: true });
       }
       
+      console.log("   ✅ Player ha ancora frasi da completare");
+      
       const nextPhraseIndex = completion.phrasesCompleted; // Index array (0-indexed)
+      
+      console.log("   📥 Caricamento frase:");
+      console.log("      nextPhraseIndex (array):", nextPhraseIndex);
       
       // Carica nuova frase da phraseSet
       const phrases = room.phraseSet || [];
       if (phrases.length === 0) {
+        console.log("   ❌ ERRORE: Nessuna frase disponibile");
         return callback({ ok: false, error: "Nessuna frase disponibile" });
       }
       
+      console.log("      phraseSet.length:", phrases.length);
+      
       const selectedPhrase = phrases[nextPhraseIndex % phrases.length];
       if (!selectedPhrase) {
+        console.log("   ❌ ERRORE: Frase non trovata all'indice", nextPhraseIndex);
         return callback({ ok: false, error: "Frase non trovata" });
       }
+      
+      console.log("   ✅ Frase caricata:", selectedPhrase.text.substring(0, 30) + "...");
       
       // ✅ INCREMENTA phrasesCompleted DOPO aver caricato con successo la nuova frase
       completion.phrasesCompleted++;
       
+      console.log("   ✅ INCREMENTATO phrasesCompleted:", completion.phrasesCompleted);
+      
       // ✅ Incrementa currentRound (per infobox)
       gs.currentRound = completion.phrasesCompleted;
+      
+      console.log("   ✅ currentRound aggiornato:", gs.currentRound);
+      
+      console.log("   🔄 Reset gameState per nuova frase...");
       
       // Reset gameState per nuova frase (COPIA ESATTA DA SINGLE PLAYER)
       gs.phrase = selectedPhrase.text;
@@ -2532,13 +2599,25 @@ if (gs.usedLetters.includes(upper)) {
       gs.gameMessage = null;
       gs.isPhraseSolved = false; // ✅ CRITICO: Reset flag risoluzione per evitare loop
       
+      console.log("   ✅ isPhraseSolved resettato a:", gs.isPhraseSolved);
+      console.log("   ✅ Nuova frase:", gs.phrase.substring(0, 30) + "...");
+      
       // Salva e invia SOLO a questo giocatore
       room.playerGameStates[socket.id] = gs;
       io.to(socket.id).emit("gameStateUpdate", { gameState: gs });
       
+      console.log("   ✅ Emesso gameStateUpdate al player");
+      console.log("   ✅ phraseNumber:", completion.phrasesCompleted);
+      console.log("🔄 ============================================");
+      
       callback({ ok: true, phraseNumber: completion.phrasesCompleted });
     } catch (err) {
-      console.error("Errore timeChallengeNextPhrase:", err);
+      console.error("❌ ============================================");
+      console.error("❌ ERRORE CRITICO in timeChallengeNextPhrase:");
+      console.error("   Player:", socket.id);
+      console.error("   Errore:", err);
+      console.error("   Stack:", err.stack);
+      console.error("❌ ============================================");
       callback({ ok: false, error: "Errore server" });
     }
   });

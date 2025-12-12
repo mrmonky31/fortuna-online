@@ -297,7 +297,13 @@ export default function Game({
 
   useEffect(() => {
     function handleGameStateUpdate({ gameState: serverState, revealQueue: newRevealQueue, letterToReveal }) {
+      console.log("📨 [CLIENT] gameStateUpdate ricevuto");
+      
       if (serverState) {
+        console.log("   isTimeChallenge:", serverState?.isTimeChallenge);
+        console.log("   isPhraseSolved:", serverState?.isPhraseSolved);
+        console.log("   phrase:", serverState?.phrase?.substring(0, 30) + "...");
+        
         setGameState(serverState);
         
         // ✅ TIME CHALLENGE: Traccia penalità su errori
@@ -350,14 +356,22 @@ export default function Game({
 
   useEffect(() => {
     function handleRoundWon({ winnerName, countdown }) {
-// console.log("🎉 Round vinto da:", winnerName);
+      console.log("🎉 [CLIENT] roundWon ricevuto");
+      console.log("   winnerName:", winnerName);
+      console.log("   countdown:", countdown);
+      
       setWinnerName(winnerName);
       
       // ✅ TIME CHALLENGE: NON attivare betweenRounds (countdown disabilitato)
       const isTimeChallenge = gameState?.isTimeChallenge === true;
+      console.log("   isTimeChallenge:", isTimeChallenge);
+      
       if (!isTimeChallenge) {
+        console.log("   ➡️ Modalità classica - Attivo betweenRounds");
         setBetweenRounds(true);
         setRoundCountdown(countdown);
+      } else {
+        console.log("   ➡️ Time Challenge - NON attivo betweenRounds");
       }
       // NOTA: L'avanzamento Time Challenge è ora gestito da useEffect dedicato
       
@@ -431,35 +445,61 @@ export default function Game({
 
   // ✅ NUOVO: Avanzamento automatico Time Challenge dopo risoluzione frase
   useEffect(() => {
-    if (!gameState || !roomCode) return;
+    console.log("🎮 [CLIENT] useEffect isPhraseSolved triggered");
+    console.log("   gameState:", gameState ? "presente" : "null");
+    console.log("   roomCode:", roomCode);
+    
+    if (!gameState || !roomCode) {
+      console.log("   ❌ gameState o roomCode mancante - SKIP");
+      return;
+    }
     
     // Verifica se siamo in modalità Time Challenge
     const isTimeChallenge = gameState?.isTimeChallenge === true;
-    if (!isTimeChallenge) return;
+    console.log("   isTimeChallenge:", isTimeChallenge);
+    
+    if (!isTimeChallenge) {
+      console.log("   ❌ Non è Time Challenge - SKIP");
+      return;
+    }
     
     // Verifica se la frase è stata risolta
-    if (!gameState.isPhraseSolved) return;
+    console.log("   isPhraseSolved:", gameState.isPhraseSolved);
+    
+    if (!gameState.isPhraseSolved) {
+      console.log("   ❌ Frase non ancora risolta - SKIP");
+      return;
+    }
+    
+    console.log("   ✅ FRASE RISOLTA! Avvio timer 2s...");
     
     // Delay di 2 secondi per mostrare la soluzione
     const timer = setTimeout(() => {
-      console.log("⏭️ Time Challenge: Carico frase successiva...");
+      console.log("   ⏰ Timer scaduto - Chiamo timeChallengeNextPhrase");
+      console.log("   📤 socket.emit('timeChallengeNextPhrase', { roomCode:", roomCode, "})");
       
       socket.emit("timeChallengeNextPhrase", { roomCode }, (res) => {
+        console.log("   📥 Risposta ricevuta da server:");
+        console.log("      res:", res);
+        
         if (!res?.ok) {
           if (res?.finished) {
-            console.log("🏁 Time Challenge completato!");
+            console.log("   🏁 Time Challenge completato!");
             return;
           }
-          console.error("❌ Errore caricamento frase successiva:", res?.error || "Sconosciuto");
+          console.error("   ❌ Errore caricamento frase successiva:", res?.error || "Sconosciuto");
         } else {
-          console.log("✅ Frase successiva caricata:", res.phraseNumber);
+          console.log("   ✅ Frase successiva caricata:", res.phraseNumber);
           // Reset timer per nuova frase
           setTimeChallengeTimer(0);
         }
       });
     }, 2000);
     
-    return () => clearTimeout(timer);
+    return () => {
+      console.log("   🧹 Cleanup timer isPhraseSolved");
+      clearTimeout(timer);
+    };
   }, [gameState?.isPhraseSolved, gameState?.isTimeChallenge, roomCode]);
 
   // ✅ NUOVO: Costruisci grid dalla frase
