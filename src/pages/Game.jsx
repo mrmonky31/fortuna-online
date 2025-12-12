@@ -1259,7 +1259,7 @@ export default function Game({
           {isTimeChallenge && solutionPanelOpen && (
             <div style={{
               position: 'absolute',
-              top: '20%',
+              top: '0%',
               left: '20%',
               width: '300vw',
               height: '120vh',
