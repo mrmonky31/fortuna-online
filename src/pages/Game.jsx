@@ -1283,7 +1283,7 @@ export default function Game({
               <div style={{
                 position: 'absolute',
                 top: '10%',        // ← Cambia qui per verticale
-                left: '0%',        // ← Cambia qui per orizzontale 
+                left: '20%',        // ← Cambia qui per orizzontale 
                 background: 'rgba(255, 68, 68, 0.2)',
                 border: '3px solid #ff4444',
                 borderRadius: '12px',
