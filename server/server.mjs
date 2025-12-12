@@ -1898,9 +1898,9 @@ if (gs.usedLetters.includes(upper)) {
           console.log("      phrasesCompleted:", completion.phrasesCompleted);
           console.log("      nextPhraseNumber:", nextPhraseNumber);
           console.log("      totalFrasi:", totalFrasi);
-          console.log("      Condizione (nextPhraseNumber > totalFrasi):", nextPhraseNumber > totalFrasi);
+          console.log("      Condizione (nextPhraseNumber >= totalFrasi):", nextPhraseNumber >= totalFrasi);
           
-          if (nextPhraseNumber > totalFrasi) {
+          if (nextPhraseNumber >= totalFrasi) {
             // ✅ Questo era l'ULTIMA frase - giocatore ha finito
             console.log("   🏁 ULTIMA FRASE COMPLETATA - Player ha finito!");
             completion.finished = true;
@@ -2547,9 +2547,9 @@ if (gs.usedLetters.includes(upper)) {
       const nextPhraseNumber = completion.phrasesCompleted + 1; // Prossima frase (1-indexed)
       
       console.log("      nextPhraseNumber:", nextPhraseNumber);
-      console.log("      Condizione (nextPhraseNumber > totalFrasi):", nextPhraseNumber > totalFrasi);
+      console.log("      Condizione (nextPhraseNumber >= totalFrasi):", nextPhraseNumber >= totalFrasi);
       
-      if (nextPhraseNumber > totalFrasi) {
+      if (nextPhraseNumber >= totalFrasi) {
         // Ha già completato tutte le frasi - non dovrebbe arrivare qui
         console.log("   ⚠️ Player ha già completato tutte le frasi - NON carico nuova frase");
         return callback({ ok: false, finished: true });
