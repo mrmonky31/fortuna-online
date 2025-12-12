@@ -2,7 +2,7 @@
 // 📍 Posizionare in: server/game/phrases-sfidanatale.js
 
 // Modalità di selezione quando NON si usa un set specifico
-export const phraseMode = "random"; // "random" o "sequential"
+export const phraseMode = "sequential"; // "random" o "sequential"
 
 // Lista completa frasi disponibili (usata quando roomName = "sfidanatale")
 export const testPhrases = [
