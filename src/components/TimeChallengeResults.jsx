@@ -8,10 +8,13 @@ export default function TimeChallengeResults({
   currentMatch, 
   totalMatches, 
   waiting,
-  hostId,
+  hostName,
+  playerName,
   roomCode
 }) {
-  const isHost = socket.id === hostId;
+  const isHost = playerName === hostName;
+  
+  console.log("TimeChallengeResults - playerName:", playerName, "hostName:", hostName, "isHost:", isHost);
   
   const handleNewMatch = () => {
     socket.emit("timeChallengeNewMatch", { roomCode }, (response) => {
@@ -165,34 +168,32 @@ export default function TimeChallengeResults({
           flexWrap: 'wrap',
           justifyContent: 'center'
         }}>
-          {/* ✅ Pulsante NUOVO MATCH - solo per l'host */}
-          {isHost && (
-            <button
-              onClick={handleNewMatch}
-              style={{
-                padding: '15px 40px',
-                fontSize: '1.2rem',
-                fontWeight: 'bold',
-                color: '#fff',
-                background: 'linear-gradient(135deg, #ff6b6b 0%, #ff5252 100%)',
-                border: 'none',
-                borderRadius: '10px',
-                cursor: 'pointer',
-                boxShadow: '0 4px 15px rgba(255, 107, 107, 0.4)',
-                transition: 'all 0.3s ease'
-              }}
-              onMouseOver={(e) => {
-                e.target.style.transform = 'translateY(-2px)';
-                e.target.style.boxShadow = '0 6px 20px rgba(255, 107, 107, 0.6)';
-              }}
-              onMouseOut={(e) => {
-                e.target.style.transform = 'translateY(0)';
-                e.target.style.boxShadow = '0 4px 15px rgba(255, 107, 107, 0.4)';
-              }}
-            >
-              🔄 NUOVO MATCH
-            </button>
-          )}
+          {/* ✅ Pulsante NUOVO MATCH - visibile a TUTTI */}
+          <button
+            onClick={handleNewMatch}
+            style={{
+              padding: '15px 40px',
+              fontSize: '1.2rem',
+              fontWeight: 'bold',
+              color: '#fff',
+              background: 'linear-gradient(135deg, #ff6b6b 0%, #ff5252 100%)',
+              border: 'none',
+              borderRadius: '10px',
+              cursor: 'pointer',
+              boxShadow: '0 4px 15px rgba(255, 107, 107, 0.4)',
+              transition: 'all 0.3s ease'
+            }}
+            onMouseOver={(e) => {
+              e.target.style.transform = 'translateY(-2px)';
+              e.target.style.boxShadow = '0 6px 20px rgba(255, 107, 107, 0.6)';
+            }}
+            onMouseOut={(e) => {
+              e.target.style.transform = 'translateY(0)';
+              e.target.style.boxShadow = '0 4px 15px rgba(255, 107, 107, 0.4)';
+            }}
+          >
+            🔄 NUOVO MATCH
+          </button>
 
           <button
             onClick={onBackToLobby}

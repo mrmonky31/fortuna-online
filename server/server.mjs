@@ -2022,6 +2022,10 @@ if (gs.usedLetters.includes(upper)) {
             console.log("   - Risultati:", results.length);
             console.log("   - Waiting:", !allFinished);
             
+            // Trova il nome dell'host
+            const hostPlayer = room.players.find(p => p.isHost);
+            const hostName = hostPlayer ? hostPlayer.name : null;
+            
             // 🔥 INVIA CLASSIFICA SOLO AI GIOCATORI CHE HANNO FINITO
             room.players.forEach(p => {
               const playerCompletion = room.timeChallengeData.completions[p.id];
@@ -2033,7 +2037,8 @@ if (gs.usedLetters.includes(upper)) {
                   waiting: !allFinished,
                   currentMatch,
                   totalMatches,
-                  hostId: room.hostId,
+                  hostName: hostName,
+                  playerName: p.name,
                   roomCode: code
                 });
               }
@@ -2850,11 +2855,6 @@ if (gs.usedLetters.includes(upper)) {
       
       if (!room || room.gameMode !== "timeChallenge") {
         return callback({ ok: false, error: "Room non trovata o non è Time Challenge" });
-      }
-      
-      // ✅ VERIFICA: Solo l'host può avviare nuovo match
-      if (socket.id !== room.hostId) {
-        return callback({ ok: false, error: "Solo l'host può avviare un nuovo match" });
       }
       
       console.log("🔄 NUOVO MATCH TIME CHALLENGE - Room:", code);
