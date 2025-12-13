@@ -2683,8 +2683,8 @@ if (gs.usedLetters.includes(upper)) {
         const maxAttempts = phrases.length;
         
         while (!selectedPhrase && attempts < maxAttempts) {
-          // 🔥 USA phraseIndexInMatch (posizione del giocatore) NON currentMatchPhrases.length
-          const candidateIndex = (room.timeChallengeData.startPhraseIndex + phraseIndexInMatch + searchIndex) % phrases.length;
+          // 🔥 +1 per saltare frase 0: se phraseIndexInMatch=0 cerca da 1, se =1 cerca da 2, ecc.
+          const candidateIndex = (room.timeChallengeData.startPhraseIndex + phraseIndexInMatch + 1 + searchIndex) % phrases.length;
           const candidate = phrases[candidateIndex];
           
           // Controlla che NON sia in playedPhrases (match precedenti) E NON in currentMatchPhrases (già usata in questo match)
