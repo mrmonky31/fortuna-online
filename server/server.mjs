@@ -1974,11 +1974,12 @@ if (gs.usedLetters.includes(upper)) {
           io.to(socket.id).emit("gameStateUpdate", { gameState: gs });
           
           
-          // 9. Controlla se ha finito tutte le frasi (considera la frase appena completata)
-          const nextPhraseNumber = completion.phrasesCompleted + 1; // Prossima frase da caricare
+          // 9. Controlla se ha finito tutte le frasi
+          // 🔥 FIX: Usa phrasesCompleted ATTUALE + 1 per includere la frase appena completata
+          const currentPhraseJustCompleted = completion.phrasesCompleted + 1;
           
           
-          if (nextPhraseNumber >= totalFrasi) {
+          if (currentPhraseJustCompleted >= totalFrasi) {
             // ✅ Questo era l'ULTIMA frase - giocatore ha finito
             completion.finished = true;
             completion.phrasesCompleted = totalFrasi; // Imposta al valore finale
@@ -2012,12 +2013,24 @@ if (gs.usedLetters.includes(upper)) {
             const currentMatch = room.timeChallengeData.currentMatch || 1;
             const totalMatches = settings.numMatch || 1;
             
-            // 🔥 INVIA CLASSIFICA AGGIORNATA A TUTTI I GIOCATORI
-            io.to(code).emit("showTimeChallengeResults", {
-              results,
-              waiting: !allFinished, // In attesa se non tutti hanno finito
-              currentMatch,
-              totalMatches
+            // 🔥 INVIA CLASSIFICA SOLO AI GIOCATORI CHE HANNO FINITO
+            room.players.forEach(p => {
+              const playerCompletion = room.timeChallengeData.completions[p.id];
+              if (playerCompletion && playerCompletion.finished) {
+                // Trova il socket di questo giocatore
+                const playerSocket = Array.from(io.sockets.sockets.values()).find(s => 
+                  s.data?.playerId === p.id && s.data?.roomCode === code
+                );
+                
+                if (playerSocket) {
+                  io.to(playerSocket.id).emit("showTimeChallengeResults", {
+                    results,
+                    waiting: !allFinished,
+                    currentMatch,
+                    totalMatches
+                  });
+                }
+              }
             });
           } else {
           }
@@ -2604,8 +2617,9 @@ if (gs.usedLetters.includes(upper)) {
       const nextPhraseNumber = completion.phrasesCompleted + 1; // Prossima frase (1-indexed)
       
       
-      if (nextPhraseNumber >= totalFrasi) {
+      if (nextPhraseNumber > totalFrasi) {
         // Ha già completato tutte le frasi - non dovrebbe arrivare qui
+        console.log("⚠️ Giocatore ha già finito tutte le frasi");
         return callback({ ok: false, finished: true });
       }
       
@@ -2630,15 +2644,6 @@ if (gs.usedLetters.includes(upper)) {
       }
       
       
-      // ✅ INCREMENTA phrasesCompleted DOPO aver caricato con successo la nuova frase
-      completion.phrasesCompleted++;
-      
-      
-      // ✅ Incrementa currentRound (per infobox)
-      gs.currentRound = completion.phrasesCompleted;
-      
-      
-      
       // Reset gameState per nuova frase (COPIA ESATTA DA SINGLE PLAYER)
       gs.phrase = selectedPhrase.text;
       gs.rows = buildBoard(selectedPhrase.text, 14, 4);
@@ -2654,6 +2659,16 @@ if (gs.usedLetters.includes(upper)) {
       gs.spinning = false;
       gs.gameMessage = null;
       gs.isPhraseSolved = false; // ✅ CRITICO: Reset flag risoluzione per evitare loop
+      
+      
+      // ✅ INCREMENTA phrasesCompleted DOPO aver caricato con successo la nuova frase
+      completion.phrasesCompleted++;
+      
+      
+      // ✅ Incrementa currentRound (per infobox)
+      gs.currentRound = completion.phrasesCompleted;
+      gs.currentRound = completion.phrasesCompleted;
+      
       
       
       // Salva e invia SOLO a questo giocatore
