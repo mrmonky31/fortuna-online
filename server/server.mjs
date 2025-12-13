@@ -1049,7 +1049,7 @@ io.on("connection", (socket) => {
           room.timeChallengeData = {
             currentMatch: 1,
             completions: {},
-            startPhraseIndex: 0,
+            startPhraseIndex: 1, // 🔥 PARTE DA 1 NON 0
             playedPhrases: [], // Frasi già usate nei match precedenti
             currentMatchPhrases: [] // ✅ Frasi assegnate nel match CORRENTE (tutti i giocatori usano queste)
           };
@@ -1137,14 +1137,14 @@ io.on("connection", (socket) => {
         room.timeChallengeData = { 
           currentMatch: 1, 
           completions: {},
-          startPhraseIndex: 0,
+          startPhraseIndex: 1,
           playedPhrases: [],
           currentMatchPhrases: []
         };
       }
       
       // 🔥 INCREMENTA startPhraseIndex in base al numero di frasi del match precedente
-      const previousStartIndex = room.timeChallengeData.startPhraseIndex || 0;
+      const previousStartIndex = room.timeChallengeData.startPhraseIndex || 1;
       room.timeChallengeData.startPhraseIndex = previousStartIndex + settings.numFrasi;
       room.timeChallengeData.currentMatch = (room.timeChallengeData.currentMatch || 1) + 1;
 
@@ -1936,7 +1936,7 @@ if (gs.usedLetters.includes(upper)) {
             room.timeChallengeData = {
               currentMatch: 1,
               completions: {},
-              startPhraseIndex: 0,
+              startPhraseIndex: 1,
               playedPhrases: [],
               currentMatchPhrases: []
             };
@@ -2917,7 +2917,7 @@ if (gs.usedLetters.includes(upper)) {
       // ✅ Aggiorna startPhraseIndex per continuare dalle frasi successive
       const settings = room.timeChallengeData.settings || {};
       const numFrasi = settings.numFrasi || 3;
-      const oldStartIndex = room.timeChallengeData.startPhraseIndex || 0;
+      const oldStartIndex = room.timeChallengeData.startPhraseIndex || 1;
       const newStartIndex = oldStartIndex + numFrasi;
       
       room.timeChallengeData.startPhraseIndex = newStartIndex;
