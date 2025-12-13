@@ -1,7 +1,7 @@
 // src/components/TimeChallengeResults.jsx
 import React from "react";
 
-export default function TimeChallengeResults({ results, onBackToLobby, currentMatch, totalMatches }) {
+export default function TimeChallengeResults({ results, onBackToLobby, currentMatch, totalMatches, waiting }) {
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -52,6 +52,24 @@ export default function TimeChallengeResults({ results, onBackToLobby, currentMa
           textAlign: 'center'
         }}>
           Match {currentMatch} / {totalMatches}
+        </div>
+      )}
+
+      {/* ⚠️ MESSAGGIO DI ATTESA */}
+      {waiting && (
+        <div style={{
+          fontSize: '1.5rem',
+          color: '#ff6b6b',
+          marginBottom: '30px',
+          textAlign: 'center',
+          padding: '20px 40px',
+          background: 'rgba(255, 107, 107, 0.1)',
+          borderRadius: '10px',
+          border: '2px solid #ff6b6b',
+          fontWeight: 'bold',
+          animation: 'pulse 2s ease-in-out infinite'
+        }}>
+          ⚠️ ATTENZIONE: ATTENDERE QUI CHE TUTTI FINISCANO DI GIOCARE ⚠️
         </div>
       )}
 
@@ -131,32 +149,48 @@ export default function TimeChallengeResults({ results, onBackToLobby, currentMa
         ))}
       </div>
 
-      <button
-        onClick={onBackToLobby}
-        style={{
-          marginTop: '40px',
-          padding: '15px 40px',
-          fontSize: '1.2rem',
-          fontWeight: 'bold',
-          color: '#fff',
-          background: 'linear-gradient(135deg, #00ff55 0%, #00cc44 100%)',
-          border: 'none',
-          borderRadius: '10px',
-          cursor: 'pointer',
-          boxShadow: '0 4px 15px rgba(0, 255, 85, 0.4)',
-          transition: 'all 0.3s ease'
-        }}
-        onMouseOver={(e) => {
-          e.target.style.transform = 'translateY(-2px)';
-          e.target.style.boxShadow = '0 6px 20px rgba(0, 255, 85, 0.6)';
-        }}
-        onMouseOut={(e) => {
-          e.target.style.transform = 'translateY(0)';
-          e.target.style.boxShadow = '0 4px 15px rgba(0, 255, 85, 0.4)';
-        }}
-      >
-        {isLastMatch ? 'TORNA ALLA LOBBY' : 'PROSSIMO MATCH ➜'}
-      </button>
+      {/* ✅ Mostra il pulsante solo se tutti hanno finito */}
+      {!waiting && (
+        <button
+          onClick={onBackToLobby}
+          style={{
+            marginTop: '40px',
+            padding: '15px 40px',
+            fontSize: '1.2rem',
+            fontWeight: 'bold',
+            color: '#fff',
+            background: 'linear-gradient(135deg, #00ff55 0%, #00cc44 100%)',
+            border: 'none',
+            borderRadius: '10px',
+            cursor: 'pointer',
+            boxShadow: '0 4px 15px rgba(0, 255, 85, 0.4)',
+            transition: 'all 0.3s ease'
+          }}
+          onMouseOver={(e) => {
+            e.target.style.transform = 'translateY(-2px)';
+            e.target.style.boxShadow = '0 6px 20px rgba(0, 255, 85, 0.6)';
+          }}
+          onMouseOut={(e) => {
+            e.target.style.transform = 'translateY(0)';
+            e.target.style.boxShadow = '0 4px 15px rgba(0, 255, 85, 0.4)';
+          }}
+        >
+          {isLastMatch ? 'TORNA ALLA LOBBY' : 'PROSSIMO MATCH ➜'}
+        </button>
+      )}
+
+      <style>{`
+        @keyframes pulse {
+          0%, 100% {
+            opacity: 1;
+            transform: scale(1);
+          }
+          50% {
+            opacity: 0.8;
+            transform: scale(1.02);
+          }
+        }
+      `}</style>
     </div>
   );
 }

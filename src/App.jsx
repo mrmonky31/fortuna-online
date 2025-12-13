@@ -86,6 +86,7 @@ function App() {
           results={timeChallengeResults.results}
           currentMatch={timeChallengeResults.currentMatch}
           totalMatches={timeChallengeResults.totalMatches}
+          waiting={timeChallengeResults.waiting || false}
           onBackToLobby={handleExitToLobby}
         />
       )}

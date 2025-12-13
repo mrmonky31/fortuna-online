@@ -1983,25 +1983,11 @@ if (gs.usedLetters.includes(upper)) {
             completion.finished = true;
             completion.phrasesCompleted = totalFrasi; // Imposta al valore finale
             
-            // 🔥 INVIA SUBITO schermata risultati a QUESTO player con flag "waiting"
-            io.to(socket.id).emit("showTimeChallengeResults", {
-              results: [], // Vuoto, il client mostrerà "In attesa..."
-              waiting: true, // Flag per mostrare "In attesa degli altri giocatori"
-              currentMatch: room.timeChallengeData.currentMatch || 1,
-              totalMatches: settings.numMatch || 1
-            });
-            
-            // Controlla se TUTTI hanno finito
-            const allFinished = room.players.every(p => 
-              room.timeChallengeData.completions[p.id]?.finished === true
-            );
-            
-            
-            if (allFinished) {
-              // TUTTI HANNO FINITO - Calcola classifica
-              const results = room.players.map(p => {
+            // 🔥 CALCOLA CLASSIFICA ATTUALE (solo giocatori che hanno finito)
+            const results = room.players
+              .map(p => {
                 const data = room.timeChallengeData.completions[p.id];
-                if (!data) return null;
+                if (!data || !data.finished) return null; // Solo giocatori finiti
                 
                 const finalTime = data.totalTime + data.totalPenalties;
                 
@@ -2012,23 +1998,27 @@ if (gs.usedLetters.includes(upper)) {
                   totalPenalties: data.totalPenalties,
                   finalTime
                 };
-              }).filter(Boolean);
-              
-              // Ordina per finalTime crescente
-              results.sort((a, b) => a.finalTime - b.finalTime);
-              
-              const currentMatch = room.timeChallengeData.currentMatch || 1;
-              const totalMatches = settings.numMatch || 1;
-              
-              // 🔥 Invia risultati COMPLETI a TUTTI (sovrascrive il waiting)
-              io.to(code).emit("showTimeChallengeResults", {
-                results,
-                waiting: false, // Flag: non più in attesa
-                currentMatch,
-                totalMatches
-              });
-              
-            }
+              })
+              .filter(Boolean);
+            
+            // Ordina per finalTime crescente
+            results.sort((a, b) => a.finalTime - b.finalTime);
+            
+            // Controlla se TUTTI hanno finito
+            const allFinished = room.players.every(p => 
+              room.timeChallengeData.completions[p.id]?.finished === true
+            );
+            
+            const currentMatch = room.timeChallengeData.currentMatch || 1;
+            const totalMatches = settings.numMatch || 1;
+            
+            // 🔥 INVIA CLASSIFICA AGGIORNATA A TUTTI I GIOCATORI
+            io.to(code).emit("showTimeChallengeResults", {
+              results,
+              waiting: !allFinished, // In attesa se non tutti hanno finito
+              currentMatch,
+              totalMatches
+            });
           } else {
           }
           
