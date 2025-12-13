@@ -1975,14 +1975,19 @@ if (gs.usedLetters.includes(upper)) {
           
           
           // 9. Controlla se ha finito tutte le frasi
-          // 🔥 FIX: Usa phrasesCompleted ATTUALE + 1 per includere la frase appena completata
-          const currentPhraseJustCompleted = completion.phrasesCompleted + 1;
+          // phrasesCompleted parte da 0 e viene incrementato in timeChallengeNextPhrase
+          // Dopo aver completato la frase N, phrasesCompleted sarà N
+          // Se phrasesCompleted == totalFrasi-1, questa era l'ULTIMA frase
           
+          console.log("   Controllo fine frasi:");
+          console.log("   - phrasesCompleted attuale:", completion.phrasesCompleted);
+          console.log("   - totalFrasi:", totalFrasi);
           
-          if (currentPhraseJustCompleted >= totalFrasi) {
+          if (completion.phrasesCompleted >= totalFrasi - 1) {
             // ✅ Questo era l'ULTIMA frase - giocatore ha finito
             completion.finished = true;
-            completion.phrasesCompleted = totalFrasi; // Imposta al valore finale
+            
+            console.log("   🏁 GIOCATORE HA FINITO!");
             
             // 🔥 CALCOLA CLASSIFICA ATTUALE (solo giocatori che hanno finito)
             const results = room.players
@@ -1994,7 +1999,7 @@ if (gs.usedLetters.includes(upper)) {
                 
                 return {
                   playerName: data.playerName,
-                  phrasesCompleted: data.phrasesCompleted,
+                  phrasesCompleted: totalFrasi, // Mostra sempre totalFrasi per chi ha finito
                   totalTime: data.totalTime,
                   totalPenalties: data.totalPenalties,
                   finalTime
@@ -2013,10 +2018,15 @@ if (gs.usedLetters.includes(upper)) {
             const currentMatch = room.timeChallengeData.currentMatch || 1;
             const totalMatches = settings.numMatch || 1;
             
+            console.log("   Invio risultati a giocatori finiti:");
+            console.log("   - Risultati:", results.length);
+            console.log("   - Waiting:", !allFinished);
+            
             // 🔥 INVIA CLASSIFICA SOLO AI GIOCATORI CHE HANNO FINITO
             room.players.forEach(p => {
               const playerCompletion = room.timeChallengeData.completions[p.id];
               if (playerCompletion && playerCompletion.finished) {
+                console.log("   - Invio a:", p.name, "socket:", p.id);
                 // p.id è il socket.id del giocatore
                 io.to(p.id).emit("showTimeChallengeResults", {
                   results,
@@ -2027,6 +2037,7 @@ if (gs.usedLetters.includes(upper)) {
               }
             });
           } else {
+            console.log("   ➡️ Ancora frasi da completare");
           }
           
           // ✅ Il CLIENT chiamerà "timeChallengeNextPhrase" per caricare la prossima frase
