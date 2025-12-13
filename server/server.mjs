@@ -1050,15 +1050,16 @@ io.on("connection", (socket) => {
             currentMatch: 1,
             completions: {},
             startPhraseIndex: 0,
-            playedPhrases: [] // ✅ Array delle frasi GIÀ GIOCATE (contiene il TESTO)
+            playedPhrases: [], // Frasi già usate nei match precedenti
+            currentMatchPhrases: [] // ✅ Frasi assegnate nel match CORRENTE (tutti i giocatori usano queste)
           };
         }
         
-        // ✅ Aggiungi la prima frase all'array delle frasi già giocate
-        if (!room.timeChallengeData.playedPhrases) {
-          room.timeChallengeData.playedPhrases = [];
-        }
-        room.timeChallengeData.playedPhrases.push(selectedPhrase.text);
+        // ✅ Reset currentMatchPhrases per nuovo match
+        room.timeChallengeData.currentMatchPhrases = [];
+        
+        // ✅ Aggiungi la prima frase del match
+        room.timeChallengeData.currentMatchPhrases.push(selectedPhrase.text);
         
         // Inizializza mappa stati privati
         room.playerGameStates = {};
@@ -1137,7 +1138,8 @@ io.on("connection", (socket) => {
           currentMatch: 1, 
           completions: {},
           startPhraseIndex: 0,
-          playedPhrases: []
+          playedPhrases: [],
+          currentMatchPhrases: []
         };
       }
       
@@ -1935,7 +1937,8 @@ if (gs.usedLetters.includes(upper)) {
               currentMatch: 1,
               completions: {},
               startPhraseIndex: 0,
-              playedPhrases: []
+              playedPhrases: [],
+              currentMatchPhrases: []
             };
           }
           
@@ -2655,35 +2658,51 @@ if (gs.usedLetters.includes(upper)) {
         return callback({ ok: false, error: "Nessuna frase disponibile" });
       }
       
-      // 🔥 CONTROLLO ANTI-DUPLICATI: Cerca una frase NON ancora giocata
-      const playedPhrases = room.timeChallengeData.playedPhrases || [];
+      // 🔥 LOGICA FRASI CONDIVISE TRA GIOCATORI:
+      // - currentMatchPhrases contiene le frasi di QUESTO match
+      // - Tutti i giocatori usano le stesse frasi nello stesso ordine
+      // - Se la frase per questo indice non esiste ancora, la troviamo e la aggiungiamo
+      
+      const currentMatchPhrases = room.timeChallengeData.currentMatchPhrases || [];
+      const phraseIndexInMatch = completion.phrasesCompleted; // 0, 1, 2...
       
       let selectedPhrase = null;
-      let searchIndex = completion.phrasesCompleted;
-      let attempts = 0;
-      const maxAttempts = phrases.length; // Massimo numero di tentativi
       
-      while (!selectedPhrase && attempts < maxAttempts) {
-        const candidateIndex = (room.timeChallengeData.startPhraseIndex + searchIndex) % phrases.length;
-        const candidate = phrases[candidateIndex];
+      // ✅ Controlla se questa frase è già stata assegnata nel match corrente
+      if (phraseIndexInMatch < currentMatchPhrases.length) {
+        // La frase esiste già, trovala nel set
+        const phraseText = currentMatchPhrases[phraseIndexInMatch];
+        selectedPhrase = phrases.find(p => p.text === phraseText);
+        console.log("✅ Uso frase già assegnata:", phraseText.substring(0, 30) + "...");
+      } else {
+        // Devo trovare una NUOVA frase (sono il primo giocatore a raggiungerla)
+        const playedPhrases = room.timeChallengeData.playedPhrases || [];
         
-        // Controlla se questa frase è già stata giocata (confronta il TESTO)
-        if (!playedPhrases.includes(candidate.text)) {
-          selectedPhrase = candidate;
-          console.log("✅ Trovata frase nuova:", candidate.text.substring(0, 30) + "...");
-        } else {
-          console.log("⚠️ Frase già giocata, salto:", candidate.text.substring(0, 30) + "...");
-          searchIndex++;
+        let searchIndex = 0;
+        let attempts = 0;
+        const maxAttempts = phrases.length;
+        
+        while (!selectedPhrase && attempts < maxAttempts) {
+          const candidateIndex = (room.timeChallengeData.startPhraseIndex + currentMatchPhrases.length + searchIndex) % phrases.length;
+          const candidate = phrases[candidateIndex];
+          
+          // Controlla che NON sia in playedPhrases (match precedenti) E NON in currentMatchPhrases (già usata in questo match)
+          if (!playedPhrases.includes(candidate.text) && !currentMatchPhrases.includes(candidate.text)) {
+            selectedPhrase = candidate;
+            // ✅ Aggiungi a currentMatchPhrases così gli altri giocatori useranno la stessa
+            room.timeChallengeData.currentMatchPhrases.push(candidate.text);
+            console.log("✅ Trovata e aggiunta nuova frase:", candidate.text.substring(0, 30) + "...");
+          } else {
+            console.log("⚠️ Frase già usata, salto:", candidate.text.substring(0, 30) + "...");
+            searchIndex++;
+          }
+          attempts++;
         }
-        attempts++;
+        
+        if (!selectedPhrase) {
+          return callback({ ok: false, error: "Tutte le frasi sono già state giocate" });
+        }
       }
-      
-      if (!selectedPhrase) {
-        return callback({ ok: false, error: "Tutte le frasi sono già state giocate" });
-      }
-      
-      // ✅ Aggiungi la frase all'array delle frasi giocate
-      room.timeChallengeData.playedPhrases.push(selectedPhrase.text);
       
       
       // Reset gameState per nuova frase (COPIA ESATTA DA SINGLE PLAYER)
@@ -2906,6 +2925,18 @@ if (gs.usedLetters.includes(upper)) {
       console.log("   Match:", currentMatch);
       console.log("   StartPhraseIndex:", oldStartIndex, "→", newStartIndex);
       
+      // ✅ Sposta le frasi del match precedente in playedPhrases
+      const previousMatchPhrases = room.timeChallengeData.currentMatchPhrases || [];
+      room.timeChallengeData.playedPhrases = room.timeChallengeData.playedPhrases || [];
+      previousMatchPhrases.forEach(phraseText => {
+        if (!room.timeChallengeData.playedPhrases.includes(phraseText)) {
+          room.timeChallengeData.playedPhrases.push(phraseText);
+        }
+      });
+      
+      // ✅ Reset currentMatchPhrases per il nuovo match
+      room.timeChallengeData.currentMatchPhrases = [];
+      
       // ✅ Reset completions per tutti i giocatori
       room.players.forEach(p => {
         room.timeChallengeData.completions[p.id] = {
@@ -2917,8 +2948,7 @@ if (gs.usedLetters.includes(upper)) {
         };
       });
       
-      // ✅ Per ogni giocatore, carica la PRIMA frase del nuovo match
-      // 🔥 Prima trova una frase NON ancora giocata
+      // ✅ Trova la PRIMA frase del nuovo match
       const { phrases } = room.phraseSet;
       if (!phrases || phrases.length === 0) {
         return callback({ ok: false, error: "Nessuna frase disponibile" });
@@ -2935,6 +2965,7 @@ if (gs.usedLetters.includes(upper)) {
         const candidateIndex = (newStartIndex + searchIndex) % phrases.length;
         const candidate = phrases[candidateIndex];
         
+        // Controlla che NON sia già stata usata
         if (!playedPhrases.includes(candidate.text)) {
           selectedPhrase = candidate;
           console.log("✅ Nuovo match - Trovata frase nuova:", candidate.text.substring(0, 30) + "...");
@@ -2949,8 +2980,8 @@ if (gs.usedLetters.includes(upper)) {
         return callback({ ok: false, error: "Tutte le frasi sono già state giocate" });
       }
       
-      // ✅ Aggiungi la frase all'array delle frasi giocate
-      room.timeChallengeData.playedPhrases.push(selectedPhrase.text);
+      // ✅ Aggiungi la prima frase a currentMatchPhrases
+      room.timeChallengeData.currentMatchPhrases.push(selectedPhrase.text);
       
       // ✅ Applica la stessa frase a TUTTI i giocatori
       room.players.forEach(p => {
