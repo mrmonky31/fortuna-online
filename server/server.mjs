@@ -2032,7 +2032,9 @@ if (gs.usedLetters.includes(upper)) {
                   results,
                   waiting: !allFinished,
                   currentMatch,
-                  totalMatches
+                  totalMatches,
+                  hostId: room.hostId,
+                  roomCode: code
                 });
               }
             });
@@ -2837,6 +2839,102 @@ if (gs.usedLetters.includes(upper)) {
       }
     } catch (err) {
       console.error("Errore timeChallengeComplete:", err);
+    }
+  });
+
+  // ✅ AVVIA NUOVO MATCH TIME CHALLENGE (solo host)
+  socket.on("timeChallengeNewMatch", ({ roomCode }, callback) => {
+    try {
+      const code = String(roomCode || "").trim().toUpperCase();
+      const room = rooms[code];
+      
+      if (!room || room.gameMode !== "timeChallenge") {
+        return callback({ ok: false, error: "Room non trovata o non è Time Challenge" });
+      }
+      
+      // ✅ VERIFICA: Solo l'host può avviare nuovo match
+      if (socket.id !== room.hostId) {
+        return callback({ ok: false, error: "Solo l'host può avviare un nuovo match" });
+      }
+      
+      console.log("🔄 NUOVO MATCH TIME CHALLENGE - Room:", code);
+      
+      updateRoomActivity(code);
+      
+      // ✅ Incrementa il numero del match corrente
+      const currentMatch = (room.timeChallengeData?.currentMatch || 1) + 1;
+      room.timeChallengeData.currentMatch = currentMatch;
+      
+      // ✅ Aggiorna startPhraseIndex per continuare dalle frasi successive
+      const settings = room.timeChallengeData.settings || {};
+      const numFrasi = settings.numFrasi || 3;
+      const oldStartIndex = room.timeChallengeData.startPhraseIndex || 0;
+      const newStartIndex = oldStartIndex + numFrasi;
+      
+      room.timeChallengeData.startPhraseIndex = newStartIndex;
+      
+      console.log("   Match:", currentMatch);
+      console.log("   StartPhraseIndex:", oldStartIndex, "→", newStartIndex);
+      
+      // ✅ Reset completions per tutti i giocatori
+      room.players.forEach(p => {
+        room.timeChallengeData.completions[p.id] = {
+          playerName: p.name,
+          phrasesCompleted: 0,
+          totalTime: 0,
+          totalPenalties: 0,
+          finished: false
+        };
+      });
+      
+      // ✅ Per ogni giocatore, carica la PRIMA frase del nuovo match
+      room.players.forEach(p => {
+        const gs = room.playerGameStates?.[p.id];
+        if (!gs) return;
+        
+        // Prendi il set frasi
+        const { phrases } = room.phraseSet;
+        if (!phrases || phrases.length === 0) return;
+        
+        // Carica frase da newStartIndex
+        const selectedPhrase = phrases[newStartIndex % phrases.length];
+        if (!selectedPhrase) return;
+        
+        // Reset gameState
+        gs.phrase = selectedPhrase.text;
+        gs.rows = buildBoard(selectedPhrase.text, 14, 4);
+        gs.category = selectedPhrase.category;
+        gs.revealedLetters = [];
+        gs.usedLetters = [];
+        gs.players[gs.currentPlayerIndex].roundScore = 0;
+        gs.wheel = generateWheel();
+        gs.mustSpin = true;
+        gs.awaitingConsonant = false;
+        gs.pendingDouble = false;
+        gs.lastSpinTarget = 0;
+        gs.spinning = false;
+        gs.gameMessage = null;
+        gs.isPhraseSolved = false;
+        gs.currentRound = 1; // Reset a round 1 per nuovo match
+        
+        // Salva stato
+        room.playerGameStates[p.id] = gs;
+        
+        // Invia gameStateUpdate al giocatore
+        io.to(p.id).emit("gameStateUpdate", { gameState: gs });
+      });
+      
+      // ✅ Invia evento "newMatchStarted" a tutti per tornare al gioco
+      io.to(code).emit("timeChallengeNewMatchStarted", {
+        currentMatch
+      });
+      
+      console.log("✅ Nuovo match avviato con successo");
+      
+      if (callback) callback({ ok: true, currentMatch });
+    } catch (err) {
+      console.error("❌ Errore in timeChallengeNewMatch:", err);
+      if (callback) callback({ ok: false, error: "Errore server" });
     }
   });
 

@@ -60,8 +60,16 @@ function App() {
       setScreen("timeChallengeResults");
     });
 
+    // ✅ Quando inizia un nuovo match, torna alla schermata di gioco
+    socket.on("timeChallengeNewMatchStarted", (data) => {
+      console.log("🔄 Nuovo match avviato, torno al gioco");
+      setScreen("game");
+      setTimeChallengeResults(null);
+    });
+
     return () => {
       socket.off("showTimeChallengeResults");
+      socket.off("timeChallengeNewMatchStarted");
     };
   }, []);
 
@@ -87,6 +95,8 @@ function App() {
           currentMatch={timeChallengeResults.currentMatch}
           totalMatches={timeChallengeResults.totalMatches}
           waiting={timeChallengeResults.waiting || false}
+          hostId={timeChallengeResults.hostId}
+          roomCode={timeChallengeResults.roomCode}
           onBackToLobby={handleExitToLobby}
         />
       )}

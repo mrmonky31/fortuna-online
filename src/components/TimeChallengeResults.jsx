@@ -1,7 +1,27 @@
 // src/components/TimeChallengeResults.jsx
 import React from "react";
+import socket from "../socket";
 
-export default function TimeChallengeResults({ results, onBackToLobby, currentMatch, totalMatches, waiting }) {
+export default function TimeChallengeResults({ 
+  results, 
+  onBackToLobby, 
+  currentMatch, 
+  totalMatches, 
+  waiting,
+  hostId,
+  roomCode
+}) {
+  const isHost = socket.id === hostId;
+  
+  const handleNewMatch = () => {
+    socket.emit("timeChallengeNewMatch", { roomCode }, (response) => {
+      if (!response.ok) {
+        console.error("Errore avvio nuovo match:", response.error);
+        alert("Errore: " + response.error);
+      }
+    });
+  };
+
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -22,8 +42,6 @@ export default function TimeChallengeResults({ results, onBackToLobby, currentMa
     return `${index + 1}°`;
   };
 
-  const isLastMatch = currentMatch >= totalMatches;
-
   return (
     <div style={{
       minHeight: '100vh',
@@ -41,19 +59,8 @@ export default function TimeChallengeResults({ results, onBackToLobby, currentMa
         textAlign: 'center',
         textShadow: '0 0 20px rgba(0, 255, 85, 0.5)'
       }}>
-        {isLastMatch ? '🏆 CLASSIFICA FINALE 🏆' : `📊 CLASSIFICA MATCH ${currentMatch}`}
+        🏆 CLASSIFICA MATCH {currentMatch} 🏆
       </h1>
-
-      {!isLastMatch && (
-        <div style={{
-          fontSize: '1.2rem',
-          color: '#ffcc00',
-          marginBottom: '30px',
-          textAlign: 'center'
-        }}>
-          Match {currentMatch} / {totalMatches}
-        </div>
-      )}
 
       {/* ⚠️ MESSAGGIO DI ATTESA */}
       {waiting && (
@@ -149,34 +156,70 @@ export default function TimeChallengeResults({ results, onBackToLobby, currentMa
         ))}
       </div>
 
-      {/* ✅ Mostra il pulsante solo se tutti hanno finito */}
+      {/* ✅ Mostra i pulsanti solo se tutti hanno finito */}
       {!waiting && (
-        <button
-          onClick={onBackToLobby}
-          style={{
-            marginTop: '40px',
-            padding: '15px 40px',
-            fontSize: '1.2rem',
-            fontWeight: 'bold',
-            color: '#fff',
-            background: 'linear-gradient(135deg, #00ff55 0%, #00cc44 100%)',
-            border: 'none',
-            borderRadius: '10px',
-            cursor: 'pointer',
-            boxShadow: '0 4px 15px rgba(0, 255, 85, 0.4)',
-            transition: 'all 0.3s ease'
-          }}
-          onMouseOver={(e) => {
-            e.target.style.transform = 'translateY(-2px)';
-            e.target.style.boxShadow = '0 6px 20px rgba(0, 255, 85, 0.6)';
-          }}
-          onMouseOut={(e) => {
-            e.target.style.transform = 'translateY(0)';
-            e.target.style.boxShadow = '0 4px 15px rgba(0, 255, 85, 0.4)';
-          }}
-        >
-          {isLastMatch ? 'TORNA ALLA LOBBY' : 'PROSSIMO MATCH ➜'}
-        </button>
+        <div style={{
+          marginTop: '40px',
+          display: 'flex',
+          gap: '20px',
+          flexWrap: 'wrap',
+          justifyContent: 'center'
+        }}>
+          {/* ✅ Pulsante NUOVO MATCH - solo per l'host */}
+          {isHost && (
+            <button
+              onClick={handleNewMatch}
+              style={{
+                padding: '15px 40px',
+                fontSize: '1.2rem',
+                fontWeight: 'bold',
+                color: '#fff',
+                background: 'linear-gradient(135deg, #ff6b6b 0%, #ff5252 100%)',
+                border: 'none',
+                borderRadius: '10px',
+                cursor: 'pointer',
+                boxShadow: '0 4px 15px rgba(255, 107, 107, 0.4)',
+                transition: 'all 0.3s ease'
+              }}
+              onMouseOver={(e) => {
+                e.target.style.transform = 'translateY(-2px)';
+                e.target.style.boxShadow = '0 6px 20px rgba(255, 107, 107, 0.6)';
+              }}
+              onMouseOut={(e) => {
+                e.target.style.transform = 'translateY(0)';
+                e.target.style.boxShadow = '0 4px 15px rgba(255, 107, 107, 0.4)';
+              }}
+            >
+              🔄 NUOVO MATCH
+            </button>
+          )}
+
+          <button
+            onClick={onBackToLobby}
+            style={{
+              padding: '15px 40px',
+              fontSize: '1.2rem',
+              fontWeight: 'bold',
+              color: '#fff',
+              background: 'linear-gradient(135deg, #00ff55 0%, #00cc44 100%)',
+              border: 'none',
+              borderRadius: '10px',
+              cursor: 'pointer',
+              boxShadow: '0 4px 15px rgba(0, 255, 85, 0.4)',
+              transition: 'all 0.3s ease'
+            }}
+            onMouseOver={(e) => {
+              e.target.style.transform = 'translateY(-2px)';
+              e.target.style.boxShadow = '0 6px 20px rgba(0, 255, 85, 0.6)';
+            }}
+            onMouseOut={(e) => {
+              e.target.style.transform = 'translateY(0)';
+              e.target.style.boxShadow = '0 4px 15px rgba(0, 255, 85, 0.4)';
+            }}
+          >
+            TORNA ALLA LOBBY
+          </button>
+        </div>
       )}
 
       <style>{`
