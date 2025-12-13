@@ -2017,19 +2017,13 @@ if (gs.usedLetters.includes(upper)) {
             room.players.forEach(p => {
               const playerCompletion = room.timeChallengeData.completions[p.id];
               if (playerCompletion && playerCompletion.finished) {
-                // Trova il socket di questo giocatore
-                const playerSocket = Array.from(io.sockets.sockets.values()).find(s => 
-                  s.data?.playerId === p.id && s.data?.roomCode === code
-                );
-                
-                if (playerSocket) {
-                  io.to(playerSocket.id).emit("showTimeChallengeResults", {
-                    results,
-                    waiting: !allFinished,
-                    currentMatch,
-                    totalMatches
-                  });
-                }
+                // p.id è il socket.id del giocatore
+                io.to(p.id).emit("showTimeChallengeResults", {
+                  results,
+                  waiting: !allFinished,
+                  currentMatch,
+                  totalMatches
+                });
               }
             });
           } else {
