@@ -362,7 +362,7 @@ export default function Game({
       
       setWinnerName(winnerName);
       
-      // ✅ TIME CHALLENGE: NON attivare betweenRounds (countdown disabilitato)
+      // ✅ TIME CHALLENGE: NON attivare betweenRounds (countdown disabilitnato)
       const isTimeChallenge = gameState?.isTimeChallenge === true;
       console.log("   isTimeChallenge:", isTimeChallenge);
       

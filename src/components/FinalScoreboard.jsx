@@ -1,4 +1,4 @@
-// src/components/FinalScoreboard.jsx
+// src/compmonents/FinalScoreboard.jsx
 import React from "react";
 
 export default function FinalScoreboard({ players = [], onRestartGame, onBackToLobby }) {

@@ -44,7 +44,7 @@ function App() {
     setScreen("game");
   };
 
-  // ✅ NUOVO: Gestisce uscita dalla partita
+  // ✅ NUOVO: Gestisce uscita dalla parntita
   const handleExitToLobby = () => {
     setScreen("setup");
     setPlayers([]);
