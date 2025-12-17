@@ -12,6 +12,8 @@ function App() {
   const [rounds, setRounds] = useState(1);
   const [gameState, setGameState] = useState(null);
   const [timeChallengeResults, setTimeChallengeResults] = useState(null);
+  const [roomCode, setRoomCode] = useState(null);
+  const [isHost, setIsHost] = useState(false);
 
   // Offline (Setup)
   const startGame = (playersList, totalRounds) => {
@@ -24,6 +26,12 @@ function App() {
   const handleOnlineGameStart = (payload) => {
     if (payload && payload.room) {
       const room = payload.room;
+      
+      // ✅ Salva roomCode e isHost
+      setRoomCode(payload.roomCode || null);
+      const myPlayer = room.players?.find(p => p.id === socket.id);
+      setIsHost(myPlayer?.isHost || false);
+      
       if (Array.isArray(room.players) && room.players.length) {
         setPlayers(
           room.players.map((p) => ({
@@ -65,6 +73,15 @@ function App() {
     };
   }, []);
 
+  // ✅ Socket listener GLOBALE per gameStart (anche da schermata risultati)
+  useEffect(() => {
+    socket.on("gameStart", handleOnlineGameStart);
+
+    return () => {
+      socket.off("gameStart", handleOnlineGameStart);
+    };
+  }, []);
+
   return (
     <div className="app-fullscreen">
       {screen === "setup" && (
@@ -83,9 +100,13 @@ function App() {
       )}
       {screen === "timeChallengeResults" && timeChallengeResults && (
         <TimeChallengeResults
-          results={timeChallengeResults.results}
+          results={timeChallengeResults.results || []}
           currentMatch={timeChallengeResults.currentMatch}
           totalMatches={timeChallengeResults.totalMatches}
+          waiting={timeChallengeResults.waiting || false}
+          myPlayerData={timeChallengeResults.myPlayerData || null}
+          roomCode={roomCode}
+          isHost={isHost}
           onBackToLobby={handleExitToLobby}
         />
       )}
