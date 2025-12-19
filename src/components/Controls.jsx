@@ -118,53 +118,23 @@ export default function Controls({
   };
 
   const submitSolution = () => {
-    console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-    console.log("🔵 [CONTROLS] submitSolution chiamato");
-    console.log("   disabled:", disabled);
-    console.log("   isSubmitting:", isSubmitting);
-    console.log("   sol:", sol);
-    
-    if (disabled) {
-      console.log("❌ [CONTROLS] SKIP - disabled = true");
-      console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-      return;
-    }
+    if (disabled) return;
     
     // 🔒 LUCCHETTO: Blocca se già in corso un submit
-    if (isSubmitting) {
-      console.log("🔒 [CONTROLS] SKIP - isSubmitting = true (LUCCHETTO ATTIVO)");
-      console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-      return;
-    }
+    if (isSubmitting) return;
     
     const text = (sol || "").trim();
-    if (!text) {
-      console.log("❌ [CONTROLS] SKIP - testo vuoto");
-      console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-      return;
-    }
+    if (!text) return;
     
     // 🔒 ATTIVA LUCCHETTO
-    console.log("🔒 [CONTROLS] ATTIVO LUCCHETTO (isSubmitting = true)");
     setIsSubmitting(true);
     
-    console.log("✅ [CONTROLS] Invio soluzione:", text);
     setSol("");
-    
-    console.log("📤 [CONTROLS] Chiamo onSolution");
     onSolution && onSolution(text);
-    
-    console.log("🚪 [CONTROLS] Chiudo pannello");
     setPanel(null);
     
-    console.log("⏱️ [CONTROLS] Timer 500ms per sbloccare lucchetto");
-    console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-    
-    // 🔒 SBLOCCA dopo 500ms (tempo sicurezza per evitare doppi click/enter)
+    // 🔒 SBLOCCA dopo 500ms
     setTimeout(() => {
-      console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-      console.log("🔓 [CONTROLS] SBLOCCO LUCCHETTO (isSubmitting = false)");
-      console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
       setIsSubmitting(false);
     }, 500);
   };
