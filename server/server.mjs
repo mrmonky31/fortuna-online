@@ -1108,7 +1108,7 @@ io.on("connection", (socket) => {
       
       // ✅ Inizializza contatore spin per forzatura PASSA/BANCAROTTA
       gs.spinCounter = 0;
-      gs.nextForcedSpin = Math.floor(Math.random() * 6) + 5; // Primo tra 5-10 spin
+      gs.nextForcedSpin = Math.floor(Math.random() * 6) + 50; // Primo tra 5-10 spin
 
       room.gameState = gs;
 
