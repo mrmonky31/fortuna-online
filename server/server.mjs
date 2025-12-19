@@ -1981,7 +1981,7 @@ if (gs.usedLetters.includes(upper)) {
           
           console.log("🎯 TIME CHALLENGE - VALIDAZIONE SOLUZIONE CORRETTA");
           console.log(`   Giocatore: ${winnerName}`);
-          console.log(`   phrasesCompleted PRIMA incremento: ${completion.phrasesCompleted}`);
+          console.log(`   phrasesCompleted: ${completion.phrasesCompleted}`);
           
           // 6. Aggiungi tempo e penalità
           const phraseTime = timeChallengeData?.time || 0;
@@ -1993,9 +1993,7 @@ if (gs.usedLetters.includes(upper)) {
           console.log(`   Tempo frase: ${phraseTime}s, Penalità: ${penalties}s`);
           console.log(`   Totale accumulato: ${completion.totalTime}s + ${completion.totalPenalties}s penalità`);
           
-          // 🔥 INCREMENTA phrasesCompleted SUBITO dopo validazione corretta
-          completion.phrasesCompleted++;
-          console.log(`   phrasesCompleted DOPO incremento: ${completion.phrasesCompleted}`);
+          // ✅ NON incrementare phrasesCompleted qui - lo farà timeChallengeNextPhrase
           
           const settings = gs.timeChallengeSettings || {};
           const totalFrasi = settings.numFrasi || 1;
@@ -2012,13 +2010,8 @@ if (gs.usedLetters.includes(upper)) {
           io.to(socket.id).emit("gameStateUpdate", { gameState: gs });
           
           
-          // 9. 🔥 CONTROLLO ATOMICO: Ha finito TUTTE le frasi?
-          const currentNumber = completion.phrasesCompleted; // Ora è GIÀ incrementato!
-          
-          console.log("   🎯 Check fine match (DOPO incremento):");
-          console.log(`      phrasesCompleted: ${currentNumber}/${totalFrasi}`);
-          
-          if (currentNumber >= totalFrasi) {
+          // 9. ✅ Il CLIENT chiamerà "timeChallengeNextPhrase" per caricare la prossima frase
+          // Non fare nulla qui - lascia che sia il client a decidere quando proseguire
             // ✅ Hai caricato tutte le frasi del match (e quindi completato l'ultima)
             completion.finished = true;
             
@@ -2662,11 +2655,10 @@ if (gs.usedLetters.includes(upper)) {
       
       
       // ✅ VERIFICA: Il giocatore ha ancora frasi da completare?
-      // phrasesCompleted è GIÀ incrementato in validateSolution
       const nextPhraseNumber = completion.phrasesCompleted + 1; // Prossima frase (1-indexed)
       
       console.log(`🔄 timeChallengeNextPhrase:`);
-      console.log(`   phrasesCompleted: ${completion.phrasesCompleted}`);
+      console.log(`   phrasesCompleted PRIMA incremento: ${completion.phrasesCompleted}`);
       console.log(`   nextPhraseNumber: ${nextPhraseNumber}`);
       console.log(`   totalFrasi: ${totalFrasi}`);
       
@@ -2702,9 +2694,74 @@ if (gs.usedLetters.includes(upper)) {
       
       console.log(`   ✅ Carico frase: ${selectedPhrase.text.substring(0, 40)}...`);
       
-      // ✅ Aggiorna currentRound (per infobox)
-      // NON incrementare phrasesCompleted qui! È già stato incrementato in validateSolution
+      
+      // ✅ INCREMENTA phrasesCompleted DOPO aver caricato con successo la nuova frase
+      completion.phrasesCompleted++;
+      console.log(`   phrasesCompleted DOPO incremento: ${completion.phrasesCompleted}`);
+      
+      
+      // ✅ Incrementa currentRound (per infobox)
       gs.currentRound = completion.phrasesCompleted;
+      
+      
+      // 🔥 CONTROLLO AGGIUNTIVO: Se dopo questo incremento hai raggiunto il limite, NON ricaricare più
+      if (completion.phrasesCompleted >= totalFrasi) {
+        console.log(`   🏁 LIMITE RAGGIUNTO! phrasesCompleted: ${completion.phrasesCompleted} >= totalFrasi: ${totalFrasi}`);
+        completion.finished = true;
+        
+        // Calcola risultati
+        const myPlayerData = {
+          playerName: completion.playerName,
+          phrasesCompleted: completion.phrasesCompleted,
+          totalTime: completion.totalTime,
+          totalPenalties: completion.totalPenalties,
+          finalTime: completion.totalTime + completion.totalPenalties
+        };
+        
+        // Invia risultati
+        io.to(socket.id).emit("showTimeChallengeResults", {
+          results: [],
+          waiting: true,
+          myPlayerData: myPlayerData,
+          currentMatch: room.timeChallengeData.currentMatch || 1,
+          totalMatches: settings.numMatch || 1
+        });
+        
+        // Controlla se tutti hanno finito
+        const allFinished = room.players.every(p => 
+          room.timeChallengeData.completions[p.id]?.finished === true
+        );
+        
+        if (allFinished) {
+          const results = room.players.map(p => {
+            const data = room.timeChallengeData.completions[p.id];
+            if (!data) return null;
+            
+            return {
+              playerName: data.playerName,
+              phrasesCompleted: data.phrasesCompleted,
+              totalTime: data.totalTime,
+              totalPenalties: data.totalPenalties,
+              finalTime: data.totalTime + data.totalPenalties
+            };
+          }).filter(Boolean);
+          
+          results.sort((a, b) => a.finalTime - b.finalTime);
+          
+          io.to(code).emit("showTimeChallengeResults", {
+            results: results,
+            waiting: false,
+            currentMatch: room.timeChallengeData.currentMatch || 1,
+            totalMatches: settings.numMatch || 1
+          });
+        }
+        
+        // Comunque salva e invia gameState aggiornato
+        room.playerGameStates[socket.id] = gs;
+        io.to(socket.id).emit("gameStateUpdate", { gameState: gs });
+        
+        return callback({ ok: true, phraseNumber: completion.phrasesCompleted, finished: true });
+      }
       
       
       
