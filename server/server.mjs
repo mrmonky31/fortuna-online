@@ -1035,7 +1035,7 @@ io.on("connection", (socket) => {
       }
 
       
-      // ✅ MODALITÀ TIME CHALLENGE - Carica CHUNK di 10 frasi
+      // ✅ MODALITÀ TIME CHALLENGE - Carica CHUNK intelligente
       if (room.gameMode === "timeChallenge") {
         const settings = room.timeChallengeSettings || {
           numFrasi: 1,
@@ -1049,28 +1049,29 @@ io.on("connection", (socket) => {
           room.timeChallengeData = {
             currentMatch: 1,
             completions: {},
-            globalPhraseIndex: 0  // 🔥 NUOVO: Tiene traccia dell'indice globale nel pool
+            globalPhraseIndex: 0  // Tiene traccia dell'indice globale nel pool
           };
         }
         
-        // 🔥 CARICA CHUNK DI 10 FRASI
-        const chunkSize = 10;
+        // 🔥 CHUNK INTELLIGENTE: Carica solo le frasi necessarie (max 10)
+        const frasiNecessarie = settings.numFrasi;
+        const chunkSize = Math.min(frasiNecessarie, 10); // Max 10 per non sovraccaricare
         const startIndex = room.timeChallengeData.globalPhraseIndex;
         const phraseChunk = phrases.slice(startIndex, startIndex + chunkSize);
         
         console.log(`🎯 TIME CHALLENGE - Match ${room.timeChallengeData.currentMatch}`);
-        console.log(`   Carico chunk di ${phraseChunk.length} frasi (indice globale: ${startIndex})`);
+        console.log(`   Frasi necessarie: ${frasiNecessarie}`);
+        console.log(`   Chunk size: ${chunkSize}`);
+        console.log(`   globalPhraseIndex: ${startIndex}`);
+        console.log(`   Carico frasi da ${startIndex} a ${startIndex + chunkSize - 1}`);
         console.log(`   Prima frase: ${phraseChunk[0]?.text.substring(0, 40)}...`);
         
         // Inizializza mappa stati privati
         room.playerGameStates = {};
-        
-        // 🔥 SALVA IL CHUNK nella room
         room.phraseChunk = phraseChunk;
         
         // Crea stato privato per OGNI giocatore
         for (const player of room.players) {
-          // Usa la PRIMA frase del chunk
           const firstPhrase = phraseChunk[0];
           const playerState = initGameState([player], room.totalRounds, firstPhrase.text, firstPhrase.category);
           
@@ -1081,13 +1082,13 @@ io.on("connection", (socket) => {
           
           // ✅ Stato locale per gestione chunk
           playerState.timeChallengeChunk = {
-            frasi: phraseChunk,           // Chunk di 10 frasi
+            frasi: phraseChunk,           // Chunk adattivo
             indexInChunk: 0,              // Parte dalla prima
             frasiCompletate: 0,           // Quante frasi ha risolto
             totalFrasiInPartita: settings.numFrasi  // Quante deve risolverne in totale
           };
           
-          // ✅ Inizializza tracking completions per questo giocatore
+          // ✅ Inizializza tracking completions
           if (!room.timeChallengeData.completions[player.id]) {
             room.timeChallengeData.completions[player.id] = {
               playerName: player.name,
@@ -1097,7 +1098,7 @@ io.on("connection", (socket) => {
               finished: false
             };
             
-            console.log(`🎯 Player ${player.name} - Chunk caricato con ${phraseChunk.length} frasi`);
+            console.log(`🎯 Player ${player.name} - Chunk di ${chunkSize} frasi caricato`);
           }
           
           // Salva stato privato
@@ -1146,7 +1147,6 @@ io.on("connection", (socket) => {
         return callback({ ok: false, error: "Room non trovata o non è Time Challenge" });
       }
 
-      // ✅ Solo l'HOST può avviare un nuovo match
       const player = room.players?.find(p => p.id === socket.id);
       if (!player || !player.isHost) {
         return callback({ ok: false, error: "Solo l'host può avviare un nuovo match" });
@@ -1161,74 +1161,82 @@ io.on("connection", (socket) => {
         timerMatch: 0
       };
 
-      console.log("🔄 timeChallengeNewMatch:");
-      console.log("   Settings numFrasi:", settings.numFrasi);
+      console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+      console.log("🔄 NUOVO MATCH - Time Challenge");
 
-      // Incrementa match counter
       if (!room.timeChallengeData) {
         room.timeChallengeData = { 
           currentMatch: 1, 
           completions: {},
-          startPhraseIndex: 1
+          globalPhraseIndex: 0
         };
       }
       
-      // 🔥 INCREMENTA startPhraseIndex in base al numero di frasi del match precedente
-      const previousStartIndex = room.timeChallengeData.startPhraseIndex || 0;
-      room.timeChallengeData.startPhraseIndex = previousStartIndex + settings.numFrasi;
-      room.timeChallengeData.currentMatch = (room.timeChallengeData.currentMatch || 1) + 1;
+      // 🔥 INCREMENTA globalPhraseIndex solo delle frasi EFFETTIVAMENTE USATE
+      // Se hai giocato 3 frasi, incrementa di 3 (non di 10!)
+      room.timeChallengeData.globalPhraseIndex += settings.numFrasi;
+      room.timeChallengeData.currentMatch++;
 
-      // Reset completions per TUTTI i giocatori
-      for (const player of room.players) {
-        room.timeChallengeData.completions[player.id] = {
-          playerName: player.name,
-          phrasesCompleted: 0, // 🔥 RIPARTE DA 0
+      console.log(`   Match: ${room.timeChallengeData.currentMatch}`);
+      console.log(`   globalPhraseIndex: ${room.timeChallengeData.globalPhraseIndex}`);
+      console.log(`   Frasi usate nel match precedente: ${settings.numFrasi}`);
+
+      // Reset completions
+      for (const p of room.players) {
+        room.timeChallengeData.completions[p.id] = {
+          playerName: p.name,
+          phrasesCompleted: 0,
           totalTime: 0,
           totalPenalties: 0,
           finished: false
         };
-        
-        console.log(`🔄 Reset player ${player.name}: phrasesCompleted = 0/${settings.numFrasi}`);
       }
 
-      // ✅ Carica PRIMA frase del NUOVO match usando startPhraseIndex
+      // 🔥 CHUNK INTELLIGENTE: Carica solo le frasi necessarie (max 10)
       const { phrases } = room.phraseSet;
-      const newStartIndex = room.timeChallengeData.startPhraseIndex;
-      const selectedPhrase = phrases[newStartIndex % phrases.length];
+      const frasiNecessarie = settings.numFrasi;
+      const chunkSize = Math.min(frasiNecessarie, 10);
+      const startIndex = room.timeChallengeData.globalPhraseIndex;
+      const phraseChunk = phrases.slice(startIndex, startIndex + chunkSize);
 
-      console.log("   📥 Carico prima frase del nuovo match:");
-      console.log(`      startPhraseIndex: ${newStartIndex}`);
-      console.log(`      Indice frase: ${newStartIndex % phrases.length}`);
-      console.log(`      Testo: ${selectedPhrase.text.substring(0, 40)}...`);
+      console.log(`   Frasi necessarie: ${frasiNecessarie}`);
+      console.log(`   Chunk size: ${chunkSize}`);
+      console.log(`   Carico frasi da ${startIndex} a ${startIndex + chunkSize - 1}`);
+      console.log(`   Prima frase: ${phraseChunk[0]?.text.substring(0, 40)}...`);
 
-      // Reset stati privati per OGNI giocatore
       room.playerGameStates = {};
-      room.sharedPhraseData = {
-        phrase: selectedPhrase.text,
-        category: selectedPhrase.category
-      };
+      room.phraseChunk = phraseChunk;
 
-      for (const player of room.players) {
-        const playerState = initGameState([player], room.totalRounds, selectedPhrase.text, selectedPhrase.category);
+      for (const p of room.players) {
+        const firstPhrase = phraseChunk[0];
+        const playerState = initGameState([p], room.totalRounds, firstPhrase.text, firstPhrase.category);
         
         playerState.isTimeChallenge = true;
         playerState.timeChallengeSettings = settings;
         playerState.spinCounter = 0;
         playerState.nextForcedSpin = Math.floor(Math.random() * 6) + 5;
         
-        room.playerGameStates[player.id] = playerState;
+        playerState.timeChallengeChunk = {
+          frasi: phraseChunk,
+          indexInChunk: 0,
+          frasiCompletate: 0,
+          totalFrasiInPartita: settings.numFrasi
+        };
         
-        // Invia gameStart al giocatore
-        io.to(player.id).emit("gameStart", {
+        room.playerGameStates[p.id] = playerState;
+        
+        io.to(p.id).emit("gameStart", {
           room,
           roomCode: code,
           gameState: playerState,
         });
       }
 
+      console.log("   ✅ Nuovo match avviato!");
+      console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
       if (callback) callback({ ok: true });
     } catch (err) {
-      console.error("Errore timeChallengeNewMatch:", err);
+      console.error("❌ Errore timeChallengeNewMatch:", err);
       if (callback) callback({ ok: false, error: "Errore avvio nuovo match" });
     }
   });
