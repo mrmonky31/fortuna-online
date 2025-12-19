@@ -1035,7 +1035,7 @@ io.on("connection", (socket) => {
       }
 
       
-      // ✅ MODALITÀ TIME CHALLENGE - Stati privati per ogni giocatore
+      // ✅ MODALITÀ TIME CHALLENGE - Carica CHUNK di 10 frasi
       if (room.gameMode === "timeChallenge") {
         const settings = room.timeChallengeSettings || {
           numFrasi: 1,
@@ -1049,50 +1049,61 @@ io.on("connection", (socket) => {
           room.timeChallengeData = {
             currentMatch: 1,
             completions: {},
-            startPhraseIndex: 1 // 🔥 Usato SOLO per match 2, 3, ecc. NON per match 1!
+            globalPhraseIndex: 0  // 🔥 NUOVO: Tiene traccia dell'indice globale nel pool
           };
         }
         
-        // 🔥 NON ricaricare selectedPhrase! Usa quella già caricata sopra con currentPhraseIndex
-        // La prima frase del Match 1 viene caricata con room.currentPhraseIndex (che parte da 0)
+        // 🔥 CARICA CHUNK DI 10 FRASI
+        const chunkSize = 10;
+        const startIndex = room.timeChallengeData.globalPhraseIndex;
+        const phraseChunk = phrases.slice(startIndex, startIndex + chunkSize);
         
         console.log(`🎯 TIME CHALLENGE - Match ${room.timeChallengeData.currentMatch}`);
-        console.log(`   Prima frase: ${selectedPhrase.text.substring(0, 40)}...`);
-        console.log(`   Categoria: ${selectedPhrase.category}`);
+        console.log(`   Carico chunk di ${phraseChunk.length} frasi (indice globale: ${startIndex})`);
+        console.log(`   Prima frase: ${phraseChunk[0]?.text.substring(0, 40)}...`);
         
         // Inizializza mappa stati privati
         room.playerGameStates = {};
-        room.sharedPhraseData = {
-          phrase: selectedPhrase.text,
-          category: selectedPhrase.category
-        };
+        
+        // 🔥 SALVA IL CHUNK nella room
+        room.phraseChunk = phraseChunk;
         
         // Crea stato privato per OGNI giocatore
         for (const player of room.players) {
-          const playerState = initGameState([player], room.totalRounds, selectedPhrase.text, selectedPhrase.category);
+          // Usa la PRIMA frase del chunk
+          const firstPhrase = phraseChunk[0];
+          const playerState = initGameState([player], room.totalRounds, firstPhrase.text, firstPhrase.category);
           
           playerState.isTimeChallenge = true;
           playerState.timeChallengeSettings = settings;
           playerState.spinCounter = 0;
           playerState.nextForcedSpin = Math.floor(Math.random() * 6) + 5;
           
+          // ✅ Stato locale per gestione chunk
+          playerState.timeChallengeChunk = {
+            frasi: phraseChunk,           // Chunk di 10 frasi
+            indexInChunk: 0,              // Parte dalla prima
+            frasiCompletate: 0,           // Quante frasi ha risolto
+            totalFrasiInPartita: settings.numFrasi  // Quante deve risolverne in totale
+          };
+          
           // ✅ Inizializza tracking completions per questo giocatore
           if (!room.timeChallengeData.completions[player.id]) {
             room.timeChallengeData.completions[player.id] = {
               playerName: player.name,
-              phrasesCompleted: 0, // 🔥 PARTE DA 0 - indica quante frasi hai COMPLETATO
+              phrasesCompleted: 0,
               totalTime: 0,
               totalPenalties: 0,
               finished: false
             };
             
-            console.log(`🎯 Player ${player.name} - phrasesCompleted: 0/${settings.numFrasi}`);
+            console.log(`🎯 Player ${player.name} - Chunk caricato con ${phraseChunk.length} frasi`);
           }
           
           // Salva stato privato
           room.playerGameStates[player.id] = playerState;
           
-          // Invia gameStart SOLO a questo giocatore
+          // Invia gameStart SOLO a questo giocatore CON IL CHUNK
           io.to(player.id).emit("gameStart", {
             room,
             roomCode: code,
@@ -1108,7 +1119,7 @@ io.on("connection", (socket) => {
       
       // ✅ Inizializza contatore spin per forzatura PASSA/BANCAROTTA
       gs.spinCounter = 0;
-      gs.nextForcedSpin = Math.floor(Math.random() * 6) + 50; // Primo tra 5-10 spin
+      gs.nextForcedSpin = Math.floor(Math.random() * 6) + 5; // Primo tra 5-10 spin
 
       room.gameState = gs;
 
@@ -1940,37 +1951,43 @@ if (gs.usedLetters.includes(upper)) {
         const i = gs.currentPlayerIndex;
         const winnerName = gs.players[i].name;
         
-        // ✅ MODALITÀ TIME CHALLENGE: Gestione completa come classica
+        // ✅ MODALITÀ TIME CHALLENGE: Gestione LOCALE con CHUNK
         if (gs.isTimeChallenge) {
-          // 1. Rivela TUTTE le lettere (come classica)
+          console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+          console.log("🎯 TIME CHALLENGE - SOLUZIONE CORRETTA");
+          
+          // 1. Rivela TUTTE le lettere
           const allLetters = [...normalizeText(gs.phrase)].filter(ch => /[A-Z]/.test(ch));
           gs.revealedLetters = [...new Set(allLetters)];
           
-          // 2. Reset flags (come classica)
+          // 2. Reset flags
           gs.mustSpin = false;
           gs.awaitingConsonant = false;
           gs.pendingDouble = false;
-          
-          // 🔥 CRITICO: Setta isPhraseSolved = true per triggerare useEffect client
           gs.isPhraseSolved = true;
-          
-          // 3. Messaggio successo
           gs.gameMessage = { type: "success", text: `✅ Frase completata!` };
           
-          // 4. Inizializza tracking globale se non esiste
-          if (!room.timeChallengeData) {
-            room.timeChallengeData = {
-              currentMatch: 1,
-              completions: {},
-              startPhraseIndex: 1
-            };
+          // 3. Prendi dati chunk
+          const chunkData = gs.timeChallengeChunk;
+          if (!chunkData) {
+            console.error("❌ Chunk data non trovato!");
+            if (callback) callback({ ok: false, error: "Errore chunk" });
+            return;
           }
           
-          // 5. Inizializza tracking giocatore se non esiste
+          console.log(`   Frase risolta: "${gs.phrase.substring(0, 40)}..."`);
+          console.log(`   frasiCompletate PRIMA: ${chunkData.frasiCompletate}`);
+          console.log(`   totalFrasiInPartita: ${chunkData.totalFrasiInPartita}`);
+          
+          // 4. Tracking server (per classifica finale)
+          if (!room.timeChallengeData) {
+            room.timeChallengeData = { currentMatch: 1, completions: {}, globalPhraseIndex: 0 };
+          }
+          
           if (!room.timeChallengeData.completions[socket.id]) {
             room.timeChallengeData.completions[socket.id] = {
               playerName: winnerName,
-              phrasesCompleted: 0, // 🔥 PARTE DA 0
+              phrasesCompleted: 0,
               totalTime: 0,
               totalPenalties: 0,
               finished: false
@@ -1978,43 +1995,27 @@ if (gs.usedLetters.includes(upper)) {
           }
           
           const completion = room.timeChallengeData.completions[socket.id];
-          
-          console.log("🎯 TIME CHALLENGE - VALIDAZIONE SOLUZIONE CORRETTA");
-          console.log(`   Giocatore: ${winnerName}`);
-          console.log(`   phrasesCompleted: ${completion.phrasesCompleted}`);
-          
-          // 6. Aggiungi tempo e penalità
           const phraseTime = timeChallengeData?.time || 0;
           const penalties = timeChallengeData?.penalties || 0;
-          
           completion.totalTime += phraseTime;
           completion.totalPenalties += penalties;
           
           console.log(`   Tempo frase: ${phraseTime}s, Penalità: ${penalties}s`);
-          console.log(`   Totale accumulato: ${completion.totalTime}s + ${completion.totalPenalties}s penalità`);
           
-          const settings = gs.timeChallengeSettings || {};
-          const totalFrasi = settings.numFrasi || 1;
-          
-          // 7. Emetti roundWon (come classica)
-          io.to(socket.id).emit("roundWon", {
-            winnerName,
-            countdown: 0 // Time Challenge non ha countdown
-          });
-          
-          
-          // 8. INCREMENTO IMMEDIATO phrasesCompleted dopo soluzione corretta
+          // 5. INCREMENTA contatore locale
+          chunkData.frasiCompletate++;
           completion.phrasesCompleted++;
           
-          console.log(`   phrasesCompleted incrementato: ${completion.phrasesCompleted}/${totalFrasi}`);
+          console.log(`   frasiCompletate DOPO: ${chunkData.frasiCompletate}`);
           
-          // 9. CONTROLLO IMMEDIATO di fine partita
-          if (completion.phrasesCompleted >= totalFrasi) {
+          // 6. Emetti roundWon
+          io.to(socket.id).emit("roundWon", { winnerName, countdown: 0 });
+          
+          // 7. CONTROLLO FINE PARTITA
+          if (chunkData.frasiCompletate >= chunkData.totalFrasiInPartita) {
+            console.log("   🏁 PARTITA FINITA!");
             completion.finished = true;
             
-            console.log("   🏁 LIMITE RAGGIUNTO! Match completato!");
-            
-            // Calcola i dati del giocatore che ha appena finito
             const myPlayerData = {
               playerName: completion.playerName,
               phrasesCompleted: completion.phrasesCompleted,
@@ -2023,13 +2024,13 @@ if (gs.usedLetters.includes(upper)) {
               finalTime: completion.totalTime + completion.totalPenalties
             };
             
-            // Invia schermata risultati a QUESTO player con flag "waiting"
+            // Invia risultati
             io.to(socket.id).emit("showTimeChallengeResults", {
               results: [],
               waiting: true,
               myPlayerData: myPlayerData,
               currentMatch: room.timeChallengeData.currentMatch || 1,
-              totalMatches: settings.numMatch || 1
+              totalMatches: gs.timeChallengeSettings?.numMatch || 1
             });
             
             // Controlla se TUTTI hanno finito
@@ -2038,11 +2039,9 @@ if (gs.usedLetters.includes(upper)) {
             );
             
             if (allFinished) {
-              // TUTTI HANNO FINITO - Calcola classifica
               const results = room.players.map(p => {
                 const data = room.timeChallengeData.completions[p.id];
                 if (!data) return null;
-                
                 return {
                   playerName: data.playerName,
                   phrasesCompleted: data.phrasesCompleted,
@@ -2054,30 +2053,63 @@ if (gs.usedLetters.includes(upper)) {
               
               results.sort((a, b) => a.finalTime - b.finalTime);
               
-              // Invia risultati COMPLETI a TUTTI
               io.to(code).emit("showTimeChallengeResults", {
                 results,
                 waiting: false,
                 currentMatch: room.timeChallengeData.currentMatch || 1,
-                totalMatches: settings.numMatch || 1
+                totalMatches: gs.timeChallengeSettings?.numMatch || 1
               });
             }
             
-            // Salva stato e emetti update
             room.playerGameStates[socket.id] = gs;
             io.to(socket.id).emit("gameStateUpdate", { gameState: gs });
-            
-            // BLOCCA ulteriori esecuzioni
-            if (callback) callback({ ok: true });
+            console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+            if (callback) callback({ ok: true, finished: true });
             return;
           }
           
-          // 10. Se non ha finito, salva stato e emetti update
+          // 8. CARICA PROSSIMA FRASE DAL CHUNK (tutto locale!)
+          chunkData.indexInChunk++;
+          
+          console.log(`   indexInChunk DOPO: ${chunkData.indexInChunk}`);
+          
+          // Verifica se abbiamo esaurito il chunk
+          if (chunkData.indexInChunk >= chunkData.frasi.length) {
+            console.log("   ⚠️ Chunk esaurito! Serve richiederne uno nuovo");
+            // TODO: Implementare richiesta nuovo chunk se necessario
+            room.playerGameStates[socket.id] = gs;
+            io.to(socket.id).emit("gameStateUpdate", { gameState: gs });
+            console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+            if (callback) callback({ ok: true, needsNewChunk: true });
+            return;
+          }
+          
+          // 9. Prendi prossima frase dal chunk
+          const nextPhrase = chunkData.frasi[chunkData.indexInChunk];
+          console.log(`   ✅ Prossima frase caricata: "${nextPhrase.text.substring(0, 40)}..."`);
+          
+          // 10. Reset gameState per nuova frase
+          gs.phrase = nextPhrase.text;
+          gs.rows = buildBoard(nextPhrase.text, 14, 4);
+          gs.category = nextPhrase.category;
+          gs.revealedLetters = [];
+          gs.usedLetters = [];
+          gs.players[gs.currentPlayerIndex].roundScore = 0;
+          gs.wheel = generateWheel();
+          gs.mustSpin = true;
+          gs.awaitingConsonant = false;
+          gs.pendingDouble = false;
+          gs.lastSpinTarget = 0;
+          gs.spinning = false;
+          gs.gameMessage = null;
+          gs.isPhraseSolved = false;
+          
+          // 11. Salva e invia SOLO a questo giocatore
           room.playerGameStates[socket.id] = gs;
           io.to(socket.id).emit("gameStateUpdate", { gameState: gs });
           
-          // 11. Il CLIENT chiamerà "timeChallengeNextPhrase" per caricare la prossima frase
-          
+          console.log("   ✅ Prossima frase pronta!");
+          console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
           if (callback) callback({ ok: true });
           return;
         }
@@ -2622,121 +2654,9 @@ if (gs.usedLetters.includes(upper)) {
   });
 
   // ✅ TIME CHALLENGE: Carica prossima frase (come nextLevel ma per Time Challenge)
-  socket.on("timeChallengeNextPhrase", ({ roomCode }, callback) => {
-    console.log("🔄 RICEVUTA RICHIESTA timeChallengeNextPhrase");
-    
-    try {
-      const code = String(roomCode || "").trim().toUpperCase();
-      const room = rooms[code];
-      
-      if (!room || room.gameMode !== "timeChallenge") {
-        return callback({ ok: false, error: "Room non trovata o non è Time Challenge" });
-      }
-
-      updateRoomActivity(code);
-      
-      // Usa gameState PRIVATO del giocatore
-      const gs = room.playerGameStates?.[socket.id];
-      if (!gs) {
-        return callback({ ok: false, error: "GameState non trovato" });
-      }
-      
-      // Prendi tracking completamenti
-      const completion = room.timeChallengeData?.completions[socket.id];
-      if (!completion) {
-        return callback({ ok: false, error: "Tracking non trovato" });
-      }
-      
-      // PROTEZIONE 1: Se il giocatore ha già finito, ignora
-      if (completion.finished) {
-        console.log(`   ⛔ ${gs.players[0].name} ha già completato la partita, richiesta ignorata`);
-        return callback({ ok: false, finished: true });
-      }
-      
-      // Prendi settings per verificare quante frasi totali
-      const settings = gs.timeChallengeSettings || {};
-      const totalFrasi = settings.numFrasi || 1;
-      
-      // PROTEZIONE 2: Verifica che non abbia già completato tutte le frasi
-      if (completion.phrasesCompleted >= totalFrasi) {
-        console.log(`   ⛔ ${gs.players[0].name} ha già completato ${completion.phrasesCompleted}/${totalFrasi} frasi, richiesta ignorata`);
-        return callback({ ok: false, finished: true });
-      }
-      
-      // Calcola indice prossima frase (basato su phrasesCompleted che è già stato incrementato)
-      const nextPhraseIndex = completion.phrasesCompleted; // 0-indexed per array
-      
-      console.log(`🔄 timeChallengeNextPhrase:`);
-      console.log(`   Giocatore: ${gs.players[0].name}`);
-      console.log(`   phrasesCompleted: ${completion.phrasesCompleted}`);
-      console.log(`   totalFrasi: ${totalFrasi}`);
-      console.log(`   nextPhraseIndex (0-based): ${nextPhraseIndex}`);
-      
-      // Usa il set frasi della room
-      const { phrases, mode } = room.phraseSet;
-      
-      if (!phrases || phrases.length === 0) {
-        return callback({ ok: false, error: "Nessuna frase disponibile" });
-      }
-      
-      // Calcola l'indice assoluto: startPhraseIndex del match + progresso del player
-      const startPhraseIndex = room.timeChallengeData.startPhraseIndex || 1;
-      const absoluteIndex = startPhraseIndex + nextPhraseIndex;
-      
-      console.log(`   startPhraseIndex: ${startPhraseIndex}`);
-      console.log(`   absoluteIndex: ${absoluteIndex}`);
-      
-      // PROTEZIONE 3: Verifica che l'indice sia valido
-      if (absoluteIndex >= phrases.length) {
-        console.log(`   ⛔ Indice ${absoluteIndex} fuori range, pool size: ${phrases.length}`);
-        return callback({ ok: false, error: "Non ci sono più frasi disponibili" });
-      }
-      
-      const selectedPhrase = phrases[absoluteIndex % phrases.length];
-      
-      if (!selectedPhrase) {
-        console.log(`   ⛔ Frase non trovata all'indice ${absoluteIndex}`);
-        return callback({ ok: false, error: "Frase non trovata" });
-      }
-      
-      console.log(`   ✅ Carico frase: ${selectedPhrase.text.substring(0, 40)}...`);
-      
-      // RIMOSSO: completion.phrasesCompleted++ (ora avviene in trySolution)
-      
-      // Incrementa currentRound per infobox
-      gs.currentRound = completion.phrasesCompleted + 1; // 1-indexed per display
-      
-      // Reset gameState per nuova frase (COPIA ESATTA DA SINGLE PLAYER)
-      gs.phrase = selectedPhrase.text;
-      gs.rows = buildBoard(selectedPhrase.text, 14, 4);
-      gs.category = selectedPhrase.category;
-      gs.revealedLetters = [];
-      gs.usedLetters = [];
-      gs.players[gs.currentPlayerIndex].roundScore = 0;
-      gs.wheel = generateWheel();
-      gs.mustSpin = true;
-      gs.awaitingConsonant = false;
-      gs.pendingDouble = false;
-      gs.lastSpinTarget = 0;
-      gs.spinning = false;
-      gs.gameMessage = null;
-      gs.isPhraseSolved = false; // Reset flag risoluzione per evitare loop
-      
-      // Salva e invia SOLO a questo giocatore
-      room.playerGameStates[socket.id] = gs;
-      io.to(socket.id).emit("gameStateUpdate", { gameState: gs });
-      
-      console.log(`   ✅ Frase ${completion.phrasesCompleted + 1}/${totalFrasi} inviata con successo`);
-      
-      callback({ ok: true, phraseNumber: completion.phrasesCompleted + 1 });
-    } catch (err) {
-      console.error("❌ ERRORE CRITICO in timeChallengeNextPhrase:");
-      console.error("   Player:", socket.id);
-      console.error("   Errore:", err);
-      console.error("   Stack:", err.stack);
-      callback({ ok: false, error: "Errore server" });
-    }
-  });
+  // ❌ EVENTO RIMOSSO: timeChallengeNextPhrase non serve più!
+  // Con il sistema CHUNK, il server carica la prossima frase DIRETTAMENTE in trySolution
+  // ZERO chiamate socket aggiuntive = ZERO race conditions!
 
   // ✅ AVVIA PARTITA GIOCATORE SINGOLO (crea room virtuale)
   socket.on("startSinglePlayerGame", ({ playerId, level, totalScore }, callback) => {

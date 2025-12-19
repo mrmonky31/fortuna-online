@@ -55,9 +55,7 @@ export default function Game({
   const [timeChallengePenalties, setTimeChallengePenalties] = useState(0);
   const timeChallengeTimerRef = useRef(null);
   
-  // 🔒 LUCCHETTO: Usa useRef invece di useState per evitare race conditions
-  // useRef è SINCRONO e non causa re-render, quindi niente race!
-  const isRequestingNextRef = useRef(false);
+  // ❌ RIMOSSO: isRequestingNext non serve più con sistema chunk!
 
   const [gameState, setGameState] = useState(() => {
     if (!state) return null;
@@ -447,129 +445,9 @@ export default function Game({
     return () => clearInterval(animation);
   }, [betweenRounds, isSinglePlayerMode, gameState?.lastRoundScore]);
 
-  // ✅ NUOVO: Avanzamento automatico Time Challenge dopo risoluzione frase
-  // 🔥 CRITICO: Usa useRef per tracciare quale frase è stata processata ed evitare doppie chiamate
-  const processedPhraseRef = useRef(null);
-  
-  useEffect(() => {
-    console.log("╔═══════════════════════════════════════════════════════════╗");
-    console.log("║ 🎮 [GAME] useEffect isPhraseSolved TRIGGERED             ║");
-    console.log("╚═══════════════════════════════════════════════════════════╝");
-    console.log("   gameState:", gameState ? "✅ presente" : "❌ null");
-    console.log("   roomCode:", roomCode);
-    
-    if (!gameState || !roomCode) {
-      console.log("❌ [GAME] SKIP - gameState o roomCode mancante");
-      console.log("═══════════════════════════════════════════════════════════");
-      return;
-    }
-    
-    // Verifica se siamo in modalità Time Challenge
-    const isTimeChallenge = gameState?.isTimeChallenge === true;
-    console.log("   isTimeChallenge:", isTimeChallenge);
-    
-    if (!isTimeChallenge) {
-      console.log("❌ [GAME] SKIP - Non è Time Challenge");
-      console.log("═══════════════════════════════════════════════════════════");
-      return;
-    }
-    
-    // 🔒 PROTEZIONE 1: Se è già in corso una richiesta, SKIP (usa .current per useRef)
-    console.log("🔒 [GAME] Controllo LUCCHETTO isRequestingNextRef.current:", isRequestingNextRef.current);
-    if (isRequestingNextRef.current === true) {
-      console.log("🔒 [GAME] ⛔ SKIP - Richiesta già in corso (LUCCHETTO ATTIVO)");
-      console.log("═══════════════════════════════════════════════════════════");
-      return;
-    }
-    
-    // 🔒 PROTEZIONE 2: Verifica se il server ha già segnato la partita come finita
-    const myCompletion = gameState?.timeChallengeData?.completions?.[socket.id];
-    console.log("🏁 [GAME] Controllo FINISHED dal server");
-    console.log("   myCompletion:", myCompletion);
-    console.log("   myCompletion?.finished:", myCompletion?.finished);
-    
-    if (myCompletion?.finished === true) {
-      console.log("🏁 [GAME] ⛔ SKIP - Server ha già segnato partita come FINITA");
-      console.log("═══════════════════════════════════════════════════════════");
-      return;
-    }
-    
-    // Verifica se la frase è stata risolta
-    console.log("📝 [GAME] Controllo stato frase");
-    console.log("   isPhraseSolved:", gameState.isPhraseSolved);
-    console.log("   phrase corrente:", gameState.phrase);
-    console.log("   phrase già processata:", processedPhraseRef.current);
-    
-    if (!gameState.isPhraseSolved) {
-      console.log("❌ [GAME] SKIP - Frase NON ancora risolta");
-      console.log("═══════════════════════════════════════════════════════════");
-      return;
-    }
-    
-    // 🔥 CONTROLLO CRITICO: Se abbiamo già processato QUESTA frase, SKIP!
-    if (processedPhraseRef.current === gameState.phrase) {
-      console.log("❌ [GAME] SKIP - FRASE GIÀ PROCESSATA (evito doppia chiamata)");
-      console.log("═══════════════════════════════════════════════════════════");
-      return;
-    }
-    
-    console.log("✅ [GAME] FRASE RISOLTA! Procedo con il caricamento prossima frase");
-    console.log("🔒 [GAME] ATTIVO LUCCHETTO (isRequestingNextRef.current = true)");
-    
-    // 🔥 SEGNA questa frase come processata PRIMA del timeout
-    processedPhraseRef.current = gameState.phrase;
-    console.log("📌 [GAME] Frase segnata come processata:", gameState.phrase);
-    
-    // 🔒 ATTIVA IL LUCCHETTO SUBITO (useRef è SINCRONO!)
-    isRequestingNextRef.current = true;
-    
-    console.log("⏱️ [GAME] Avvio timer 2 secondi...");
-    console.log("═══════════════════════════════════════════════════════════");
-    
-    // Delay di 2 secondi per mostrare la soluzione
-    const timer = setTimeout(() => {
-      console.log("╔═══════════════════════════════════════════════════════════╗");
-      console.log("║ ⏰ [GAME] TIMER SCADUTO - Chiamo timeChallengeNextPhrase ║");
-      console.log("╚═══════════════════════════════════════════════════════════╝");
-      console.log("📤 [GAME] socket.emit('timeChallengeNextPhrase')");
-      console.log("   roomCode:", roomCode);
-      
-      socket.emit("timeChallengeNextPhrase", { roomCode }, (res) => {
-        console.log("╔═══════════════════════════════════════════════════════════╗");
-        console.log("║ 📥 [GAME] RISPOSTA RICEVUTA da timeChallengeNextPhrase   ║");
-        console.log("╚═══════════════════════════════════════════════════════════╝");
-        console.log("   res:", res);
-        console.log("   res?.ok:", res?.ok);
-        console.log("   res?.finished:", res?.finished);
-        console.log("   res?.phraseNumber:", res?.phraseNumber);
-        
-        if (!res?.ok) {
-          if (res?.finished) {
-            console.log("🏁 [GAME] Time Challenge COMPLETATO!");
-          } else {
-            console.error("❌ [GAME] Errore caricamento frase successiva:", res?.error || "Sconosciuto");
-          }
-        } else {
-          console.log("✅ [GAME] Frase successiva caricata:", res.phraseNumber);
-          console.log("⏱️ [GAME] Reset timer a 0");
-          // Reset timer per nuova frase
-          setTimeChallengeTimer(0);
-        }
-        
-        // 🔒 SBLOCCA IL LUCCHETTO sempre, sia per successo che errore (SINCRONO con useRef!)
-        console.log("🔓 [GAME] SBLOCCO LUCCHETTO (isRequestingNextRef.current = false)");
-        isRequestingNextRef.current = false;
-        console.log("═══════════════════════════════════════════════════════════");
-      });
-    }, 2000);
-    
-    return () => {
-      console.log("🧹 [GAME] Cleanup timer isPhraseSolved");
-      clearTimeout(timer);
-      // Non resettare isRequestingNextRef qui - solo nella callback socket
-    };
-  }, [gameState?.isPhraseSolved, gameState?.isTimeChallenge, gameState?.phrase, gameState?.timeChallengeData, roomCode]);
-  // 🔥 useRef NON è nelle dependencies perché .current non causa re-render!
+  // ❌ RIMOSSO: Vecchio useEffect isPhraseSolved che causava race conditions
+  // Con il sistema CHUNK, il server manda la prossima frase DIRETTAMENTE in gameStateUpdate
+  // ZERO chiamate socket aggiuntive = ZERO useEffect complicati!
 
   // ✅ NUOVO: Costruisci grid dalla frase
   useEffect(() => {
@@ -871,41 +749,20 @@ export default function Game({
   };
 
   const handleSolution = (text) => {
-    console.log("╔═══════════════════════════════════════════════════════════╗");
-    console.log("║ 🎯 [GAME] handleSolution CHIAMATO                        ║");
-    console.log("╚═══════════════════════════════════════════════════════════╝");
-    console.log("   text:", text);
-    console.log("   roomCode:", roomCode);
-    console.log("   gameMode:", state?.room?.gameMode);
-    console.log("   isPresenter:", isPresenter);
-    
-    if (!roomCode) {
-      console.log("❌ [GAME] SKIP - roomCode mancante");
-      console.log("═══════════════════════════════════════════════════════════");
-      return;
-    }
+    if (!roomCode) return;
     
     // ✅ MODALITÀ PRESENTATORE: Giocatore NON passa testo, server notifica presentatore
     if (state?.room?.gameMode === "presenter" && !isPresenter) {
-      console.log("🎭 [GAME] Modalità PRESENTATORE");
       setActiveLetterType("solution"); // Illumina pulsante
       socket.emit("trySolution", { roomCode, text: "" }, (res) => {
         if (!res?.ok) alert(res?.error || "Errore soluzione");
       });
-      console.log("═══════════════════════════════════════════════════════════");
       return;
     }
     
     // ✅ TIME CHALLENGE: Passa tempo e penalità
     const isTimeChallenge = gameState?.isTimeChallenge === true;
-    console.log("   isTimeChallenge:", isTimeChallenge);
-    
     if (isTimeChallenge) {
-      console.log("⏱️ [GAME] TIME CHALLENGE - Invio soluzione");
-      console.log("   timeChallengeTimer:", timeChallengeTimer);
-      console.log("   timeChallengePenalties:", timeChallengePenalties);
-      console.log("📤 [GAME] socket.emit('trySolution')");
-      
       socket.emit("trySolution", { 
         roomCode, 
         text,
@@ -914,32 +771,15 @@ export default function Game({
           penalties: timeChallengePenalties
         }
       }, (res) => {
-        console.log("📥 [GAME] Risposta trySolution ricevuta");
-        console.log("   res:", res);
-        if (!res?.ok && res?.error) {
-          console.error("❌ [GAME] Errore:", res.error);
-          alert(res.error);
-        } else {
-          console.log("✅ [GAME] Soluzione inviata con successo");
-        }
+        if (!res?.ok && res?.error) alert(res.error);
       });
-      console.log("═══════════════════════════════════════════════════════════");
       return;
     }
     
     // ✅ Modalità normale: Giocatore passa il testo della soluzione
-    console.log("📤 [GAME] Modalità NORMALE - socket.emit('trySolution')");
     socket.emit("trySolution", { roomCode, text }, (res) => {
-      console.log("📥 [GAME] Risposta trySolution ricevuta");
-      console.log("   res:", res);
-      if (!res?.ok) {
-        console.error("❌ [GAME] Errore:", res?.error);
-        alert(res?.error || "Errore soluzione");
-      } else {
-        console.log("✅ [GAME] Soluzione inviata con successo");
-      }
+      if (!res?.ok) alert(res?.error || "Errore soluzione");
     });
-    console.log("═══════════════════════════════════════════════════════════");
   };
 
   // ✅ TIME CHALLENGE: Chiusura pannello soluzione con penalità +5s
