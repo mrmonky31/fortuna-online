@@ -55,8 +55,9 @@ export default function Game({
   const [timeChallengePenalties, setTimeChallengePenalties] = useState(0);
   const timeChallengeTimerRef = useRef(null);
   
-  // 🔒 LUCCHETTO: Impedisce richieste multiple di cambio frase
-  const [isRequestingNext, setIsRequestingNext] = useState(false);
+  // 🔒 LUCCHETTO: Usa useRef invece di useState per evitare race conditions
+  // useRef è SINCRONO e non causa re-render, quindi niente race!
+  const isRequestingNextRef = useRef(false);
 
   const [gameState, setGameState] = useState(() => {
     if (!state) return null;
@@ -473,9 +474,9 @@ export default function Game({
       return;
     }
     
-    // 🔒 PROTEZIONE 1: Se è già in corso una richiesta, SKIP
-    console.log("🔒 [GAME] Controllo LUCCHETTO isRequestingNext:", isRequestingNext);
-    if (isRequestingNext) {
+    // 🔒 PROTEZIONE 1: Se è già in corso una richiesta, SKIP (usa .current per useRef)
+    console.log("🔒 [GAME] Controllo LUCCHETTO isRequestingNextRef.current:", isRequestingNextRef.current);
+    if (isRequestingNextRef.current === true) {
       console.log("🔒 [GAME] ⛔ SKIP - Richiesta già in corso (LUCCHETTO ATTIVO)");
       console.log("═══════════════════════════════════════════════════════════");
       return;
@@ -513,14 +514,14 @@ export default function Game({
     }
     
     console.log("✅ [GAME] FRASE RISOLTA! Procedo con il caricamento prossima frase");
-    console.log("🔒 [GAME] ATTIVO LUCCHETTO (isRequestingNext = true)");
+    console.log("🔒 [GAME] ATTIVO LUCCHETTO (isRequestingNextRef.current = true)");
     
     // 🔥 SEGNA questa frase come processata PRIMA del timeout
     processedPhraseRef.current = gameState.phrase;
     console.log("📌 [GAME] Frase segnata come processata:", gameState.phrase);
     
-    // 🔒 ATTIVA IL LUCCHETTO SUBITO
-    setIsRequestingNext(true);
+    // 🔒 ATTIVA IL LUCCHETTO SUBITO (useRef è SINCRONO!)
+    isRequestingNextRef.current = true;
     
     console.log("⏱️ [GAME] Avvio timer 2 secondi...");
     console.log("═══════════════════════════════════════════════════════════");
@@ -555,9 +556,9 @@ export default function Game({
           setTimeChallengeTimer(0);
         }
         
-        // 🔒 SBLOCCA IL LUCCHETTO sempre, sia per successo che errore
-        console.log("🔓 [GAME] SBLOCCO LUCCHETTO (isRequestingNext = false)");
-        setIsRequestingNext(false);
+        // 🔒 SBLOCCA IL LUCCHETTO sempre, sia per successo che errore (SINCRONO con useRef!)
+        console.log("🔓 [GAME] SBLOCCO LUCCHETTO (isRequestingNextRef.current = false)");
+        isRequestingNextRef.current = false;
         console.log("═══════════════════════════════════════════════════════════");
       });
     }, 2000);
@@ -565,10 +566,10 @@ export default function Game({
     return () => {
       console.log("🧹 [GAME] Cleanup timer isPhraseSolved");
       clearTimeout(timer);
-      // Non resettare isRequestingNext qui - solo nella callback socket
+      // Non resettare isRequestingNextRef qui - solo nella callback socket
     };
   }, [gameState?.isPhraseSolved, gameState?.isTimeChallenge, gameState?.phrase, gameState?.timeChallengeData, roomCode]);
-  // 🔥 IMPORTANTE: NON includere isRequestingNext nelle dependencies altrimenti crea loop!
+  // 🔥 useRef NON è nelle dependencies perché .current non causa re-render!
 
   // ✅ NUOVO: Costruisci grid dalla frase
   useEffect(() => {
