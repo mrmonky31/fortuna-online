@@ -444,6 +444,9 @@ export default function Game({
   }, [betweenRounds, isSinglePlayerMode, gameState?.lastRoundScore]);
 
   // ✅ NUOVO: Avanzamento automatico Time Challenge dopo risoluzione frase
+  // 🔥 CRITICO: Usa useRef per tracciare quale frase è stata processata ed evitare doppie chiamate
+  const processedPhraseRef = useRef(null);
+  
   useEffect(() => {
     console.log("🎮 [CLIENT] useEffect isPhraseSolved triggered");
     console.log("   gameState:", gameState ? "presente" : "null");
@@ -465,13 +468,24 @@ export default function Game({
     
     // Verifica se la frase è stata risolta
     console.log("   isPhraseSolved:", gameState.isPhraseSolved);
+    console.log("   phrase corrente:", gameState.phrase);
+    console.log("   phrase già processata:", processedPhraseRef.current);
     
     if (!gameState.isPhraseSolved) {
       console.log("   ❌ Frase non ancora risolta - SKIP");
       return;
     }
     
+    // 🔥 CONTROLLO CRITICO: Se abbiamo già processato QUESTA frase, SKIP!
+    if (processedPhraseRef.current === gameState.phrase) {
+      console.log("   ❌ FRASE GIÀ PROCESSATA - SKIP per evitare doppia chiamata!");
+      return;
+    }
+    
     console.log("   ✅ FRASE RISOLTA! Avvio timer 2s...");
+    
+    // 🔥 SEGNA questa frase come processata PRIMA del timeout
+    processedPhraseRef.current = gameState.phrase;
     
     // Delay di 2 secondi per mostrare la soluzione
     const timer = setTimeout(() => {
@@ -500,7 +514,7 @@ export default function Game({
       console.log("   🧹 Cleanup timer isPhraseSolved");
       clearTimeout(timer);
     };
-  }, [gameState?.isPhraseSolved, gameState?.isTimeChallenge, roomCode]);
+  }, [gameState?.isPhraseSolved, gameState?.isTimeChallenge, gameState?.phrase, roomCode]);
 
   // ✅ NUOVO: Costruisci grid dalla frase
   useEffect(() => {
