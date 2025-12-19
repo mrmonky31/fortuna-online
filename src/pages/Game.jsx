@@ -499,11 +499,12 @@ export default function Game({
     }
     
     console.log("   ✅ FRASE RISOLTA! Avvio timer 2s...");
+    console.log("   🔒 Attivo lucchetto (isRequestingNext = true)");
     
     // 🔥 SEGNA questa frase come processata PRIMA del timeout
     processedPhraseRef.current = gameState.phrase;
     
-    // 🔒 ATTIVA IL LUCCHETTO
+    // 🔒 ATTIVA IL LUCCHETTO SUBITO
     setIsRequestingNext(true);
     
     // Delay di 2 secondi per mostrare la soluzione
@@ -515,20 +516,21 @@ export default function Game({
         console.log("   📥 Risposta ricevuta da server:");
         console.log("      res:", res);
         
-        // 🔒 SBLOCCA IL LUCCHETTO sempre, sia per successo che errore
-        setIsRequestingNext(false);
-        
         if (!res?.ok) {
           if (res?.finished) {
             console.log("   🏁 Time Challenge completato!");
-            return;
+          } else {
+            console.error("   ❌ Errore caricamento frase successiva:", res?.error || "Sconosciuto");
           }
-          console.error("   ❌ Errore caricamento frase successiva:", res?.error || "Sconosciuto");
         } else {
           console.log("   ✅ Frase successiva caricata:", res.phraseNumber);
           // Reset timer per nuova frase
           setTimeChallengeTimer(0);
         }
+        
+        // 🔒 SBLOCCA IL LUCCHETTO sempre, sia per successo che errore
+        console.log("   🔓 Sblocco lucchetto (isRequestingNext = false)");
+        setIsRequestingNext(false);
       });
     }, 2000);
     
@@ -537,7 +539,7 @@ export default function Game({
       clearTimeout(timer);
       // Non resettare isRequestingNext qui - solo nella callback socket
     };
-  }, [gameState?.isPhraseSolved, gameState?.isTimeChallenge, gameState?.phrase, roomCode]);
+  }, [gameState?.isPhraseSolved, gameState?.isTimeChallenge, gameState?.phrase, gameState?.timeChallengeData, roomCode]);
   // 🔥 IMPORTANTE: NON includere isRequestingNext nelle dependencies altrimenti crea loop!
 
   // ✅ NUOVO: Costruisci grid dalla frase
