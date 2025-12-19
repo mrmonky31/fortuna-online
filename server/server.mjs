@@ -1993,6 +1993,10 @@ if (gs.usedLetters.includes(upper)) {
           console.log(`   Tempo frase: ${phraseTime}s, Penalità: ${penalties}s`);
           console.log(`   Totale accumulato: ${completion.totalTime}s + ${completion.totalPenalties}s penalità`);
           
+          // 🔥 INCREMENTA phrasesCompleted SUBITO dopo validazione corretta
+          completion.phrasesCompleted++;
+          console.log(`   phrasesCompleted DOPO incremento: ${completion.phrasesCompleted}`);
+          
           const settings = gs.timeChallengeSettings || {};
           const totalFrasi = settings.numFrasi || 1;
           
@@ -2008,11 +2012,11 @@ if (gs.usedLetters.includes(upper)) {
           io.to(socket.id).emit("gameStateUpdate", { gameState: gs });
           
           
-          // 9. Controlla se ha finito tutte le frasi
-          const currentNumber = completion.phrasesCompleted;
+          // 9. 🔥 CONTROLLO ATOMICO: Ha finito TUTTE le frasi?
+          const currentNumber = completion.phrasesCompleted; // Ora è GIÀ incrementato!
           
-          console.log("   🎯 Check fine match:");
-          console.log(`      Frase corrente: ${currentNumber}/${totalFrasi}`);
+          console.log("   🎯 Check fine match (DOPO incremento):");
+          console.log(`      phrasesCompleted: ${currentNumber}/${totalFrasi}`);
           
           if (currentNumber >= totalFrasi) {
             // ✅ Hai caricato tutte le frasi del match (e quindi completato l'ultima)
@@ -2658,11 +2662,17 @@ if (gs.usedLetters.includes(upper)) {
       
       
       // ✅ VERIFICA: Il giocatore ha ancora frasi da completare?
+      // phrasesCompleted è GIÀ incrementato in validateSolution
       const nextPhraseNumber = completion.phrasesCompleted + 1; // Prossima frase (1-indexed)
       
+      console.log(`🔄 timeChallengeNextPhrase:`);
+      console.log(`   phrasesCompleted: ${completion.phrasesCompleted}`);
+      console.log(`   nextPhraseNumber: ${nextPhraseNumber}`);
+      console.log(`   totalFrasi: ${totalFrasi}`);
       
       if (nextPhraseNumber > totalFrasi) {
         // Ha già completato tutte le frasi - non dovrebbe arrivare qui
+        console.log(`   ⛔ STOP: nextPhraseNumber (${nextPhraseNumber}) > totalFrasi (${totalFrasi})`);
         return callback({ ok: false, finished: true });
       }
       
@@ -2681,17 +2691,19 @@ if (gs.usedLetters.includes(upper)) {
       const startPhraseIndex = room.timeChallengeData.startPhraseIndex || 1;
       const absoluteIndex = startPhraseIndex + nextPhraseIndex;
       
+      console.log(`   startPhraseIndex: ${startPhraseIndex}`);
+      console.log(`   nextPhraseIndex: ${nextPhraseIndex}`);
+      console.log(`   absoluteIndex: ${absoluteIndex}`);
+      
       const selectedPhrase = phrases[absoluteIndex % phrases.length];
       if (!selectedPhrase) {
         return callback({ ok: false, error: "Frase non trovata" });
       }
       
+      console.log(`   ✅ Carico frase: ${selectedPhrase.text.substring(0, 40)}...`);
       
-      // ✅ INCREMENTA phrasesCompleted DOPO aver caricato con successo la nuova frase
-      completion.phrasesCompleted++;
-      
-      
-      // ✅ Incrementa currentRound (per infobox)
+      // ✅ Aggiorna currentRound (per infobox)
+      // NON incrementare phrasesCompleted qui! È già stato incrementato in validateSolution
       gs.currentRound = completion.phrasesCompleted;
       
       
