@@ -54,6 +54,9 @@ export default function Game({
   const [timeChallengeTimer, setTimeChallengeTimer] = useState(0);
   const [timeChallengePenalties, setTimeChallengePenalties] = useState(0);
   const timeChallengeTimerRef = useRef(null);
+  
+  // 🔒 LUCCHETTO: Impedisce richieste multiple di cambio frase
+  const [isRequestingNext, setIsRequestingNext] = useState(false);
 
   const [gameState, setGameState] = useState(() => {
     if (!state) return null;
@@ -466,6 +469,19 @@ export default function Game({
       return;
     }
     
+    // 🔒 PROTEZIONE 1: Se è già in corso una richiesta, SKIP
+    if (isRequestingNext) {
+      console.log("   🔒 Richiesta già in corso - SKIP");
+      return;
+    }
+    
+    // 🔒 PROTEZIONE 2: Verifica se il server ha già segnato la partita come finita
+    const myCompletion = gameState?.timeChallengeData?.completions?.[socket.id];
+    if (myCompletion?.finished === true) {
+      console.log("   🏁 Server ha già segnato partita come finita - SKIP");
+      return;
+    }
+    
     // Verifica se la frase è stata risolta
     console.log("   isPhraseSolved:", gameState.isPhraseSolved);
     console.log("   phrase corrente:", gameState.phrase);
@@ -487,6 +503,9 @@ export default function Game({
     // 🔥 SEGNA questa frase come processata PRIMA del timeout
     processedPhraseRef.current = gameState.phrase;
     
+    // 🔒 ATTIVA IL LUCCHETTO
+    setIsRequestingNext(true);
+    
     // Delay di 2 secondi per mostrare la soluzione
     const timer = setTimeout(() => {
       console.log("   ⏰ Timer scaduto - Chiamo timeChallengeNextPhrase");
@@ -495,6 +514,9 @@ export default function Game({
       socket.emit("timeChallengeNextPhrase", { roomCode }, (res) => {
         console.log("   📥 Risposta ricevuta da server:");
         console.log("      res:", res);
+        
+        // 🔒 SBLOCCA IL LUCCHETTO sempre, sia per successo che errore
+        setIsRequestingNext(false);
         
         if (!res?.ok) {
           if (res?.finished) {
@@ -513,8 +535,9 @@ export default function Game({
     return () => {
       console.log("   🧹 Cleanup timer isPhraseSolved");
       clearTimeout(timer);
+      // Non resettare isRequestingNext qui - solo nella callback socket
     };
-  }, [gameState?.isPhraseSolved, gameState?.isTimeChallenge, gameState?.phrase, roomCode]);
+  }, [gameState?.isPhraseSolved, gameState?.isTimeChallenge, gameState?.phrase, roomCode, isRequestingNext]);
 
   // ✅ NUOVO: Costruisci grid dalla frase
   useEffect(() => {
