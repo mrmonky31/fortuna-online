@@ -537,7 +537,8 @@ export default function Game({
       clearTimeout(timer);
       // Non resettare isRequestingNext qui - solo nella callback socket
     };
-  }, [gameState?.isPhraseSolved, gameState?.isTimeChallenge, gameState?.phrase, roomCode, isRequestingNext]);
+  }, [gameState?.isPhraseSolved, gameState?.isTimeChallenge, gameState?.phrase, roomCode]);
+  // 🔥 IMPORTANTE: NON includere isRequestingNext nelle dependencies altrimenti crea loop!
 
   // ✅ NUOVO: Costruisci grid dalla frase
   useEffect(() => {
