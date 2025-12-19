@@ -26,6 +26,9 @@ export default function Controls({
   const [cons, setCons] = useState("");
   const [vow, setVow] = useState("");
   const [sol, setSol] = useState("");
+  
+  // 🔒 LUCCHETTO: Impedisce doppio submit della soluzione
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const consRef = useRef(null);
   const vowRef = useRef(null);
@@ -34,6 +37,11 @@ export default function Controls({
   useEffect(() => {
     if (onPanelChange) {
       onPanelChange(panel);
+    }
+    
+    // 🔒 Reset lucchetto quando si chiude il pannello soluzione
+    if (panel !== "sol") {
+      setIsSubmitting(false);
     }
   }, [panel, onPanelChange]);
 
@@ -111,11 +119,29 @@ export default function Controls({
 
   const submitSolution = () => {
     if (disabled) return;
+    
+    // 🔒 LUCCHETTO: Blocca se già in corso un submit
+    if (isSubmitting) {
+      console.log("🔒 Submit già in corso, ignoro");
+      return;
+    }
+    
     const text = (sol || "").trim();
     if (!text) return;
+    
+    // 🔒 ATTIVA LUCCHETTO
+    console.log("🔒 Attivo lucchetto submit soluzione");
+    setIsSubmitting(true);
+    
     setSol("");
     onSolution && onSolution(text);
     setPanel(null);
+    
+    // 🔒 SBLOCCA dopo 500ms (tempo sicurezza per evitare doppi click/enter)
+    setTimeout(() => {
+      console.log("🔓 Sblocco lucchetto submit soluzione");
+      setIsSubmitting(false);
+    }, 500);
   };
 
   const handlePassTurn = () => {
