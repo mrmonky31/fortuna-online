@@ -451,12 +451,15 @@ export default function Game({
   const processedPhraseRef = useRef(null);
   
   useEffect(() => {
-    console.log("🎮 [CLIENT] useEffect isPhraseSolved triggered");
-    console.log("   gameState:", gameState ? "presente" : "null");
+    console.log("╔═══════════════════════════════════════════════════════════╗");
+    console.log("║ 🎮 [GAME] useEffect isPhraseSolved TRIGGERED             ║");
+    console.log("╚═══════════════════════════════════════════════════════════╝");
+    console.log("   gameState:", gameState ? "✅ presente" : "❌ null");
     console.log("   roomCode:", roomCode);
     
     if (!gameState || !roomCode) {
-      console.log("   ❌ gameState o roomCode mancante - SKIP");
+      console.log("❌ [GAME] SKIP - gameState o roomCode mancante");
+      console.log("═══════════════════════════════════════════════════════════");
       return;
     }
     
@@ -465,77 +468,102 @@ export default function Game({
     console.log("   isTimeChallenge:", isTimeChallenge);
     
     if (!isTimeChallenge) {
-      console.log("   ❌ Non è Time Challenge - SKIP");
+      console.log("❌ [GAME] SKIP - Non è Time Challenge");
+      console.log("═══════════════════════════════════════════════════════════");
       return;
     }
     
     // 🔒 PROTEZIONE 1: Se è già in corso una richiesta, SKIP
+    console.log("🔒 [GAME] Controllo LUCCHETTO isRequestingNext:", isRequestingNext);
     if (isRequestingNext) {
-      console.log("   🔒 Richiesta già in corso - SKIP");
+      console.log("🔒 [GAME] ⛔ SKIP - Richiesta già in corso (LUCCHETTO ATTIVO)");
+      console.log("═══════════════════════════════════════════════════════════");
       return;
     }
     
     // 🔒 PROTEZIONE 2: Verifica se il server ha già segnato la partita come finita
     const myCompletion = gameState?.timeChallengeData?.completions?.[socket.id];
+    console.log("🏁 [GAME] Controllo FINISHED dal server");
+    console.log("   myCompletion:", myCompletion);
+    console.log("   myCompletion?.finished:", myCompletion?.finished);
+    
     if (myCompletion?.finished === true) {
-      console.log("   🏁 Server ha già segnato partita come finita - SKIP");
+      console.log("🏁 [GAME] ⛔ SKIP - Server ha già segnato partita come FINITA");
+      console.log("═══════════════════════════════════════════════════════════");
       return;
     }
     
     // Verifica se la frase è stata risolta
+    console.log("📝 [GAME] Controllo stato frase");
     console.log("   isPhraseSolved:", gameState.isPhraseSolved);
     console.log("   phrase corrente:", gameState.phrase);
     console.log("   phrase già processata:", processedPhraseRef.current);
     
     if (!gameState.isPhraseSolved) {
-      console.log("   ❌ Frase non ancora risolta - SKIP");
+      console.log("❌ [GAME] SKIP - Frase NON ancora risolta");
+      console.log("═══════════════════════════════════════════════════════════");
       return;
     }
     
     // 🔥 CONTROLLO CRITICO: Se abbiamo già processato QUESTA frase, SKIP!
     if (processedPhraseRef.current === gameState.phrase) {
-      console.log("   ❌ FRASE GIÀ PROCESSATA - SKIP per evitare doppia chiamata!");
+      console.log("❌ [GAME] SKIP - FRASE GIÀ PROCESSATA (evito doppia chiamata)");
+      console.log("═══════════════════════════════════════════════════════════");
       return;
     }
     
-    console.log("   ✅ FRASE RISOLTA! Avvio timer 2s...");
-    console.log("   🔒 Attivo lucchetto (isRequestingNext = true)");
+    console.log("✅ [GAME] FRASE RISOLTA! Procedo con il caricamento prossima frase");
+    console.log("🔒 [GAME] ATTIVO LUCCHETTO (isRequestingNext = true)");
     
     // 🔥 SEGNA questa frase come processata PRIMA del timeout
     processedPhraseRef.current = gameState.phrase;
+    console.log("📌 [GAME] Frase segnata come processata:", gameState.phrase);
     
     // 🔒 ATTIVA IL LUCCHETTO SUBITO
     setIsRequestingNext(true);
     
+    console.log("⏱️ [GAME] Avvio timer 2 secondi...");
+    console.log("═══════════════════════════════════════════════════════════");
+    
     // Delay di 2 secondi per mostrare la soluzione
     const timer = setTimeout(() => {
-      console.log("   ⏰ Timer scaduto - Chiamo timeChallengeNextPhrase");
-      console.log("   📤 socket.emit('timeChallengeNextPhrase', { roomCode:", roomCode, "})");
+      console.log("╔═══════════════════════════════════════════════════════════╗");
+      console.log("║ ⏰ [GAME] TIMER SCADUTO - Chiamo timeChallengeNextPhrase ║");
+      console.log("╚═══════════════════════════════════════════════════════════╝");
+      console.log("📤 [GAME] socket.emit('timeChallengeNextPhrase')");
+      console.log("   roomCode:", roomCode);
       
       socket.emit("timeChallengeNextPhrase", { roomCode }, (res) => {
-        console.log("   📥 Risposta ricevuta da server:");
-        console.log("      res:", res);
+        console.log("╔═══════════════════════════════════════════════════════════╗");
+        console.log("║ 📥 [GAME] RISPOSTA RICEVUTA da timeChallengeNextPhrase   ║");
+        console.log("╚═══════════════════════════════════════════════════════════╝");
+        console.log("   res:", res);
+        console.log("   res?.ok:", res?.ok);
+        console.log("   res?.finished:", res?.finished);
+        console.log("   res?.phraseNumber:", res?.phraseNumber);
         
         if (!res?.ok) {
           if (res?.finished) {
-            console.log("   🏁 Time Challenge completato!");
+            console.log("🏁 [GAME] Time Challenge COMPLETATO!");
           } else {
-            console.error("   ❌ Errore caricamento frase successiva:", res?.error || "Sconosciuto");
+            console.error("❌ [GAME] Errore caricamento frase successiva:", res?.error || "Sconosciuto");
           }
         } else {
-          console.log("   ✅ Frase successiva caricata:", res.phraseNumber);
+          console.log("✅ [GAME] Frase successiva caricata:", res.phraseNumber);
+          console.log("⏱️ [GAME] Reset timer a 0");
           // Reset timer per nuova frase
           setTimeChallengeTimer(0);
         }
         
         // 🔒 SBLOCCA IL LUCCHETTO sempre, sia per successo che errore
-        console.log("   🔓 Sblocco lucchetto (isRequestingNext = false)");
+        console.log("🔓 [GAME] SBLOCCO LUCCHETTO (isRequestingNext = false)");
         setIsRequestingNext(false);
+        console.log("═══════════════════════════════════════════════════════════");
       });
     }, 2000);
     
     return () => {
-      console.log("   🧹 Cleanup timer isPhraseSolved");
+      console.log("🧹 [GAME] Cleanup timer isPhraseSolved");
       clearTimeout(timer);
       // Non resettare isRequestingNext qui - solo nella callback socket
     };
@@ -842,20 +870,41 @@ export default function Game({
   };
 
   const handleSolution = (text) => {
-    if (!roomCode) return;
+    console.log("╔═══════════════════════════════════════════════════════════╗");
+    console.log("║ 🎯 [GAME] handleSolution CHIAMATO                        ║");
+    console.log("╚═══════════════════════════════════════════════════════════╝");
+    console.log("   text:", text);
+    console.log("   roomCode:", roomCode);
+    console.log("   gameMode:", state?.room?.gameMode);
+    console.log("   isPresenter:", isPresenter);
+    
+    if (!roomCode) {
+      console.log("❌ [GAME] SKIP - roomCode mancante");
+      console.log("═══════════════════════════════════════════════════════════");
+      return;
+    }
     
     // ✅ MODALITÀ PRESENTATORE: Giocatore NON passa testo, server notifica presentatore
     if (state?.room?.gameMode === "presenter" && !isPresenter) {
+      console.log("🎭 [GAME] Modalità PRESENTATORE");
       setActiveLetterType("solution"); // Illumina pulsante
       socket.emit("trySolution", { roomCode, text: "" }, (res) => {
         if (!res?.ok) alert(res?.error || "Errore soluzione");
       });
+      console.log("═══════════════════════════════════════════════════════════");
       return;
     }
     
     // ✅ TIME CHALLENGE: Passa tempo e penalità
     const isTimeChallenge = gameState?.isTimeChallenge === true;
+    console.log("   isTimeChallenge:", isTimeChallenge);
+    
     if (isTimeChallenge) {
+      console.log("⏱️ [GAME] TIME CHALLENGE - Invio soluzione");
+      console.log("   timeChallengeTimer:", timeChallengeTimer);
+      console.log("   timeChallengePenalties:", timeChallengePenalties);
+      console.log("📤 [GAME] socket.emit('trySolution')");
+      
       socket.emit("trySolution", { 
         roomCode, 
         text,
@@ -864,15 +913,32 @@ export default function Game({
           penalties: timeChallengePenalties
         }
       }, (res) => {
-        if (!res?.ok && res?.error) alert(res.error);
+        console.log("📥 [GAME] Risposta trySolution ricevuta");
+        console.log("   res:", res);
+        if (!res?.ok && res?.error) {
+          console.error("❌ [GAME] Errore:", res.error);
+          alert(res.error);
+        } else {
+          console.log("✅ [GAME] Soluzione inviata con successo");
+        }
       });
+      console.log("═══════════════════════════════════════════════════════════");
       return;
     }
     
     // ✅ Modalità normale: Giocatore passa il testo della soluzione
+    console.log("📤 [GAME] Modalità NORMALE - socket.emit('trySolution')");
     socket.emit("trySolution", { roomCode, text }, (res) => {
-      if (!res?.ok) alert(res?.error || "Errore soluzione");
+      console.log("📥 [GAME] Risposta trySolution ricevuta");
+      console.log("   res:", res);
+      if (!res?.ok) {
+        console.error("❌ [GAME] Errore:", res?.error);
+        alert(res?.error || "Errore soluzione");
+      } else {
+        console.log("✅ [GAME] Soluzione inviata con successo");
+      }
     });
+    console.log("═══════════════════════════════════════════════════════════");
   };
 
   // ✅ TIME CHALLENGE: Chiusura pannello soluzione con penalità +5s
