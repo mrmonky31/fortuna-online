@@ -9,9 +9,9 @@
 }
 
 .boss-room h1 {
-  font-size: 1.6rem;
+  font-size: 1.3rem;
   font-weight: 700;
-  margin-bottom: 25px;
+  margin-bottom: 20px;
   background: linear-gradient(135deg, #0066ff 0%, #6b2dd8 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -19,9 +19,9 @@
 }
 
 .boss-room h3 {
-  font-size: 1rem;
+  font-size: 0.9rem;
   font-weight: 600;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
   color: #0066ff;
 }
 
@@ -35,16 +35,16 @@
 }
 
 .boss-btn {
-  padding: 14px 24px;
-  font-size: 1rem;
+  padding: 12px 20px;
+  font-size: 0.9rem;
   font-weight: 600;
   background: linear-gradient(135deg, #0066ff 0%, #0052cc 100%);
   color: white;
   border: none;
-  border-radius: 12px;
+  border-radius: 10px;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(0, 102, 255, 0.3);
+  box-shadow: 0 3px 12px rgba(0, 102, 255, 0.3);
 }
 
 .boss-btn:hover {
@@ -67,33 +67,33 @@
 
 /* FORM */
 .boss-form {
-  max-width: 500px;
+  max-width: 450px;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
   text-align: left;
   background: rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(10px);
-  border-radius: 15px;
-  padding: 25px;
+  border-radius: 12px;
+  padding: 20px;
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .boss-form label {
   font-weight: 600;
   color: #0066ff;
-  font-size: 0.85rem;
-  margin-bottom: 6px;
+  font-size: 0.75rem;
+  margin-bottom: 4px;
   display: block;
 }
 
 .boss-form input {
-  padding: 12px 15px;
-  font-size: 0.95rem;
+  padding: 10px 12px;
+  font-size: 0.85rem;
   background: rgba(0, 0, 0, 0.3);
   border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 10px;
+  border-radius: 8px;
   color: white;
   outline: none;
   transition: all 0.3s ease;
@@ -101,11 +101,11 @@
 }
 
 .boss-form textarea {
-  padding: 12px 15px;
-  font-size: 0.95rem;
+  padding: 10px 12px;
+  font-size: 0.85rem;
   background: rgba(0, 0, 0, 0.3);
   border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 10px;
+  border-radius: 8px;
   color: white;
   font-family: inherit;
   line-height: 1.5;
@@ -121,17 +121,17 @@
 }
 
 .boss-form button {
-  padding: 14px;
-  font-size: 1rem;
+  padding: 12px;
+  font-size: 0.9rem;
   font-weight: 600;
   background: linear-gradient(135deg, #0066ff 0%, #0052cc 100%);
   color: white;
   border: none;
-  border-radius: 10px;
+  border-radius: 8px;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(0, 102, 255, 0.3);
-  margin-top: 8px;
+  box-shadow: 0 3px 12px rgba(0, 102, 255, 0.3);
+  margin-top: 6px;
 }
 
 .boss-form button:hover:not(:disabled) {
@@ -169,8 +169,8 @@
 .list-card {
   background: linear-gradient(135deg, rgba(0, 102, 255, 0.1) 0%, rgba(107, 45, 216, 0.1) 100%);
   border: 2px solid rgba(0, 102, 255, 0.3);
-  border-radius: 12px;
-  padding: 20px 15px;
+  border-radius: 10px;
+  padding: 16px 12px;
   cursor: pointer;
   transition: all 0.3s ease;
   text-align: center;
@@ -198,8 +198,8 @@
 }
 
 .list-card h3 {
-  font-size: 1.2rem;
-  margin-bottom: 8px;
+  font-size: 1rem;
+  margin-bottom: 6px;
   color: #0066ff;
   font-weight: 700;
 }
@@ -209,7 +209,7 @@
 }
 
 .list-card p {
-  font-size: 0.85rem;
+  font-size: 0.75rem;
   color: #aaa;
 }
 
@@ -229,9 +229,9 @@
   align-items: center;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 10px;
-  padding: 15px;
-  margin-bottom: 10px;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 8px;
   transition: all 0.3s ease;
 }
 
@@ -258,14 +258,14 @@
 }
 
 .phrase-text {
-  font-size: 1rem;
+  font-size: 0.9rem;
   font-weight: 600;
   color: white;
-  margin-bottom: 4px;
+  margin-bottom: 3px;
 }
 
 .phrase-category {
-  font-size: 0.85rem;
+  font-size: 0.75rem;
   color: #0066ff;
   font-weight: 500;
 }
