@@ -2843,8 +2843,8 @@ if (gs.usedLetters.includes(upper)) {
         const count = await phrasesCollection.countDocuments({ listId: list._id.toString() });
         list.phrasesCount = count;
         
-        // ✅ SICUREZZA: Non inviare il PIN al client
-        delete list.pin;
+        // ✅ IMPORTANTE: Invia il PIN al client (necessario per verifiche client-side)
+        // Il PIN serve solo per aggiungere frasi, non per visualizzare/eliminare
       }
 
       callback({ ok: true, lists });
@@ -2863,6 +2863,11 @@ if (gs.usedLetters.includes(upper)) {
 
       if (!name || name.trim().length === 0) {
         return callback({ ok: false, error: "Nome lista non valido" });
+      }
+
+      // ✅ NUOVO: Limite 20 caratteri
+      if (name.trim().length > 20) {
+        return callback({ ok: false, error: "Nome lista max 20 caratteri" });
       }
 
       // ✅ Validazione PIN se presente
@@ -2887,9 +2892,6 @@ if (gs.usedLetters.includes(upper)) {
       const result = await phraseListsCollection.insertOne(newList);
       newList._id = result.insertedId;
       newList.phrasesCount = 0;
-      
-      // ✅ Non inviare il PIN al client
-      delete newList.pin;
 
       callback({ ok: true, list: newList });
     } catch (err) {
@@ -2899,26 +2901,13 @@ if (gs.usedLetters.includes(upper)) {
   });
 
   // 📝 OTTIENI FRASI DI UNA LISTA
-  socket.on("getPhrasesByList", async ({ listId, pin }, callback) => {
+  socket.on("getPhrasesByList", async ({ listId }, callback) => {
     try {
-      if (!phrasesCollection || !phraseListsCollection) {
+      if (!phrasesCollection) {
         return callback({ ok: false, error: "Database non disponibile" });
       }
 
-      // ✅ Verifica se la lista esiste ed è protetta
-      const { ObjectId } = await import('mongodb');
-      const list = await phraseListsCollection.findOne({ _id: new ObjectId(listId) });
-      
-      if (!list) {
-        return callback({ ok: false, error: "Lista non trovata" });
-      }
-
-      // ✅ Se lista protetta, verifica PIN
-      if (list.isProtected) {
-        if (!pin || pin !== list.pin) {
-          return callback({ ok: false, error: "PIN errato o mancante" });
-        }
-      }
+      // ✅ NESSUNA VERIFICA PIN - chiunque può visualizzare le frasi
 
       const phrases = await phrasesCollection
         .find({ listId })
@@ -2943,8 +2932,18 @@ if (gs.usedLetters.includes(upper)) {
         return callback({ ok: false, error: "Frase non valida" });
       }
 
+      // ✅ NUOVO: Limite 50 caratteri per frase
+      if (phrase.trim().length > 50) {
+        return callback({ ok: false, error: "Frase max 50 caratteri" });
+      }
+
       if (!category || category.trim().length === 0) {
         return callback({ ok: false, error: "Categoria non valida" });
+      }
+
+      // ✅ NUOVO: Limite 20 caratteri per categoria
+      if (category.trim().length > 20) {
+        return callback({ ok: false, error: "Categoria max 20 caratteri" });
       }
 
       // ✅ Verifica PIN se lista protetta
@@ -2995,30 +2994,13 @@ if (gs.usedLetters.includes(upper)) {
   });
 
   // 🗑️ ELIMINA FRASE
-  socket.on("deletePhrase", async ({ phraseId, pin }, callback) => {
+  socket.on("deletePhrase", async ({ phraseId }, callback) => {
     try {
-      if (!phrasesCollection || !phraseListsCollection) {
+      if (!phrasesCollection) {
         return callback({ ok: false, error: "Database non disponibile" });
       }
 
       const { ObjectId } = await import('mongodb');
-      
-      // ✅ Prima trova la frase per ottenere il listId
-      const phrase = await phrasesCollection.findOne({ _id: new ObjectId(phraseId) });
-      
-      if (!phrase) {
-        return callback({ ok: false, error: "Frase non trovata" });
-      }
-
-      // ✅ Verifica PIN se lista protetta
-      const list = await phraseListsCollection.findOne({ _id: new ObjectId(phrase.listId) });
-      
-      if (list && list.isProtected) {
-        if (!pin || pin !== list.pin) {
-          return callback({ ok: false, error: "PIN errato o mancante" });
-        }
-      }
-
       const result = await phrasesCollection.deleteOne({ _id: new ObjectId(phraseId) });
 
       if (result.deletedCount === 0) {
@@ -3033,26 +3015,13 @@ if (gs.usedLetters.includes(upper)) {
   });
 
   // 🗑️ ELIMINA LISTA (e tutte le sue frasi)
-  socket.on("deletePhraseList", async ({ listId, pin }, callback) => {
+  socket.on("deletePhraseList", async ({ listId }, callback) => {
     try {
       if (!phraseListsCollection || !phrasesCollection) {
         return callback({ ok: false, error: "Database non disponibile" });
       }
 
       const { ObjectId } = await import('mongodb');
-      
-      // ✅ Verifica PIN se lista protetta
-      const list = await phraseListsCollection.findOne({ _id: new ObjectId(listId) });
-      
-      if (!list) {
-        return callback({ ok: false, error: "Lista non trovata" });
-      }
-
-      if (list.isProtected) {
-        if (!pin || pin !== list.pin) {
-          return callback({ ok: false, error: "PIN errato o mancante" });
-        }
-      }
       
       // Elimina tutte le frasi della lista
       await phrasesCollection.deleteMany({ listId });

@@ -3,32 +3,39 @@ import React, { useState, useEffect } from "react";
 import socket from "../socket";
 import "../styles/boss-room.css";
 
+// ✅ PIN GLOBALE per accedere a "Gestisci Liste"
+const MANAGE_PIN = "0000"; // ← Cambia questo con il tuo PIN
+
 export default function BossRoom({ onBack }) {
-  const [mode, setMode] = useState("menu"); // "menu" | "create" | "list" | "pinPrompt"
+  const [mode, setMode] = useState("menu"); // "menu" | "create" | "manageAuth" | "manage" | "addPhrase" | "pinPrompt"
   const [lists, setLists] = useState([]);
   const [selectedList, setSelectedList] = useState(null);
-  const [phrases, setPhrases] = useState([]);
   
   // Form nuova lista
   const [newListName, setNewListName] = useState("");
-  const [newListPin, setNewListPin] = useState(""); // ✅ NUOVO: PIN per nuova lista
+  const [newListPin, setNewListPin] = useState(""); // PIN per aggiungere frasi
   
   // Form nuova frase
   const [newPhrase, setNewPhrase] = useState("");
   const [newCategory, setNewCategory] = useState("");
   
-  // ✅ NUOVO: Gestione PIN per accesso liste protette
-  const [pinPromptList, setPinPromptList] = useState(null); // Lista che richiede PIN
-  const [enteredPin, setEnteredPin] = useState(""); // PIN inserito dall'utente
+  // PIN globale per gestire liste
+  const [managePinInput, setManagePinInput] = useState("");
+  
+  // PIN per aggiungere frase a lista protetta
+  const [pinPromptList, setPinPromptList] = useState(null);
+  const [enteredPin, setEnteredPin] = useState("");
   
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  // ✅ Carica liste quando si entra
+  // ✅ Carica liste quando necessario
   useEffect(() => {
-    loadLists();
-  }, []);
+    if (mode === "manage" || mode === "addPhrase") {
+      loadLists();
+    }
+  }, [mode]);
 
   const loadLists = () => {
     setLoading(true);
@@ -42,13 +49,19 @@ export default function BossRoom({ onBack }) {
     });
   };
 
+  // ============ CREA LISTA ============
+  
   const handleCreateList = () => {
     if (!newListName.trim()) {
       setError("Inserisci un nome per la lista");
       return;
     }
 
-    // ✅ Validazione PIN (se inserito, deve essere 4 cifre)
+    if (newListName.trim().length > 20) {
+      setError("Nome lista max 20 caratteri");
+      return;
+    }
+
     if (newListPin && (newListPin.length !== 4 || !/^\d{4}$/.test(newListPin))) {
       setError("Il PIN deve essere 4 cifre (o lascia vuoto per lista pubblica)");
       return;
@@ -59,14 +72,13 @@ export default function BossRoom({ onBack }) {
     
     socket.emit("createPhraseList", { 
       name: newListName.trim(),
-      pin: newListPin || null // ✅ Invia PIN solo se presente
+      pin: newListPin || null
     }, (res) => {
       setLoading(false);
       if (res && res.ok) {
-        setSuccess(newListPin ? "✅ Lista protetta creata!" : "✅ Lista creata!");
+        setSuccess(newListPin ? "✅ Lista protetta creata!" : "✅ Lista pubblica creata!");
         setNewListName("");
-        setNewListPin(""); // ✅ Reset PIN
-        loadLists();
+        setNewListPin("");
         setTimeout(() => setSuccess(""), 2000);
       } else {
         setError(res?.error || "Errore creazione lista");
@@ -74,21 +86,20 @@ export default function BossRoom({ onBack }) {
     });
   };
 
-  const handleSelectList = (list) => {
-    // ✅ Se la lista è protetta, controlla se abbiamo già il PIN salvato
+  // ============ AGGIUNGI FRASE ============
+  
+  const handleSelectListForPhrase = (list) => {
     if (list.isProtected) {
+      // Controlla se abbiamo PIN salvato
       const savedPins = JSON.parse(sessionStorage.getItem('listPins') || '{}');
       const savedPin = savedPins[list._id];
       
       if (savedPin) {
-        // ✅ PIN già salvato, accedi direttamente
         setSelectedList({ ...list, verifiedPin: savedPin });
-        setMode("list");
-        loadPhrases(list._id, savedPin);
         return;
       }
       
-      // ❌ PIN non salvato, chiedi PIN
+      // Chiedi PIN
       setPinPromptList(list);
       setEnteredPin("");
       setError("");
@@ -96,25 +107,10 @@ export default function BossRoom({ onBack }) {
       return;
     }
     
-    // Lista pubblica, accesso diretto
+    // Lista pubblica
     setSelectedList(list);
-    setMode("list");
-    loadPhrases(list._id, null);
   };
 
-  const loadPhrases = (listId, pin = null) => {
-    setLoading(true);
-    socket.emit("getPhrasesByList", { listId, pin }, (res) => {
-      setLoading(false);
-      if (res && res.ok) {
-        setPhrases(res.phrases || []);
-      } else {
-        setError(res?.error || "Errore caricamento frasi");
-      }
-    });
-  };
-
-  // ✅ NUOVO: Verifica PIN e accedi alla lista protetta
   const handlePinSubmit = () => {
     if (!enteredPin || enteredPin.length !== 4) {
       setError("Inserisci un PIN di 4 cifre");
@@ -123,48 +119,42 @@ export default function BossRoom({ onBack }) {
 
     if (!pinPromptList) return;
 
-    setLoading(true);
-    setError("");
+    // Verifica PIN
+    if (enteredPin !== pinPromptList.pin) {
+      setError("PIN errato!");
+      setEnteredPin("");
+      return;
+    }
 
-    // Verifica PIN caricando le frasi
-    socket.emit("getPhrasesByList", { 
-      listId: pinPromptList._id, 
-      pin: enteredPin 
-    }, (res) => {
-      setLoading(false);
-      
-      if (res && res.ok) {
-        // ✅ PIN corretto! Salva in sessionStorage per non chiederlo più
-        const savedPins = JSON.parse(sessionStorage.getItem('listPins') || '{}');
-        savedPins[pinPromptList._id] = enteredPin;
-        sessionStorage.setItem('listPins', JSON.stringify(savedPins));
-        
-        setSelectedList({ ...pinPromptList, verifiedPin: enteredPin });
-        setPhrases(res.phrases || []);
-        setMode("list");
-        setPinPromptList(null);
-        setEnteredPin("");
-      } else {
-        // ❌ PIN errato
-        setError("PIN errato!");
-        setEnteredPin("");
-      }
-    });
+    // ✅ PIN corretto! Salva in sessionStorage
+    const savedPins = JSON.parse(sessionStorage.getItem('listPins') || '{}');
+    savedPins[pinPromptList._id] = enteredPin;
+    sessionStorage.setItem('listPins', JSON.stringify(savedPins));
+    
+    setSelectedList({ ...pinPromptList, verifiedPin: enteredPin });
+    setMode("addPhrase");
+    setPinPromptList(null);
+    setEnteredPin("");
   };
 
   const handleAddPhrase = () => {
+    if (!selectedList) {
+      setError("Seleziona una lista");
+      return;
+    }
+
     if (!newPhrase.trim()) {
       setError("Inserisci una frase");
       return;
     }
 
-    if (!newCategory.trim()) {
-      setError("Inserisci una categoria");
+    if (newPhrase.trim().length > 50) {
+      setError("Frase max 50 caratteri");
       return;
     }
 
-    if (!selectedList) {
-      setError("Seleziona una lista");
+    if (!newCategory.trim()) {
+      setError("Inserisci una categoria");
       return;
     }
 
@@ -175,14 +165,15 @@ export default function BossRoom({ onBack }) {
       listId: selectedList._id,
       phrase: newPhrase.trim().toUpperCase(),
       category: newCategory.trim(),
-      pin: selectedList.verifiedPin || null // ✅ Invia PIN se lista protetta
+      pin: selectedList.verifiedPin || null
     }, (res) => {
       setLoading(false);
       if (res && res.ok) {
         setSuccess("✅ Frase aggiunta!");
         setNewPhrase("");
         setNewCategory("");
-        loadPhrases(selectedList._id, selectedList.verifiedPin);
+        setSelectedList(null); // Reset selezione
+        loadLists(); // Ricarica per aggiornare conteggio
         setTimeout(() => setSuccess(""), 2000);
       } else {
         setError(res?.error || "Errore aggiunta frase");
@@ -190,50 +181,38 @@ export default function BossRoom({ onBack }) {
     });
   };
 
-  const handleDeletePhrase = (phraseId) => {
-    if (!confirm("Sei sicuro di voler eliminare questa frase?")) return;
-
-    setLoading(true);
-    socket.emit("deletePhrase", { 
-      phraseId,
-      pin: selectedList.verifiedPin || null // ✅ PIN per liste protette
-    }, (res) => {
-      setLoading(false);
-      if (res && res.ok) {
-        setSuccess("✅ Frase eliminata!");
-        loadPhrases(selectedList._id, selectedList.verifiedPin);
-        setTimeout(() => setSuccess(""), 2000);
-      } else {
-        setError(res?.error || "Errore eliminazione frase");
-      }
-    });
+  // ============ GESTISCI LISTE ============
+  
+  const handleManagePinSubmit = () => {
+    if (managePinInput === MANAGE_PIN) {
+      setMode("manage");
+      setManagePinInput("");
+      setError("");
+    } else {
+      setError("PIN errato!");
+      setManagePinInput("");
+    }
   };
 
   const handleDeleteList = (listId) => {
-    if (!confirm("Sei sicuro di voler eliminare questa lista e TUTTE le sue frasi?")) return;
+    if (!confirm("Eliminare questa lista e TUTTE le sue frasi?")) return;
 
     setLoading(true);
-    socket.emit("deletePhraseList", { 
-      listId,
-      pin: selectedList.verifiedPin || null // ✅ PIN per liste protette
-    }, (res) => {
+    socket.emit("deletePhraseList", { listId }, (res) => {
       setLoading(false);
       if (res && res.ok) {
         setSuccess("✅ Lista eliminata!");
         loadLists();
-        setSelectedList(null);
-        setPhrases([]);
-        setMode("menu");
         setTimeout(() => setSuccess(""), 2000);
       } else {
-        setError(res?.error || "Errore eliminazione lista");
+        setError(res?.error || "Errore eliminazione");
       }
     });
   };
 
   // ============ RENDER ============
 
-  // ✅ NUOVO: Prompt PIN per liste protette
+  // PROMPT PIN per lista protetta (aggiungere frase)
   if (mode === "pinPrompt" && pinPromptList) {
     return (
       <div className="boss-room">
@@ -241,7 +220,7 @@ export default function BossRoom({ onBack }) {
         <h2 style={{ color: '#00ff55', marginBottom: '30px' }}>{pinPromptList.name}</h2>
         
         <div className="boss-form">
-          <label>Inserisci PIN</label>
+          <label>Inserisci PIN per aggiungere frasi</label>
           <input
             type="text"
             placeholder="4 cifre"
@@ -259,7 +238,7 @@ export default function BossRoom({ onBack }) {
           
           <button 
             onClick={() => {
-              setMode("list");
+              setMode("addPhrase");
               setPinPromptList(null);
               setEnteredPin("");
               setError("");
@@ -275,11 +254,8 @@ export default function BossRoom({ onBack }) {
     );
   }
 
+  // MENU PRINCIPALE
   if (mode === "menu") {
-    // ✅ Controlla se ci sono PIN salvati
-    const savedPins = JSON.parse(sessionStorage.getItem('listPins') || '{}');
-    const hasSavedPins = Object.keys(savedPins).length > 0;
-    
     return (
       <div className="boss-room">
         <h1>👑 STANZA DEL CAPO</h1>
@@ -289,29 +265,13 @@ export default function BossRoom({ onBack }) {
             ➕ CREA LISTA
           </button>
           
-          <button onClick={() => setMode("list")} className="boss-btn">
-            📋 GESTISCI LISTE
+          <button onClick={() => setMode("addPhrase")} className="boss-btn">
+            ✏️ AGGIUNGI FRASE
           </button>
           
-          {/* ✅ Pulsante reset PIN - appare solo se ci sono PIN salvati */}
-          {hasSavedPins && (
-            <button 
-              onClick={() => {
-                if (confirm("Cancellare tutti i PIN salvati? Dovrai reinserirli per accedere alle liste protette.")) {
-                  sessionStorage.removeItem('listPins');
-                  setSuccess("✅ PIN cancellati!");
-                  setTimeout(() => setSuccess(""), 2000);
-                }
-              }} 
-              className="boss-btn"
-              style={{
-                background: '#ff6b00',
-                border: '2px solid #ff9500'
-              }}
-            >
-              🔓 DIMENTICA PIN SALVATI
-            </button>
-          )}
+          <button onClick={() => setMode("manageAuth")} className="boss-btn">
+            📋 GESTISCI LISTE
+          </button>
           
           <button onClick={onBack} className="boss-btn btn-secondary">
             ⬅️ INDIETRO
@@ -324,34 +284,38 @@ export default function BossRoom({ onBack }) {
     );
   }
 
+  // CREA LISTA
   if (mode === "create") {
     return (
       <div className="boss-room">
         <h1>➕ CREA NUOVA LISTA</h1>
         
         <div className="boss-form">
-          <label>Nome lista</label>
+          <label>Nome lista (max 20 caratteri)</label>
           <input
             type="text"
-            placeholder="es. NATALE, FILM, CIBO..."
+            placeholder="es. NATALE, FILM..."
             value={newListName}
-            onChange={(e) => setNewListName(e.target.value.toUpperCase())}
+            onChange={(e) => setNewListName(e.target.value.toUpperCase().slice(0, 20))}
+            maxLength={20}
             disabled={loading}
           />
+          <p style={{ color: '#666', fontSize: '0.8rem', margin: '-10px 0 10px 0', textAlign: 'right' }}>
+            {newListName.length}/20
+          </p>
           
-          {/* ✅ NUOVO: Campo PIN opzionale */}
-          <label>PIN protezione (opzionale)</label>
+          <label>PIN per aggiungere frasi (opzionale)</label>
           <input
             type="text"
-            placeholder="4 cifre (lascia vuoto per lista pubblica)"
+            placeholder="4 cifre"
             value={newListPin}
             onChange={(e) => setNewListPin(e.target.value.replace(/\D/g, "").slice(0, 4))}
             maxLength={4}
             disabled={loading}
             inputMode="numeric"
           />
-          <p style={{ color: '#888', fontSize: '0.85rem', margin: '5px 0 15px 0' }}>
-            🔒 Se inserisci un PIN, solo chi lo conosce potrà vedere e modificare la lista
+          <p style={{ color: '#888', fontSize: '0.75rem', margin: '5px 0 15px 0' }}>
+            🔒 Solo chi conosce il PIN potrà aggiungere frasi
           </p>
           
           <button onClick={handleCreateList} disabled={loading}>
@@ -369,106 +333,53 @@ export default function BossRoom({ onBack }) {
     );
   }
 
-  if (mode === "list") {
-    if (selectedList) {
-      return (
-        <div className="boss-room">
-          <h1>📋 {selectedList.name}</h1>
-          <p style={{ color: '#aaa', marginBottom: '20px' }}>
-            {phrases.length} frasi
-          </p>
-          
-          {/* FORM AGGIUNGI FRASE */}
-          <div className="boss-form" style={{ marginBottom: '30px' }}>
-            <h3>➕ Aggiungi frase</h3>
-            
-            <label>Frase</label>
-            <input
-              type="text"
-              placeholder="LA FRASE DA INDOVINARE"
-              value={newPhrase}
-              onChange={(e) => setNewPhrase(e.target.value.toUpperCase())}
-              disabled={loading}
-            />
-            
-            <label>Categoria</label>
-            <input
-              type="text"
-              placeholder="es. Film, Luoghi, Cibo..."
-              value={newCategory}
-              onChange={(e) => setNewCategory(e.target.value)}
-              disabled={loading}
-            />
-            
-            <button onClick={handleAddPhrase} disabled={loading}>
-              {loading ? "⏳ AGGIUNTA..." : "✅ AGGIUNGI FRASE"}
-            </button>
-          </div>
-
-          {/* LISTA FRASI */}
-          <div className="phrases-list">
-            {phrases.length === 0 ? (
-              <p style={{ color: '#888', textAlign: 'center' }}>
-                Nessuna frase in questa lista
-              </p>
-            ) : (
-              phrases.map((p) => (
-                <div key={p._id} className="phrase-item">
-                  <div>
-                    <div className="phrase-text">{p.phrase}</div>
-                    <div className="phrase-category">{p.category}</div>
-                  </div>
-                  <button 
-                    onClick={() => handleDeletePhrase(p._id)}
-                    className="btn-delete"
-                  >
-                    🗑️
-                  </button>
-                </div>
-              ))
-            )}
-          </div>
-
-          <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
-            <button 
-              onClick={() => {
-                setSelectedList(null);
-                setPhrases([]);
-              }} 
-              className="btn-secondary"
-            >
-              ⬅️ INDIETRO
-            </button>
-            
-            <button 
-              onClick={() => handleDeleteList(selectedList._id)}
-              className="btn-delete"
-            >
-              🗑️ ELIMINA LISTA
-            </button>
-          </div>
-
-          {error && <p className="error">{error}</p>}
-          {success && <p className="success">{success}</p>}
-        </div>
-      );
-    }
-
-    // Lista delle liste disponibili
+  // AUTENTICAZIONE GESTISCI LISTE
+  if (mode === "manageAuth") {
     return (
       <div className="boss-room">
-        <h1>📋 LE TUE LISTE</h1>
+        <h1>🔐 ACCESSO GESTIONE</h1>
+        
+        <div className="boss-form">
+          <label>PIN Gestione</label>
+          <input
+            type="text"
+            placeholder="4 cifre"
+            value={managePinInput}
+            onChange={(e) => setManagePinInput(e.target.value.replace(/\D/g, "").slice(0, 4))}
+            maxLength={4}
+            inputMode="numeric"
+            autoFocus
+          />
+          
+          <button onClick={handleManagePinSubmit} disabled={managePinInput.length !== 4}>
+            ✅ ACCEDI
+          </button>
+          
+          <button onClick={() => setMode("menu")} className="btn-secondary">
+            ⬅️ INDIETRO
+          </button>
+        </div>
+
+        {error && <p className="error">{error}</p>}
+      </div>
+    );
+  }
+
+  // GESTISCI LISTE (richiede PIN globale)
+  if (mode === "manage") {
+    return (
+      <div className="boss-room">
+        <h1>📋 GESTISCI LISTE</h1>
         
         {loading ? (
           <p>⏳ Caricamento...</p>
         ) : lists.length === 0 ? (
           <p style={{ color: '#888', textAlign: 'center' }}>
-            Nessuna lista creata. Creane una!
+            Nessuna lista creata
           </p>
         ) : (
           <div className="lists-grid">
             {lists.map((list) => {
-              // ✅ Controlla se abbiamo PIN salvato per questa lista
               const savedPins = JSON.parse(sessionStorage.getItem('listPins') || '{}');
               const hasSavedPin = list.isProtected && savedPins[list._id];
               
@@ -476,7 +387,6 @@ export default function BossRoom({ onBack }) {
                 <div 
                   key={list._id} 
                   className={`list-card ${list.isProtected ? 'protected' : ''}`}
-                  onClick={() => handleSelectList(list)}
                 >
                   <h3>
                     {list.isProtected && <span className="lock-icon">{hasSavedPin ? '🔓' : '🔒'} </span>}
@@ -484,19 +394,139 @@ export default function BossRoom({ onBack }) {
                   </h3>
                   <p>
                     {list.phrasesCount || 0} frasi
-                    {hasSavedPin && <span style={{ marginLeft: '10px', fontSize: '0.85rem', color: '#00ff88' }}>✓ Accesso salvato</span>}
+                    {hasSavedPin && <span style={{ marginLeft: '10px', fontSize: '0.85rem', color: '#00ff88' }}>✓ Salvato</span>}
                   </p>
+                  <button 
+                    onClick={() => handleDeleteList(list._id)}
+                    className="btn-delete"
+                    style={{ marginTop: '10px' }}
+                  >
+                    🗑️ ELIMINA
+                  </button>
                 </div>
               );
             })}
           </div>
         )}
 
-        <button onClick={() => setMode("menu")} className="btn-secondary">
+        <button onClick={() => setMode("menu")} className="btn-secondary" style={{ marginTop: '20px' }}>
           ⬅️ INDIETRO
         </button>
 
         {error && <p className="error">{error}</p>}
+        {success && <p className="success">{success}</p>}
+      </div>
+    );
+  }
+
+  // AGGIUNGI FRASE
+  if (mode === "addPhrase") {
+    return (
+      <div className="boss-room">
+        <h1>✏️ AGGIUNGI FRASE</h1>
+        
+        {!selectedList ? (
+          // STEP 1: Seleziona lista
+          <>
+            <p style={{ color: '#aaa', marginBottom: '20px' }}>
+              Seleziona la lista dove aggiungere la frase
+            </p>
+            
+            {loading ? (
+              <p>⏳ Caricamento...</p>
+            ) : lists.length === 0 ? (
+              <p style={{ color: '#888', textAlign: 'center' }}>
+                Nessuna lista disponibile. Creane una!
+              </p>
+            ) : (
+              <div className="lists-grid">
+                {lists.map((list) => {
+                  const savedPins = JSON.parse(sessionStorage.getItem('listPins') || '{}');
+                  const hasSavedPin = list.isProtected && savedPins[list._id];
+                  
+                  return (
+                    <div 
+                      key={list._id} 
+                      className={`list-card ${list.isProtected ? 'protected' : ''}`}
+                      onClick={() => handleSelectListForPhrase(list)}
+                    >
+                      <h3>
+                        {list.isProtected && <span className="lock-icon">{hasSavedPin ? '🔓' : '🔒'} </span>}
+                        {list.name}
+                      </h3>
+                      <p>
+                        {list.phrasesCount || 0} frasi
+                        {hasSavedPin && <span style={{ marginLeft: '10px', fontSize: '0.85rem', color: '#00ff88' }}>✓ Salvato</span>}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </>
+        ) : (
+          // STEP 2: Aggiungi frase alla lista selezionata
+          <>
+            <h2 style={{ color: '#00ff55', marginBottom: '20px' }}>
+              {selectedList.isProtected && '🔓 '}{selectedList.name}
+            </h2>
+            
+            <div className="boss-form">
+              <label>Frase (max 50 caratteri)</label>
+              <input
+                type="text"
+                placeholder="LA FRASE DA INDOVINARE"
+                value={newPhrase}
+                onChange={(e) => setNewPhrase(e.target.value.toUpperCase().slice(0, 50))}
+                maxLength={50}
+                disabled={loading}
+              />
+              <p style={{ color: '#666', fontSize: '0.8rem', margin: '-10px 0 10px 0', textAlign: 'right' }}>
+                {newPhrase.length}/50
+              </p>
+              
+              <label>Categoria (max 20 caratteri)</label>
+              <input
+                type="text"
+                placeholder="Film, Luoghi, Cibo..."
+                value={newCategory}
+                onChange={(e) => setNewCategory(e.target.value.slice(0, 20))}
+                maxLength={20}
+                disabled={loading}
+              />
+              <p style={{ color: '#666', fontSize: '0.8rem', margin: '-10px 0 10px 0', textAlign: 'right' }}>
+                {newCategory.length}/20
+              </p>
+              
+              <button onClick={handleAddPhrase} disabled={loading}>
+                {loading ? "⏳ AGGIUNTA..." : "✅ AGGIUNGI FRASE"}
+              </button>
+              
+              <button 
+                onClick={() => setSelectedList(null)} 
+                className="btn-secondary"
+              >
+                ⬅️ CAMBIA LISTA
+              </button>
+            </div>
+          </>
+        )}
+
+        <button 
+          onClick={() => {
+            setMode("menu");
+            setSelectedList(null);
+            setNewPhrase("");
+            setNewCategory("");
+          }} 
+          className="btn-secondary" 
+          style={{ marginTop: '20px' }}
+        >
+          ⬅️ MENU
+        </button>
+
+        {error && <p className="error">{error}</p>}
+        {success && <p className="success">{success}</p>}
       </div>
     );
   }
