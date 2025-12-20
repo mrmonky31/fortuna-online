@@ -575,18 +575,18 @@ export default function BossRoom({ onBack }) {
                     {list.phrasesCount || 0} frasi
                     {hasSavedPin && <span style={{ marginLeft: '10px', fontSize: '0.85rem', color: '#00ff88' }}>✓ Salvato</span>}
                   </p>
-                  <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
+                  <div style={{ display: 'flex', gap: '6px', marginTop: '8px' }}>
                     <button 
                       onClick={() => handleOpenListDetail(list)}
                       className="btn-secondary"
-                      style={{ flex: 1 }}
+                      style={{ flex: 1, fontSize: '0.75rem', padding: '6px 8px' }}
                     >
                       📂 APRI
                     </button>
                     <button 
                       onClick={() => handleDeleteList(list._id)}
                       className="btn-delete"
-                      style={{ flex: 1 }}
+                      style={{ flex: 1, fontSize: '0.75rem', padding: '6px 8px' }}
                     >
                       🗑️ ELIMINA
                     </button>
@@ -793,10 +793,10 @@ export default function BossRoom({ onBack }) {
             <button 
               onClick={handleToggleReorderMode}
               style={{
-                padding: '8px 15px',
-                fontSize: '0.9rem',
+                padding: '6px 12px',
+                fontSize: '0.75rem',
                 background: reorderMode ? '#ff9500' : '#0066ff',
-                color: reorderMode ? 'white' : 'black',
+                color: 'white',
                 border: 'none',
                 borderRadius: '6px',
                 cursor: 'pointer',
@@ -919,17 +919,17 @@ export default function BossRoom({ onBack }) {
                         <div className="phrase-category">{phrase.category}</div>
                       </div>
                       {!reorderMode && (
-                        <div style={{ display: 'flex', gap: '8px' }}>
+                        <div style={{ display: 'flex', gap: '5px' }}>
                           <button 
                             onClick={() => handleStartEditPhrase(phrase)}
-                            style={{ padding: '8px 12px', fontSize: '0.9rem' }}
+                            style={{ padding: '5px 8px', fontSize: '0.75rem' }}
                           >
                             ✏️
                           </button>
                           <button 
                             onClick={() => handleDeletePhrase(phrase._id)}
                             className="btn-delete"
-                            style={{ padding: '8px 12px' }}
+                            style={{ padding: '5px 8px', fontSize: '0.75rem' }}
                           >
                             🗑️
                           </button>
