@@ -17,7 +17,7 @@ export default function OnlinePlayers({ room, playerName, role, roomCode }) {
 
       {/* Info Round */}
       <div style={{ textAlign: "center", marginBottom: "20px" }}>
-        <h3 style={{ margin: "10px 0", fontSize: "1.2rem", color: "#00ff55" }}>
+        <h3 style={{ margin: "10px 0", fontSize: "1.2rem", color: "#00d4aa" }}>
           🎲 Round: {totalRounds}
         </h3>
       </div>
@@ -58,7 +58,7 @@ export default function OnlinePlayers({ room, playerName, role, roomCode }) {
       {role === "player" && players.length === 1 && (
         <p style={{
           textAlign: "center",
-          color: "#00ff55",
+          color: "#00d4aa",
           marginTop: "20px",
           fontSize: "1.1rem",
           fontStyle: "italic"

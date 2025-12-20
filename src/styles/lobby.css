@@ -27,25 +27,25 @@
   position: absolute;
   top: max(20px, env(safe-area-inset-top, 20px));
   right: max(20px, env(safe-area-inset-right, 20px));
-  padding: 12px 24px;
-  font-size: 1.1rem;
-  border-radius: 12px;
-  border: 3px solid #00ff55;
+  padding: 10px 20px;
+  font-size: 0.95rem;
+  border-radius: 10px;
+  border: 2px solid #0066ff;
   background: #11131a;
-  color: #00ff55;
-  font-weight: 900;
+  color: #0066ff;
+  font-weight: 700;
   cursor: pointer;
   transition: all 0.3s ease;
   z-index: 1000;
-  box-shadow: 0 4px 15px rgba(0, 255, 85, 0.3);
+  box-shadow: 0 3px 12px rgba(0, 102, 255, 0.3);
 }
 
 .fullscreen-btn:hover,
 .fullscreen-btn:active {
-  background: #00ff55;
+  background: #0066ff;
   color: #11131a;
   transform: scale(1.05);
-  box-shadow: 0 6px 20px rgba(0, 255, 85, 0.5);
+  box-shadow: 0 5px 18px rgba(0, 102, 255, 0.5);
 }
 
 /* Form interno della lobby - solo per i form */
@@ -63,19 +63,19 @@
 
 /* Titoli più grandi SOLO nel form */
 .lobby-form-minimal h1 {
-  margin: 20px 0;
-  font-size: 2.5rem;
-  font-weight: 900;
-  letter-spacing: 2px;
+  margin: 15px 0;
+  font-size: 1.8rem;
+  font-weight: 700;
+  letter-spacing: 1px;
   text-align: center;
-  text-shadow: 0 0 20px rgba(0, 255, 85, 0.5);
+  text-shadow: 0 0 15px rgba(0, 102, 255, 0.4);
 }
 
 .lobby-container h2 {
-  margin: 15px 0;
-  font-size: 1.8rem;
-  font-weight: 800;
-  letter-spacing: 1px;
+  margin: 12px 0;
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
   text-align: center;
 }
 
@@ -83,11 +83,11 @@
 .lobby-container input[type="text"] {
   width: 85vw;
   max-width: 400px;
-  padding: 18px 24px;
-  margin: 12px 0;
-  font-size: 1.3rem;
-  border-radius: 12px;
-  border: 3px solid #00ff55;
+  padding: 14px 20px;
+  margin: 10px 0;
+  font-size: 1.1rem;
+  border-radius: 10px;
+  border: 2px solid #0066ff;
   background: #1a1d2e;
   color: #fff;
   font-weight: 600;
@@ -97,8 +97,8 @@
 
 .lobby-container input[type="text"]:focus {
   outline: none;
-  border-color: #00ff88;
-  box-shadow: 0 0 20px rgba(0, 255, 85, 0.4);
+  border-color: #0088ff;
+  box-shadow: 0 0 15px rgba(0, 102, 255, 0.3);
   background: #222538;
 }
 
@@ -108,28 +108,28 @@
 }
 
 .lobby-container button {
-  min-width: 250px;
-  padding: 18px 32px;
-  margin: 15px 8px;
-  font-size: 1.4rem;
-  border-radius: 14px;
-  border: 3px solid #00ff55;
+  min-width: 220px;
+  padding: 14px 28px;
+  margin: 12px 6px;
+  font-size: 1.1rem;
+  border-radius: 10px;
+  border: 2px solid #0066ff;
   background: #11131a;
-  color: #eaffea;
-  font-weight: 900;
+  color: #eaf4ff;
+  font-weight: 700;
   cursor: pointer;
   transition: all 0.3s ease;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
   text-transform: uppercase;
-  letter-spacing: 1px;
+  letter-spacing: 0.5px;
 }
 
 .lobby-container button:hover,
 .lobby-container button:active {
-  background: #00ff55;
+  background: #0066ff;
   color: #11131a;
   transform: scale(1.05);
-  box-shadow: 0 6px 20px rgba(0, 255, 85, 0.5);
+  box-shadow: 0 6px 20px rgba(0, 102, 255, 0.5);
 }
 
 .lobby-container button:disabled {
@@ -149,12 +149,12 @@
 
 /* Pulsante INIZIA PARTITA ancora più evidente */
 .start-btn {
-  background: linear-gradient(135deg, #00ff55, #00cc44) !important;
-  color: #000 !important;
-  font-size: 1.6rem !important;
-  padding: 22px 40px !important;
-  border: 4px solid #00ff88 !important;
-  box-shadow: 0 8px 30px rgba(0, 255, 85, 0.6) !important;
+  background: linear-gradient(135deg, #6b2dd8, #5424a8) !important;
+  color: #fff !important;
+  font-size: 1.3rem !important;
+  padding: 18px 36px !important;
+  border: 3px solid #8844ee !important;
+  box-shadow: 0 6px 25px rgba(107, 45, 216, 0.5) !important;
   animation: pulse 2s infinite;
 }
 
@@ -209,17 +209,17 @@
 .online-players-container {
   width: 100%;
   background: rgba(17, 19, 26, 0.9);
-  border: 2px solid #00ff55;
+  border: 2px solid #00d4aa;
   border-radius: 12px;
   padding: 20px;
   backdrop-filter: blur(5px);
 }
 
 .online-players-container h3 {
-  font-size: 1.5rem;
-  margin-bottom: 15px;
+  font-size: 1.2rem;
+  margin-bottom: 12px;
   text-align: center;
-  color: #00ff55;
+  color: #00d4aa;
 }
 
 .online-players-container ul {
@@ -229,26 +229,26 @@
 }
 
 .online-players-container li {
-  padding: 12px 15px;
-  margin: 8px 0;
-  background: rgba(0, 255, 85, 0.1);
-  border: 1px solid rgba(0, 255, 85, 0.3);
+  padding: 10px 12px;
+  margin: 6px 0;
+  background: rgba(0, 212, 170, 0.1);
+  border: 1px solid rgba(0, 212, 170, 0.3);
   border-radius: 8px;
-  font-size: 1.2rem;
+  font-size: 1rem;
   font-weight: bold;
 }
 
 .room-code-display {
-  font-size: 2rem;
-  font-weight: 900;
-  color: #00ff55;
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #00d4aa;
   text-align: center;
-  padding: 15px;
-  background: rgba(0, 255, 85, 0.1);
-  border: 3px solid #00ff55;
+  padding: 12px;
+  background: rgba(0, 212, 170, 0.1);
+  border: 2px solid #00d4aa;
   border-radius: 10px;
-  margin-bottom: 15px;
-  letter-spacing: 3px;
+  margin-bottom: 12px;
+  letter-spacing: 2px;
 }
 
 /* Footer */
@@ -277,10 +277,10 @@
 
 /* Label per form */
 .form-label {
-  font-size: 1.5rem;
-  font-weight: bold;
-  margin: 15px 0 10px 0;
-  color: #00ff55;
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin: 12px 0 8px 0;
+  color: #0066ff;
   text-align: center;
   display: block;
 }

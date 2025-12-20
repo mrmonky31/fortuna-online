@@ -396,7 +396,7 @@ export default function BossRoom({ onBack }) {
     return (
       <div className="boss-room">
         <h1>🔒 LISTA PROTETTA</h1>
-        <h2 style={{ color: '#00ff55', marginBottom: '30px' }}>{pinPromptList.name}</h2>
+        <h2 style={{ color: '#0066ff', marginBottom: '30px' }}>{pinPromptList.name}</h2>
         
         <div className="boss-form">
           <label>Inserisci PIN per aggiungere frasi</label>
@@ -655,7 +655,7 @@ export default function BossRoom({ onBack }) {
         ) : (
           // STEP 2: Aggiungi frase alla lista selezionata
           <>
-            <h2 style={{ color: '#00ff55', marginBottom: '20px' }}>
+            <h2 style={{ color: '#0066ff', marginBottom: '20px' }}>
               {selectedList.isProtected && '🔓 '}{selectedList.name}
             </h2>
             
@@ -745,7 +745,7 @@ export default function BossRoom({ onBack }) {
             <>
               <p style={{ color: '#aaa', marginBottom: '10px' }}>
                 {selectedList.isProtected ? (
-                  <>PIN attuale: <strong style={{ color: '#00ff55' }}>{selectedList.pin}</strong></>
+                  <>PIN attuale: <strong style={{ color: '#0066ff' }}>{selectedList.pin}</strong></>
                 ) : (
                   <>Nessun PIN impostato (lista pubblica)</>
                 )}
@@ -795,7 +795,7 @@ export default function BossRoom({ onBack }) {
               style={{
                 padding: '8px 15px',
                 fontSize: '0.9rem',
-                background: reorderMode ? '#ff9500' : '#00ff55',
+                background: reorderMode ? '#ff9500' : '#0066ff',
                 color: reorderMode ? 'white' : 'black',
                 border: 'none',
                 borderRadius: '6px',
