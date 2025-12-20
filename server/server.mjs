@@ -31,6 +31,8 @@ const DB_NAME = "fortuna_online";
 let mongoClient;
 let db;
 let playersCollection;
+let phraseListsCollection; // ✅ NUOVO: Liste di frasi personalizzate
+let phrasesCollection; // ✅ NUOVO: Frasi personalizzate
 
 // 🔧 MODIFICA 1: ERROR HANDLING + RETRY AUTOMATICO MONGODB
 async function connectMongoDB() {
@@ -49,11 +51,17 @@ async function connectMongoDB() {
       await mongoClient.connect();
       db = mongoClient.db(DB_NAME);
       playersCollection = db.collection("players");
+      phraseListsCollection = db.collection("phraseLists"); // ✅ NUOVO
+      phrasesCollection = db.collection("phrases"); // ✅ NUOVO
       
       console.log("✅ MongoDB connesso con pooling!");
       
       // Crea indice su ID per ricerche veloci
       await playersCollection.createIndex({ id: 1 }, { unique: true });
+      
+      // ✅ NUOVO: Indici per frasi
+      await phraseListsCollection.createIndex({ name: 1 });
+      await phrasesCollection.createIndex({ listId: 1 });
       
       // Carica leaderboard all'avvio
       await updateLeaderboard();
@@ -2816,6 +2824,252 @@ if (gs.usedLetters.includes(upper)) {
     }
   });
   */
+
+  // ============================================
+  // 👑 STANZA DEL CAPO - GESTIONE FRASI
+  // ============================================
+
+  // 📋 OTTIENI TUTTE LE LISTE
+  socket.on("getPhraseLists", async (data, callback) => {
+    try {
+      if (!phraseListsCollection) {
+        return callback({ ok: false, error: "Database non disponibile" });
+      }
+
+      const lists = await phraseListsCollection.find({}).toArray();
+      
+      // Aggiungi conteggio frasi per ogni lista
+      for (let list of lists) {
+        const count = await phrasesCollection.countDocuments({ listId: list._id.toString() });
+        list.phrasesCount = count;
+        
+        // ✅ SICUREZZA: Non inviare il PIN al client
+        delete list.pin;
+      }
+
+      callback({ ok: true, lists });
+    } catch (err) {
+      console.error("Errore getPhraseLists:", err);
+      callback({ ok: false, error: "Errore caricamento liste" });
+    }
+  });
+
+  // ➕ CREA NUOVA LISTA
+  socket.on("createPhraseList", async ({ name, pin }, callback) => {
+    try {
+      if (!phraseListsCollection) {
+        return callback({ ok: false, error: "Database non disponibile" });
+      }
+
+      if (!name || name.trim().length === 0) {
+        return callback({ ok: false, error: "Nome lista non valido" });
+      }
+
+      // ✅ Validazione PIN se presente
+      if (pin && (pin.length !== 4 || !/^\d{4}$/.test(pin))) {
+        return callback({ ok: false, error: "PIN deve essere 4 cifre" });
+      }
+
+      // Verifica se esiste già
+      const existing = await phraseListsCollection.findOne({ name: name.trim().toUpperCase() });
+      if (existing) {
+        return callback({ ok: false, error: "Lista già esistente" });
+      }
+
+      const newList = {
+        name: name.trim().toUpperCase(),
+        isProtected: !!pin, // ✅ Flag: lista protetta o pubblica
+        pin: pin || null,    // ✅ Salva PIN in chiaro (per semplicità, in produzione usa bcrypt)
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+
+      const result = await phraseListsCollection.insertOne(newList);
+      newList._id = result.insertedId;
+      newList.phrasesCount = 0;
+      
+      // ✅ Non inviare il PIN al client
+      delete newList.pin;
+
+      callback({ ok: true, list: newList });
+    } catch (err) {
+      console.error("Errore createPhraseList:", err);
+      callback({ ok: false, error: "Errore creazione lista" });
+    }
+  });
+
+  // 📝 OTTIENI FRASI DI UNA LISTA
+  socket.on("getPhrasesByList", async ({ listId, pin }, callback) => {
+    try {
+      if (!phrasesCollection || !phraseListsCollection) {
+        return callback({ ok: false, error: "Database non disponibile" });
+      }
+
+      // ✅ Verifica se la lista esiste ed è protetta
+      const { ObjectId } = await import('mongodb');
+      const list = await phraseListsCollection.findOne({ _id: new ObjectId(listId) });
+      
+      if (!list) {
+        return callback({ ok: false, error: "Lista non trovata" });
+      }
+
+      // ✅ Se lista protetta, verifica PIN
+      if (list.isProtected) {
+        if (!pin || pin !== list.pin) {
+          return callback({ ok: false, error: "PIN errato o mancante" });
+        }
+      }
+
+      const phrases = await phrasesCollection
+        .find({ listId })
+        .sort({ createdAt: -1 })
+        .toArray();
+
+      callback({ ok: true, phrases });
+    } catch (err) {
+      console.error("Errore getPhrasesByList:", err);
+      callback({ ok: false, error: "Errore caricamento frasi" });
+    }
+  });
+
+  // ➕ AGGIUNGI FRASE A LISTA
+  socket.on("addPhraseToList", async ({ listId, phrase, category, pin }, callback) => {
+    try {
+      if (!phrasesCollection || !phraseListsCollection) {
+        return callback({ ok: false, error: "Database non disponibile" });
+      }
+
+      if (!phrase || phrase.trim().length === 0) {
+        return callback({ ok: false, error: "Frase non valida" });
+      }
+
+      if (!category || category.trim().length === 0) {
+        return callback({ ok: false, error: "Categoria non valida" });
+      }
+
+      // ✅ Verifica PIN se lista protetta
+      const { ObjectId } = await import('mongodb');
+      const list = await phraseListsCollection.findOne({ _id: new ObjectId(listId) });
+      
+      if (!list) {
+        return callback({ ok: false, error: "Lista non trovata" });
+      }
+
+      if (list.isProtected) {
+        if (!pin || pin !== list.pin) {
+          return callback({ ok: false, error: "PIN errato o mancante" });
+        }
+      }
+
+      // Verifica se la frase esiste già in questa lista
+      const existing = await phrasesCollection.findOne({ 
+        listId, 
+        phrase: phrase.trim().toUpperCase() 
+      });
+      
+      if (existing) {
+        return callback({ ok: false, error: "Frase già presente in questa lista" });
+      }
+
+      const newPhrase = {
+        listId,
+        phrase: phrase.trim().toUpperCase(),
+        category: category.trim(),
+        createdAt: new Date()
+      };
+
+      const result = await phrasesCollection.insertOne(newPhrase);
+      newPhrase._id = result.insertedId;
+
+      // Aggiorna timestamp lista
+      await phraseListsCollection.updateOne(
+        { _id: new ObjectId(listId) },
+        { $set: { updatedAt: new Date() } }
+      );
+
+      callback({ ok: true, phrase: newPhrase });
+    } catch (err) {
+      console.error("Errore addPhraseToList:", err);
+      callback({ ok: false, error: "Errore aggiunta frase" });
+    }
+  });
+
+  // 🗑️ ELIMINA FRASE
+  socket.on("deletePhrase", async ({ phraseId, pin }, callback) => {
+    try {
+      if (!phrasesCollection || !phraseListsCollection) {
+        return callback({ ok: false, error: "Database non disponibile" });
+      }
+
+      const { ObjectId } = await import('mongodb');
+      
+      // ✅ Prima trova la frase per ottenere il listId
+      const phrase = await phrasesCollection.findOne({ _id: new ObjectId(phraseId) });
+      
+      if (!phrase) {
+        return callback({ ok: false, error: "Frase non trovata" });
+      }
+
+      // ✅ Verifica PIN se lista protetta
+      const list = await phraseListsCollection.findOne({ _id: new ObjectId(phrase.listId) });
+      
+      if (list && list.isProtected) {
+        if (!pin || pin !== list.pin) {
+          return callback({ ok: false, error: "PIN errato o mancante" });
+        }
+      }
+
+      const result = await phrasesCollection.deleteOne({ _id: new ObjectId(phraseId) });
+
+      if (result.deletedCount === 0) {
+        return callback({ ok: false, error: "Frase non trovata" });
+      }
+
+      callback({ ok: true });
+    } catch (err) {
+      console.error("Errore deletePhrase:", err);
+      callback({ ok: false, error: "Errore eliminazione frase" });
+    }
+  });
+
+  // 🗑️ ELIMINA LISTA (e tutte le sue frasi)
+  socket.on("deletePhraseList", async ({ listId, pin }, callback) => {
+    try {
+      if (!phraseListsCollection || !phrasesCollection) {
+        return callback({ ok: false, error: "Database non disponibile" });
+      }
+
+      const { ObjectId } = await import('mongodb');
+      
+      // ✅ Verifica PIN se lista protetta
+      const list = await phraseListsCollection.findOne({ _id: new ObjectId(listId) });
+      
+      if (!list) {
+        return callback({ ok: false, error: "Lista non trovata" });
+      }
+
+      if (list.isProtected) {
+        if (!pin || pin !== list.pin) {
+          return callback({ ok: false, error: "PIN errato o mancante" });
+        }
+      }
+      
+      // Elimina tutte le frasi della lista
+      await phrasesCollection.deleteMany({ listId });
+      
+      // Elimina la lista
+      const result = await phraseListsCollection.deleteOne({ _id: new ObjectId(listId) });
+
+      if (result.deletedCount === 0) {
+        return callback({ ok: false, error: "Lista non trovata" });
+      }
+
+      callback({ ok: true });
+    } catch (err) {
+      console.error("Errore deletePhraseList:", err);
+      callback({ ok: false, error: "Errore eliminazione lista" });
+    }
+  });
 
   // DISCONNESSIONE
   socket.on("disconnect", () => {

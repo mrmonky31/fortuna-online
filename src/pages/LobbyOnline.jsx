@@ -3,10 +3,11 @@ import React, { useState, useEffect } from "react";
 import socket from "../socket";
 import LobbyFormMinimal from "../components/LobbyFormMinimal";
 import OnlinePlayers from "../components/OnlinePlayers";
+import BossRoom from "../components/BossRoom";
 import "../styles/lobby.css";
 
 export default function LobbyOnline({ onGameStart }) {
-  const [lobbyMode, setLobbyMode] = useState("home"); // "home" | "singlePlayer" | "multiPlayer" | "singleNew" | "singleContinue"
+  const [lobbyMode, setLobbyMode] = useState("home"); // "home" | "singlePlayer" | "multiPlayer" | "singleNew" | "singleContinue" | "bossRoom"
   const [room, setRoom] = useState(null);
   const [playerName, setPlayerName] = useState("");
   const [role, setRole] = useState(null);
@@ -493,6 +494,15 @@ export default function LobbyOnline({ onGameStart }) {
             <button onClick={() => setLobbyMode("multiPlayer")}>
               👥 MULTI GIOCATORE
             </button>
+            <button 
+              onClick={() => setLobbyMode("bossRoom")}
+              style={{
+                background: 'linear-gradient(135deg, #ff9500 0%, #ff6b00 100%)',
+                border: '2px solid #ffaa33'
+              }}
+            >
+              👑 STANZA DEL CAPO
+            </button>
           </div>
           
           {/* ✅ PULSANTE INSTALLA PWA */}
@@ -802,6 +812,11 @@ export default function LobbyOnline({ onGameStart }) {
           )}
           {error && <p className="error">{error}</p>}
         </div>
+      )}
+
+      {/* ✅ STANZA DEL CAPO */}
+      {lobbyMode === "bossRoom" && (
+        <BossRoom onBack={() => setLobbyMode("home")} />
       )}
 
       {/* ✅ POPUP RICHIESTA JOIN */}
