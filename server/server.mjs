@@ -2908,10 +2908,11 @@ if (gs.usedLetters.includes(upper)) {
       }
 
       // ✅ NESSUNA VERIFICA PIN - chiunque può visualizzare le frasi
+      // ✅ Ordina per campo 'order' se presente, altrimenti per createdAt
 
       const phrases = await phrasesCollection
         .find({ listId })
-        .sort({ createdAt: -1 })
+        .sort({ order: 1, createdAt: -1 }) // Prima per order, poi per data
         .toArray();
 
       callback({ ok: true, phrases });
@@ -2990,6 +2991,118 @@ if (gs.usedLetters.includes(upper)) {
     } catch (err) {
       console.error("Errore addPhraseToList:", err);
       callback({ ok: false, error: "Errore aggiunta frase" });
+    }
+  });
+
+  // ✏️ AGGIORNA PIN LISTA
+  socket.on("updateListPin", async ({ listId, pin }, callback) => {
+    try {
+      if (!phraseListsCollection) {
+        return callback({ ok: false, error: "Database non disponibile" });
+      }
+
+      // Validazione PIN se presente
+      if (pin && (pin.length !== 4 || !/^\d{4}$/.test(pin))) {
+        return callback({ ok: false, error: "PIN deve essere 4 cifre" });
+      }
+
+      const { ObjectId } = await import('mongodb');
+      
+      const result = await phraseListsCollection.updateOne(
+        { _id: new ObjectId(listId) },
+        { 
+          $set: { 
+            pin: pin || null,
+            isProtected: !!pin,
+            updatedAt: new Date()
+          }
+        }
+      );
+
+      if (result.matchedCount === 0) {
+        return callback({ ok: false, error: "Lista non trovata" });
+      }
+
+      callback({ ok: true });
+    } catch (err) {
+      console.error("Errore updateListPin:", err);
+      callback({ ok: false, error: "Errore aggiornamento PIN" });
+    }
+  });
+
+  // ✏️ AGGIORNA FRASE
+  socket.on("updatePhrase", async ({ phraseId, phrase, category }, callback) => {
+    try {
+      if (!phrasesCollection) {
+        return callback({ ok: false, error: "Database non disponibile" });
+      }
+
+      if (!phrase || phrase.trim().length === 0) {
+        return callback({ ok: false, error: "Frase non valida" });
+      }
+
+      if (phrase.trim().length > 50) {
+        return callback({ ok: false, error: "Frase max 50 caratteri" });
+      }
+
+      if (!category || category.trim().length === 0) {
+        return callback({ ok: false, error: "Categoria non valida" });
+      }
+
+      if (category.trim().length > 20) {
+        return callback({ ok: false, error: "Categoria max 20 caratteri" });
+      }
+
+      const { ObjectId } = await import('mongodb');
+      
+      const result = await phrasesCollection.updateOne(
+        { _id: new ObjectId(phraseId) },
+        { 
+          $set: { 
+            phrase: phrase.trim().toUpperCase(),
+            category: category.trim()
+          }
+        }
+      );
+
+      if (result.matchedCount === 0) {
+        return callback({ ok: false, error: "Frase non trovata" });
+      }
+
+      callback({ ok: true });
+    } catch (err) {
+      console.error("Errore updatePhrase:", err);
+      callback({ ok: false, error: "Errore aggiornamento frase" });
+    }
+  });
+
+  // 🔄 RIORDINA FRASI
+  socket.on("reorderPhrases", async ({ listId, newOrder }, callback) => {
+    try {
+      if (!phrasesCollection) {
+        return callback({ ok: false, error: "Database non disponibile" });
+      }
+
+      if (!Array.isArray(newOrder) || newOrder.length === 0) {
+        return callback({ ok: false, error: "Ordine non valido" });
+      }
+
+      const { ObjectId } = await import('mongodb');
+
+      // Aggiorna l'ordine di ogni frase
+      const updatePromises = newOrder.map((phraseId, index) => {
+        return phrasesCollection.updateOne(
+          { _id: new ObjectId(phraseId) },
+          { $set: { order: index } }
+        );
+      });
+
+      await Promise.all(updatePromises);
+
+      callback({ ok: true });
+    } catch (err) {
+      console.error("Errore reorderPhrases:", err);
+      callback({ ok: false, error: "Errore riordino frasi" });
     }
   });
 

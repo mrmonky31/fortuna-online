@@ -4,12 +4,13 @@ import socket from "../socket";
 import "../styles/boss-room.css";
 
 // ✅ PIN GLOBALE per accedere a "Gestisci Liste"
-const MANAGE_PIN = "0000"; // ← Cambia questo con il tuo PIN
+const MANAGE_PIN = "9999"; // ← Cambia questo con il tuo PIN
 
 export default function BossRoom({ onBack }) {
-  const [mode, setMode] = useState("menu"); // "menu" | "create" | "manageAuth" | "manage" | "addPhrase" | "pinPrompt"
+  const [mode, setMode] = useState("menu"); // "menu" | "create" | "manageAuth" | "manage" | "manageListDetail" | "addPhrase" | "pinPrompt"
   const [lists, setLists] = useState([]);
   const [selectedList, setSelectedList] = useState(null);
+  const [phrases, setPhrases] = useState([]); // ✅ Frasi della lista selezionata in gestione
   
   // Form nuova lista
   const [newListName, setNewListName] = useState("");
@@ -18,6 +19,19 @@ export default function BossRoom({ onBack }) {
   // Form nuova frase
   const [newPhrase, setNewPhrase] = useState("");
   const [newCategory, setNewCategory] = useState("");
+  
+  // ✅ NUOVO: Modifica frase esistente
+  const [editingPhrase, setEditingPhrase] = useState(null);
+  const [editPhraseText, setEditPhraseText] = useState("");
+  const [editPhraseCategory, setEditPhraseCategory] = useState("");
+  
+  // ✅ NUOVO: Riordino frasi
+  const [reorderMode, setReorderMode] = useState(false); // Modalità riordino attiva
+  const [selectedPhraseToMove, setSelectedPhraseToMove] = useState(null); // Frase selezionata da spostare
+  
+  // ✅ NUOVO: Modifica PIN lista
+  const [editingListPin, setEditingListPin] = useState(false);
+  const [newListPinEdit, setNewListPinEdit] = useState("");
   
   // PIN globale per gestire liste
   const [managePinInput, setManagePinInput] = useState("");
@@ -192,6 +206,171 @@ export default function BossRoom({ onBack }) {
       setError("PIN errato!");
       setManagePinInput("");
     }
+  };
+
+  // ✅ NUOVO: Apri dettaglio lista
+  const handleOpenListDetail = (list) => {
+    setSelectedList(list);
+    setMode("manageListDetail");
+    loadPhrases(list._id);
+  };
+
+  // ✅ NUOVO: Carica frasi di una lista
+  const loadPhrases = (listId) => {
+    setLoading(true);
+    socket.emit("getPhrasesByList", { listId }, (res) => {
+      setLoading(false);
+      if (res && res.ok) {
+        setPhrases(res.phrases || []);
+      } else {
+        setError(res?.error || "Errore caricamento frasi");
+      }
+    });
+  };
+
+  // ✅ NUOVO: Modifica PIN lista
+  const handleUpdateListPin = () => {
+    if (newListPinEdit && (newListPinEdit.length !== 4 || !/^\d{4}$/.test(newListPinEdit))) {
+      setError("Il PIN deve essere 4 cifre (o lascia vuoto per rimuovere)");
+      return;
+    }
+
+    setLoading(true);
+    socket.emit("updateListPin", {
+      listId: selectedList._id,
+      pin: newListPinEdit || null
+    }, (res) => {
+      setLoading(false);
+      if (res && res.ok) {
+        setSuccess(newListPinEdit ? "✅ PIN aggiornato!" : "✅ PIN rimosso!");
+        setSelectedList({ ...selectedList, pin: newListPinEdit || null, isProtected: !!newListPinEdit });
+        setEditingListPin(false);
+        setNewListPinEdit("");
+        loadLists();
+        setTimeout(() => setSuccess(""), 2000);
+      } else {
+        setError(res?.error || "Errore aggiornamento PIN");
+      }
+    });
+  };
+
+  // ✅ NUOVO: Inizia modifica frase
+  const handleStartEditPhrase = (phrase) => {
+    setEditingPhrase(phrase._id);
+    setEditPhraseText(phrase.phrase);
+    setEditPhraseCategory(phrase.category);
+  };
+
+  // ✅ NUOVO: Salva modifica frase
+  const handleSaveEditPhrase = (phraseId) => {
+    if (!editPhraseText.trim()) {
+      setError("Inserisci una frase");
+      return;
+    }
+
+    if (editPhraseText.trim().length > 50) {
+      setError("Frase max 50 caratteri");
+      return;
+    }
+
+    if (!editPhraseCategory.trim()) {
+      setError("Inserisci una categoria");
+      return;
+    }
+
+    setLoading(true);
+    socket.emit("updatePhrase", {
+      phraseId,
+      phrase: editPhraseText.trim().toUpperCase(),
+      category: editPhraseCategory.trim()
+    }, (res) => {
+      setLoading(false);
+      if (res && res.ok) {
+        setSuccess("✅ Frase aggiornata!");
+        setEditingPhrase(null);
+        loadPhrases(selectedList._id);
+        setTimeout(() => setSuccess(""), 2000);
+      } else {
+        setError(res?.error || "Errore aggiornamento frase");
+      }
+    });
+  };
+
+  // ✅ NUOVO: Elimina singola frase
+  const handleDeletePhrase = (phraseId) => {
+    if (!confirm("Eliminare questa frase?")) return;
+
+    setLoading(true);
+    socket.emit("deletePhrase", { phraseId }, (res) => {
+      setLoading(false);
+      if (res && res.ok) {
+        setSuccess("✅ Frase eliminata!");
+        loadPhrases(selectedList._id);
+        loadLists(); // Aggiorna conteggio
+        setTimeout(() => setSuccess(""), 2000);
+      } else {
+        setError(res?.error || "Errore eliminazione");
+      }
+    });
+  };
+
+  // ✅ NUOVO: Gestione riordino frasi
+  const handleToggleReorderMode = () => {
+    setReorderMode(!reorderMode);
+    setSelectedPhraseToMove(null);
+    setEditingPhrase(null); // Disattiva modifica quando entri in riordino
+  };
+
+  const handleSelectPhraseToMove = (phrase) => {
+    if (selectedPhraseToMove && selectedPhraseToMove._id === phrase._id) {
+      // Deseleziona se clicchi sulla stessa
+      setSelectedPhraseToMove(null);
+    } else {
+      setSelectedPhraseToMove(phrase);
+    }
+  };
+
+  const handleMovePhrase = (targetPhrase) => {
+    if (!selectedPhraseToMove) return;
+    if (selectedPhraseToMove._id === targetPhrase._id) return; // Stesso elemento
+
+    // Trova gli indici
+    const fromIndex = phrases.findIndex(p => p._id === selectedPhraseToMove._id);
+    const toIndex = phrases.findIndex(p => p._id === targetPhrase._id);
+
+    if (fromIndex === -1 || toIndex === -1) return;
+
+    // Crea nuovo array riordinato
+    const newPhrases = [...phrases];
+    const [movedPhrase] = newPhrases.splice(fromIndex, 1);
+    
+    // Inserisci DOPO la posizione target
+    const insertIndex = toIndex >= fromIndex ? toIndex : toIndex + 1;
+    newPhrases.splice(insertIndex, 0, movedPhrase);
+
+    // Aggiorna lo stato locale immediatamente per feedback visivo
+    setPhrases(newPhrases);
+
+    // Crea array di ID nell'ordine corretto
+    const newOrder = newPhrases.map(p => p._id);
+
+    // Invia al server
+    setLoading(true);
+    socket.emit("reorderPhrases", {
+      listId: selectedList._id,
+      newOrder
+    }, (res) => {
+      setLoading(false);
+      if (res && res.ok) {
+        setSuccess("✅ Ordine aggiornato!");
+        setSelectedPhraseToMove(null);
+        setTimeout(() => setSuccess(""), 2000);
+      } else {
+        setError(res?.error || "Errore riordino");
+        // Ricarica frasi in caso di errore
+        loadPhrases(selectedList._id);
+      }
+    });
   };
 
   const handleDeleteList = (listId) => {
@@ -396,13 +575,22 @@ export default function BossRoom({ onBack }) {
                     {list.phrasesCount || 0} frasi
                     {hasSavedPin && <span style={{ marginLeft: '10px', fontSize: '0.85rem', color: '#00ff88' }}>✓ Salvato</span>}
                   </p>
-                  <button 
-                    onClick={() => handleDeleteList(list._id)}
-                    className="btn-delete"
-                    style={{ marginTop: '10px' }}
-                  >
-                    🗑️ ELIMINA
-                  </button>
+                  <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
+                    <button 
+                      onClick={() => handleOpenListDetail(list)}
+                      className="btn-secondary"
+                      style={{ flex: 1 }}
+                    >
+                      📂 APRI
+                    </button>
+                    <button 
+                      onClick={() => handleDeleteList(list._id)}
+                      className="btn-delete"
+                      style={{ flex: 1 }}
+                    >
+                      🗑️ ELIMINA
+                    </button>
+                  </div>
                 </div>
               );
             })}
@@ -473,13 +661,25 @@ export default function BossRoom({ onBack }) {
             
             <div className="boss-form">
               <label>Frase (max 50 caratteri)</label>
-              <input
-                type="text"
+              <textarea
                 placeholder="LA FRASE DA INDOVINARE"
                 value={newPhrase}
-                onChange={(e) => setNewPhrase(e.target.value.toUpperCase().slice(0, 50))}
-                maxLength={50}
+                onChange={(e) => {
+                  const value = e.target.value.toUpperCase();
+                  if (value.length <= 50) {
+                    setNewPhrase(value);
+                  }
+                }}
                 disabled={loading}
+                rows={2}
+                style={{
+                  resize: 'none',
+                  minHeight: '60px',
+                  maxHeight: '120px',
+                  overflow: 'auto',
+                  whiteSpace: 'pre-wrap',
+                  wordWrap: 'break-word'
+                }}
               />
               <p style={{ color: '#666', fontSize: '0.8rem', margin: '-10px 0 10px 0', textAlign: 'right' }}>
                 {newPhrase.length}/50
@@ -523,6 +723,238 @@ export default function BossRoom({ onBack }) {
           style={{ marginTop: '20px' }}
         >
           ⬅️ MENU
+        </button>
+
+        {error && <p className="error">{error}</p>}
+        {success && <p className="success">{success}</p>}
+      </div>
+    );
+  }
+
+  // ✅ NUOVO: DETTAGLIO LISTA (dentro Gestisci Liste)
+  if (mode === "manageListDetail" && selectedList) {
+    return (
+      <div className="boss-room">
+        <h1>📂 {selectedList.name}</h1>
+        
+        {/* SEZIONE PIN */}
+        <div className="boss-form" style={{ marginBottom: '30px', background: 'rgba(255,149,0,0.1)', padding: '15px', borderRadius: '8px' }}>
+          <h3>🔐 PIN Lista</h3>
+          
+          {!editingListPin ? (
+            <>
+              <p style={{ color: '#aaa', marginBottom: '10px' }}>
+                {selectedList.isProtected ? (
+                  <>PIN attuale: <strong style={{ color: '#00ff55' }}>{selectedList.pin}</strong></>
+                ) : (
+                  <>Nessun PIN impostato (lista pubblica)</>
+                )}
+              </p>
+              <button onClick={() => {
+                setEditingListPin(true);
+                setNewListPinEdit(selectedList.pin || "");
+              }}>
+                {selectedList.isProtected ? "✏️ MODIFICA PIN" : "🔒 AGGIUNGI PIN"}
+              </button>
+            </>
+          ) : (
+            <>
+              <input
+                type="text"
+                placeholder="4 cifre (vuoto per rimuovere)"
+                value={newListPinEdit}
+                onChange={(e) => setNewListPinEdit(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                maxLength={4}
+                inputMode="numeric"
+              />
+              <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+                <button onClick={handleUpdateListPin} disabled={loading}>
+                  {loading ? "⏳..." : "✅ SALVA"}
+                </button>
+                <button 
+                  onClick={() => {
+                    setEditingListPin(false);
+                    setNewListPinEdit("");
+                  }}
+                  className="btn-secondary"
+                >
+                  ❌ ANNULLA
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* SEZIONE FRASI */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+          <h3 style={{ margin: 0 }}>📝 Frasi ({phrases.length})</h3>
+          
+          {phrases.length > 1 && (
+            <button 
+              onClick={handleToggleReorderMode}
+              style={{
+                padding: '8px 15px',
+                fontSize: '0.9rem',
+                background: reorderMode ? '#ff9500' : '#00ff55',
+                color: reorderMode ? 'white' : 'black',
+                border: 'none',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                fontWeight: 'bold'
+              }}
+            >
+              {reorderMode ? "✅ FINE RIORDINO" : "🔄 ORDINA FRASI"}
+            </button>
+          )}
+        </div>
+
+        {reorderMode && (
+          <p style={{ 
+            color: '#ff9500', 
+            fontSize: '0.9rem', 
+            marginBottom: '15px',
+            padding: '10px',
+            background: 'rgba(255,149,0,0.1)',
+            borderRadius: '6px'
+          }}>
+            ℹ️ <strong>Modalità riordino:</strong> Clicca su una frase per selezionarla, poi clicca su un'altra frase per inserire DOPO di essa
+          </p>
+        )}
+        
+        {loading ? (
+          <p>⏳ Caricamento...</p>
+        ) : phrases.length === 0 ? (
+          <p style={{ color: '#888', textAlign: 'center' }}>Nessuna frase in questa lista</p>
+        ) : (
+          <div className="phrases-list" style={{ maxHeight: '400px', overflowY: 'auto' }}>
+            {phrases.map((phrase, index) => {
+              const isSelected = selectedPhraseToMove && selectedPhraseToMove._id === phrase._id;
+              
+              return (
+                <div 
+                  key={phrase._id} 
+                  className={`phrase-item ${reorderMode ? 'reorder-mode' : ''} ${isSelected ? 'selected' : ''}`}
+                  onClick={() => {
+                    if (reorderMode) {
+                      if (!selectedPhraseToMove) {
+                        handleSelectPhraseToMove(phrase);
+                      } else {
+                        handleMovePhrase(phrase);
+                      }
+                    }
+                  }}
+                  style={{
+                    cursor: reorderMode ? 'pointer' : 'default',
+                    background: isSelected ? 'rgba(255,149,0,0.2)' : undefined,
+                    border: isSelected ? '2px solid #ff9500' : undefined,
+                    position: 'relative'
+                  }}
+                >
+                  {reorderMode && (
+                    <div style={{
+                      position: 'absolute',
+                      left: '10px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      fontSize: '1.2rem',
+                      fontWeight: 'bold',
+                      color: isSelected ? '#ff9500' : '#666'
+                    }}>
+                      {isSelected ? '👆' : index + 1}
+                    </div>
+                  )}
+                  
+                  {editingPhrase === phrase._id && !reorderMode ? (
+                    // MODALITÀ MODIFICA
+                    <div style={{ flex: 1, marginLeft: reorderMode ? '40px' : '0' }}>
+                      <textarea
+                        value={editPhraseText}
+                        onChange={(e) => {
+                          const value = e.target.value.toUpperCase();
+                          if (value.length <= 50) {
+                            setEditPhraseText(value);
+                          }
+                        }}
+                        style={{
+                          width: '100%',
+                          minHeight: '50px',
+                          marginBottom: '5px',
+                          resize: 'none',
+                          padding: '8px',
+                          fontSize: '0.95rem'
+                        }}
+                      />
+                      <p style={{ fontSize: '0.75rem', color: '#666', textAlign: 'right', margin: '0 0 10px 0' }}>
+                        {editPhraseText.length}/50
+                      </p>
+                      <input
+                        type="text"
+                        value={editPhraseCategory}
+                        onChange={(e) => setEditPhraseCategory(e.target.value.slice(0, 20))}
+                        maxLength={20}
+                        placeholder="Categoria"
+                        style={{ width: '100%', marginBottom: '10px' }}
+                      />
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <button 
+                          onClick={() => handleSaveEditPhrase(phrase._id)}
+                          style={{ flex: 1, padding: '8px', fontSize: '0.9rem' }}
+                        >
+                          ✅ SALVA
+                        </button>
+                        <button 
+                          onClick={() => setEditingPhrase(null)}
+                          className="btn-secondary"
+                          style={{ flex: 1, padding: '8px', fontSize: '0.9rem' }}
+                        >
+                          ❌ ANNULLA
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    // MODALITÀ VISUALIZZAZIONE
+                    <>
+                      <div style={{ flex: 1, marginLeft: reorderMode ? '40px' : '0' }}>
+                        <div className="phrase-text">{phrase.phrase}</div>
+                        <div className="phrase-category">{phrase.category}</div>
+                      </div>
+                      {!reorderMode && (
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                          <button 
+                            onClick={() => handleStartEditPhrase(phrase)}
+                            style={{ padding: '8px 12px', fontSize: '0.9rem' }}
+                          >
+                            ✏️
+                          </button>
+                          <button 
+                            onClick={() => handleDeletePhrase(phrase._id)}
+                            className="btn-delete"
+                            style={{ padding: '8px 12px' }}
+                          >
+                            🗑️
+                          </button>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        <button 
+          onClick={() => {
+            setMode("manage");
+            setSelectedList(null);
+            setPhrases([]);
+            setEditingPhrase(null);
+            setEditingListPin(false);
+          }} 
+          className="btn-secondary" 
+          style={{ marginTop: '20px' }}
+        >
+          ⬅️ INDIETRO
         </button>
 
         {error && <p className="error">{error}</p>}

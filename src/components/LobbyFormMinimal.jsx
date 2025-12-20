@@ -1,545 +1,265 @@
-// src/components/LobbyFormMinimal.jsx
-import React, { useState, useEffect, useRef } from "react";
+import React from "react";
 
-export default function LobbyFormMinimal({ onCreate, onJoin, onSpectate, error }) {
-  const [step, setStep] = useState("home");
-  const [roomName, setRoomName] = useState("");
-  const [roomCode, setRoomCode] = useState("");
-  const [playerName, setPlayerName] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [totalRounds, setTotalRounds] = useState(3);
-  const [gameMode, setGameMode] = useState("classic"); // classic | presenter | timeChallenge
-  
-  // Time Challenge settings
-  const [numFrasi, setNumFrasi] = useState(1);
-  const [numMatch, setNumMatch] = useState(1);
-  const [timerFrase, setTimerFrase] = useState(0);
-  const [timerMatch, setTimerMatch] = useState(0);
-  
-  // Refs per auto-focus
-  const roomNameInputRef = useRef(null);
-  const roomCodeInputRef = useRef(null);
-  const playerNameInputRef = useRef(null);
-
-  // Auto-focus quando cambia lo step
-  useEffect(() => {
-    const focusTimeout = setTimeout(() => {
-      if (step === "create-name" && roomNameInputRef.current) {
-        roomNameInputRef.current.focus();
-      } else if (step === "join-name" && roomCodeInputRef.current) {
-        roomCodeInputRef.current.focus();
-      } else if ((step === "create-role" || step === "join-role") && playerNameInputRef.current) {
-        playerNameInputRef.current.focus();
-      }
-    }, 100);
-
-    return () => clearTimeout(focusTimeout);
-  }, [step]);
-
-  const handleCreate = () => {
-    if (!roomName.trim()) return;
-    setStep("select-mode"); // Prima scegli modalità
-  };
-
-  const handleJoin = () => {
-    if (!roomCode.trim()) return;
-    setStep("join-role");
-  };
-
-  const handleEnterAsPlayer = (isJoin) => {
-    if (!playerName.trim()) return;
-    
-    setLoading(true);
-    
-    if (isJoin) {
-      onJoin(playerName, roomCode);
-    } else {
-      const timeChallengeSettings = gameMode === "timeChallenge" ? {
-        numFrasi,
-        numMatch,
-        timerFrase,
-        timerMatch
-      } : null;
-      
-      onCreate(playerName, totalRounds, roomName, gameMode, timeChallengeSettings);
-    }
-  };
-
-  const handleEnterAsSpectator = (isJoin) => {
-    if (isJoin) {
-      onSpectate("Spettatore", roomCode);
-    } else {
-      onSpectate("Spettatore", roomName);
-    }
-  };
-
-  // Handler per premere Enter negli input
-  const handleKeyPress = (e, action) => {
-    if (e.key === 'Enter') {
-      action();
-    }
-  };
+export default function LobbyFormMinimal({
+  onSelectClassic,
+  onSelectPresenter,
+  onSelectSinglePlayer,
+  onSelectTimeChallenge,
+  onSelectBossRoom,
+  serverStatus
+}) {
+  const isServerDown = serverStatus === "down";
 
   return (
-    <div className="lobby-form-minimal">
-      <h1>🎡 RUOTA DELLA FORTUNA</h1>
-      <h2>ONLINE</h2>
+    <div style={{
+      minHeight: "100vh",
+      background: "linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: "20px"
+    }}>
+      <div style={{
+        maxWidth: "480px",
+        width: "100%",
+        background: "rgba(255, 255, 255, 0.05)",
+        backdropFilter: "blur(10px)",
+        borderRadius: "20px",
+        padding: "40px 30px",
+        boxShadow: "0 20px 60px rgba(0, 0, 0, 0.4)",
+        border: "1px solid rgba(255, 255, 255, 0.1)"
+      }}>
+        
+        {/* TITOLO */}
+        <h1 style={{
+          fontSize: "1.8rem",
+          fontWeight: "700",
+          textAlign: "center",
+          marginBottom: "10px",
+          background: "linear-gradient(135deg, #0066ff 0%, #6b2dd8 100%)",
+          WebkitBackgroundClip: "text",
+          WebkitTextFillColor: "transparent",
+          backgroundClip: "text"
+        }}>
+          RUOTA DELLA FORTUNA
+        </h1>
 
-      {step === "home" && (
-        <div className="inputs-row">
-          <button onClick={() => setStep("create-name")}>
-            🌀 CREA STANZA
-          </button>
-          <button onClick={() => setStep("join-name")}>
-            🎮 UNISCITI A STANZA
-          </button>
-        </div>
-      )}
+        <p style={{
+          textAlign: "center",
+          color: "#aaa",
+          fontSize: "0.9rem",
+          marginBottom: "35px",
+          fontWeight: "400"
+        }}>
+          Scegli la tua modalità di gioco
+        </p>
 
-      {step === "create-name" && (
-        <div className="inputs-row">
-          <label className="form-label">Nome della stanza</label>
-          <input
-            ref={roomNameInputRef}
-            type="text"
-            placeholder="es. ORCHIDEA"
-            value={roomName}
-            onChange={(e) => setRoomName(e.target.value)}
-            onKeyPress={(e) => handleKeyPress(e, handleCreate)}
-            autoComplete="off"
-            autoCapitalize="characters"
-          />
-          
-          <label className="form-label" style={{ marginTop: '20px' }}>Numero di round</label>
-          <div style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'center',
-            gap: '20px',
-            margin: '10px 0'
+        {/* STATO SERVER */}
+        {isServerDown && (
+          <div style={{
+            background: "rgba(255, 149, 0, 0.15)",
+            border: "1px solid #ff9500",
+            borderRadius: "12px",
+            padding: "12px",
+            marginBottom: "25px",
+            textAlign: "center"
           }}>
-            <button 
-              onClick={() => setTotalRounds(prev => Math.max(1, prev - 1))}
-              style={{
-                width: '60px',
-                height: '60px',
-                fontSize: '2rem',
-                padding: '0',
-                minWidth: 'auto'
-              }}
-            >
-              −
-            </button>
-            <div style={{
-              fontSize: '3rem',
-              fontWeight: '900',
-              color: '#00ff55',
-              minWidth: '80px',
-              textAlign: 'center'
-            }}>
-              {totalRounds}
-            </div>
-            <button 
-              onClick={() => setTotalRounds(prev => Math.min(10, prev + 1))}
-              style={{
-                width: '60px',
-                height: '60px',
-                fontSize: '2rem',
-                padding: '0',
-                minWidth: 'auto'
-              }}
-            >
-              +
-            </button>
-          </div>
-          
-          <button onClick={handleCreate} disabled={!roomName.trim()}>
-            CONTINUA ➜
-          </button>
-          <button onClick={() => setStep("home")} className="btn-secondary">
-            ⬅️ INDIETRO
-          </button>
-        </div>
-      )}
-
-      {step === "select-mode" && (
-        <div className="inputs-row">
-          <h2>Scegli modalità:</h2>
-          <button 
-            onClick={() => {
-              setGameMode("classic");
-              setStep("create-role");
-            }}
-            style={{
-              padding: '20px',
-              fontSize: '1.2rem',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: '10px'
-            }}
-          >
-            <div style={{ fontSize: '2rem' }}>🎮</div>
-            <div style={{ fontWeight: 'bold' }}>CLASSICA</div>
-            <div style={{ fontSize: '0.9rem', opacity: 0.8 }}>Tutti giocano normalmente</div>
-          </button>
-          
-          <button 
-            onClick={() => {
-              setGameMode("presenter");
-              setPlayerName("Presentatore");
-              setLoading(true);
-              onCreate("Presentatore", totalRounds, roomName, "presenter");
-            }}
-            style={{
-              padding: '20px',
-              fontSize: '1.2rem',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: '10px'
-            }}
-          >
-            <div style={{ fontSize: '2rem' }}>🎙️</div>
-            <div style={{ fontWeight: 'bold' }}>PRESENTATORE</div>
-            <div style={{ fontSize: '0.9rem', opacity: 0.8 }}>L'host gestisce il gioco</div>
-          </button>
-          
-          <button 
-            onClick={() => {
-              setGameMode("timeChallenge");
-              setStep("time-challenge-settings");
-            }}
-            style={{
-              padding: '20px',
-              fontSize: '1.2rem',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: '10px'
-            }}
-          >
-            <div style={{ fontSize: '2rem' }}>⏱️</div>
-            <div style={{ fontWeight: 'bold' }}>SFIDA A TEMPO</div>
-            <div style={{ fontSize: '0.9rem', opacity: 0.8 }}>Gara contro il tempo</div>
-          </button>
-          
-          {loading && (
-            <div style={{
-              margin: '15px 0',
-              padding: '15px',
-              background: 'rgba(0, 255, 85, 0.1)',
-              border: '2px solid #00ff55',
-              borderRadius: '10px',
-              color: '#00ff55',
-              fontSize: '1.1rem',
-              fontWeight: 'bold',
-              textAlign: 'center'
+            <p style={{
+              color: "#ff9500",
+              fontSize: "0.9rem",
+              margin: 0,
+              fontWeight: "500"
             }}>
               🛠️ Sto oliando la ruota... Un attimo di pazienza!
-            </div>
-          )}
-          
-          <button onClick={() => setStep("create-name")} className="btn-secondary">
-            ⬅️ INDIETRO
-          </button>
-        </div>
-      )}
-
-      {step === "time-challenge-settings" && (
-        <div className="inputs-row">
-          <h2>Configura Partita:</h2>
-          
-          <label className="form-label">Numero di FRASI</label>
-          <div style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'center',
-            gap: '20px',
-            margin: '10px 0'
-          }}>
-            <button 
-              onClick={() => setNumFrasi(prev => Math.max(1, prev - 1))}
-              style={{
-                width: '60px',
-                height: '60px',
-                fontSize: '2rem',
-                padding: '0',
-                minWidth: 'auto'
-              }}
-            >
-              −
-            </button>
-            <div style={{
-              fontSize: '3rem',
-              fontWeight: '900',
-              color: '#00ff55',
-              minWidth: '80px',
-              textAlign: 'center'
-            }}>
-              {numFrasi}
-            </div>
-            <button 
-              onClick={() => setNumFrasi(prev => Math.min(50, prev + 1))}
-              style={{
-                width: '60px',
-                height: '60px',
-                fontSize: '2rem',
-                padding: '0',
-                minWidth: 'auto'
-              }}
-            >
-              +
-            </button>
+            </p>
           </div>
+        )}
 
-          <label className="form-label" style={{ marginTop: '20px' }}>Numero di MATCH</label>
-          <div style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'center',
-            gap: '20px',
-            margin: '10px 0'
-          }}>
-            <button 
-              onClick={() => setNumMatch(prev => Math.max(1, prev - 1))}
-              style={{
-                width: '60px',
-                height: '60px',
-                fontSize: '2rem',
-                padding: '0',
-                minWidth: 'auto'
-              }}
-            >
-              −
-            </button>
-            <div style={{
-              fontSize: '3rem',
-              fontWeight: '900',
-              color: '#00ff55',
-              minWidth: '80px',
-              textAlign: 'center'
-            }}>
-              {numMatch}
-            </div>
-            <button 
-              onClick={() => setNumMatch(prev => Math.min(10, prev + 1))}
-              style={{
-                width: '60px',
-                height: '60px',
-                fontSize: '2rem',
-                padding: '0',
-                minWidth: 'auto'
-              }}
-            >
-              +
-            </button>
-          </div>
-
-          <label className="form-label" style={{ marginTop: '20px' }}>Timer FRASE (secondi)</label>
-          <div style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'center',
-            gap: '20px',
-            margin: '10px 0'
-          }}>
-            <button 
-              onClick={() => setTimerFrase(prev => Math.max(0, prev - 30))}
-              style={{
-                width: '60px',
-                height: '60px',
-                fontSize: '2rem',
-                padding: '0',
-                minWidth: 'auto'
-              }}
-            >
-              −
-            </button>
-            <div style={{
-              fontSize: '3rem',
-              fontWeight: '900',
-              color: '#00ff55',
-              minWidth: '120px',
-              textAlign: 'center'
-            }}>
-              {timerFrase === 0 ? '∞' : timerFrase}
-            </div>
-            <button 
-              onClick={() => setTimerFrase(prev => prev + 30)}
-              style={{
-                width: '60px',
-                height: '60px',
-                fontSize: '2rem',
-                padding: '0',
-                minWidth: 'auto'
-              }}
-            >
-              +
-            </button>
-          </div>
-
-          <label className="form-label" style={{ marginTop: '20px' }}>Timer MATCH (secondi)</label>
-          <div style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'center',
-            gap: '20px',
-            margin: '10px 0'
-          }}>
-            <button 
-              onClick={() => setTimerMatch(prev => Math.max(0, prev - 60))}
-              style={{
-                width: '60px',
-                height: '60px',
-                fontSize: '2rem',
-                padding: '0',
-                minWidth: 'auto'
-              }}
-            >
-              −
-            </button>
-            <div style={{
-              fontSize: '3rem',
-              fontWeight: '900',
-              color: '#00ff55',
-              minWidth: '120px',
-              textAlign: 'center'
-            }}>
-              {timerMatch === 0 ? '∞' : timerMatch}
-            </div>
-            <button 
-              onClick={() => setTimerMatch(prev => prev + 60)}
-              style={{
-                width: '60px',
-                height: '60px',
-                fontSize: '2rem',
-                padding: '0',
-                minWidth: 'auto'
-              }}
-            >
-              +
-            </button>
-          </div>
-
-          <button onClick={() => setStep("create-role")} style={{ marginTop: '30px' }}>
-            CONTINUA ➜
-          </button>
-          <button onClick={() => setStep("select-mode")} className="btn-secondary">
-            ⬅️ INDIETRO
-          </button>
-        </div>
-      )}
-
-      {step === "create-role" && (
-        <div className="inputs-row">
-          <h2>Entra come:</h2>
-          <label className="form-label">Il tuo nome</label>
-          <input
-            ref={playerNameInputRef}
-            type="text"
-            placeholder="es. Marco"
-            value={playerName}
-            onChange={(e) => setPlayerName(e.target.value)}
-            onKeyPress={(e) => handleKeyPress(e, () => handleEnterAsPlayer(false))}
-            autoComplete="off"
-          />
+        {/* BOTTONI MODALITÀ */}
+        <div style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: "12px"
+        }}>
           
-          {/* Scritta che appare quando loading è true - SOPRA IL PULSANTE */}
-          {loading && (
-            <div style={{
-              margin: '15px 0',
-              padding: '15px',
-              background: 'rgba(0, 255, 85, 0.1)',
-              border: '2px solid #00ff55',
-              borderRadius: '10px',
-              color: '#00ff55',
-              fontSize: '1.1rem',
-              fontWeight: 'bold',
-              textAlign: 'center'
-            }}>
-              🛠️ Sto oliando la ruota... Un attimo di pazienza!
-            </div>
-          )}
-          
-          <button onClick={() => handleEnterAsPlayer(false)} disabled={!playerName.trim() || loading}>
-            🎮 ENTRA COME GIOCATORE
+          <button
+            onClick={onSelectClassic}
+            style={{
+              padding: "16px 24px",
+              fontSize: "1rem",
+              fontWeight: "600",
+              background: "linear-gradient(135deg, #0066ff 0%, #0052cc 100%)",
+              color: "white",
+              border: "none",
+              borderRadius: "12px",
+              cursor: "pointer",
+              transition: "all 0.3s ease",
+              boxShadow: "0 4px 15px rgba(0, 102, 255, 0.3)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "10px"
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.transform = "translateY(-2px)";
+              e.target.style.boxShadow = "0 6px 20px rgba(0, 102, 255, 0.4)";
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.transform = "translateY(0)";
+              e.target.style.boxShadow = "0 4px 15px rgba(0, 102, 255, 0.3)";
+            }}
+          >
+            <span style={{ fontSize: "1.3rem" }}>🌀</span>
+            <span>Modalità Classica</span>
           </button>
-          <button onClick={() => handleEnterAsSpectator(false)}>
-            👀 ENTRA COME SPETTATORE
-          </button>
-          <button onClick={() => setStep("create-name")} className="btn-secondary">
-            ⬅️ INDIETRO
-          </button>
-        </div>
-      )}
 
-      {step === "join-name" && (
-        <div className="inputs-row">
-          <label className="form-label">Codice stanza</label>
-          <input
-            ref={roomCodeInputRef}
-            type="text"
-            placeholder="es. ORCHIDEA"
-            value={roomCode}
-            onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
-            onKeyPress={(e) => handleKeyPress(e, handleJoin)}
-            autoComplete="off"
-            autoCapitalize="characters"
-          />
-          <button onClick={handleJoin} disabled={!roomCode.trim()}>
-            CONTINUA ➜
+          <button
+            onClick={onSelectPresenter}
+            style={{
+              padding: "16px 24px",
+              fontSize: "1rem",
+              fontWeight: "600",
+              background: "linear-gradient(135deg, #6b2dd8 0%, #5424a8 100%)",
+              color: "white",
+              border: "none",
+              borderRadius: "12px",
+              cursor: "pointer",
+              transition: "all 0.3s ease",
+              boxShadow: "0 4px 15px rgba(107, 45, 216, 0.3)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "10px"
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.transform = "translateY(-2px)";
+              e.target.style.boxShadow = "0 6px 20px rgba(107, 45, 216, 0.4)";
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.transform = "translateY(0)";
+              e.target.style.boxShadow = "0 4px 15px rgba(107, 45, 216, 0.3)";
+            }}
+          >
+            <span style={{ fontSize: "1.3rem" }}>🎤</span>
+            <span>Modalità Presentatore</span>
           </button>
-          <button onClick={() => setStep("home")} className="btn-secondary">
-            ⬅️ INDIETRO
-          </button>
-        </div>
-      )}
 
-      {step === "join-role" && (
-        <div className="inputs-row">
-          <h2>Entra come:</h2>
-          <label className="form-label">Il tuo nome</label>
-          <input
-            ref={playerNameInputRef}
-            type="text"
-            placeholder="es. Marco"
-            value={playerName}
-            onChange={(e) => setPlayerName(e.target.value)}
-            onKeyPress={(e) => handleKeyPress(e, () => handleEnterAsPlayer(true))}
-            autoComplete="off"
-          />
-          
-          {/* Scritta che appare quando loading è true - SOPRA IL PULSANTE */}
-          {loading && (
-            <div style={{
-              margin: '15px 0',
-              padding: '15px',
-              background: 'rgba(0, 255, 85, 0.1)',
-              border: '2px solid #00ff55',
-              borderRadius: '10px',
-              color: '#00ff55',
-              fontSize: '1.1rem',
-              fontWeight: 'bold',
-              textAlign: 'center'
-            }}>
-              🛠️ Sto oliando la ruota... Un attimo di pazienza!
-            </div>
-          )}
-          
-          <button onClick={() => handleEnterAsPlayer(true)} disabled={!playerName.trim() || loading}>
-            🎮 ENTRA COME GIOCATORE
+          <button
+            onClick={onSelectSinglePlayer}
+            style={{
+              padding: "16px 24px",
+              fontSize: "1rem",
+              fontWeight: "600",
+              background: "linear-gradient(135deg, #ff9500 0%, #cc7700 100%)",
+              color: "white",
+              border: "none",
+              borderRadius: "12px",
+              cursor: "pointer",
+              transition: "all 0.3s ease",
+              boxShadow: "0 4px 15px rgba(255, 149, 0, 0.3)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "10px"
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.transform = "translateY(-2px)";
+              e.target.style.boxShadow = "0 6px 20px rgba(255, 149, 0, 0.4)";
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.transform = "translateY(0)";
+              e.target.style.boxShadow = "0 4px 15px rgba(255, 149, 0, 0.3)";
+            }}
+          >
+            <span style={{ fontSize: "1.3rem" }}>🎯</span>
+            <span>Giocatore Singolo</span>
           </button>
-          <button onClick={() => handleEnterAsSpectator(true)}>
-            👀 ENTRA COME SPETTATORE
-          </button>
-          <button onClick={() => setStep("join-name")} className="btn-secondary">
-            ⬅️ INDIETRO
-          </button>
-        </div>
-      )}
 
-      {error && <p className="error">{error}</p>}
+          <button
+            onClick={onSelectTimeChallenge}
+            style={{
+              padding: "16px 24px",
+              fontSize: "1rem",
+              fontWeight: "600",
+              background: "linear-gradient(135deg, #00d4aa 0%, #00a885 100%)",
+              color: "white",
+              border: "none",
+              borderRadius: "12px",
+              cursor: "pointer",
+              transition: "all 0.3s ease",
+              boxShadow: "0 4px 15px rgba(0, 212, 170, 0.3)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "10px"
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.transform = "translateY(-2px)";
+              e.target.style.boxShadow = "0 6px 20px rgba(0, 212, 170, 0.4)";
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.transform = "translateY(0)";
+              e.target.style.boxShadow = "0 4px 15px rgba(0, 212, 170, 0.3)";
+            }}
+          >
+            <span style={{ fontSize: "1.3rem" }}>⏱️</span>
+            <span>Sfida a Tempo</span>
+          </button>
+
+          {/* SEPARATORE */}
+          <div style={{
+            height: "1px",
+            background: "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.2) 50%, transparent 100%)",
+            margin: "15px 0"
+          }}></div>
+
+          {/* STANZA DEL CAPO */}
+          <button
+            onClick={onSelectBossRoom}
+            style={{
+              padding: "14px 20px",
+              fontSize: "0.95rem",
+              fontWeight: "600",
+              background: "rgba(255, 255, 255, 0.05)",
+              color: "#aaa",
+              border: "1px solid rgba(255, 255, 255, 0.1)",
+              borderRadius: "12px",
+              cursor: "pointer",
+              transition: "all 0.3s ease",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "10px"
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.background = "rgba(255, 255, 255, 0.08)";
+              e.target.style.color = "white";
+              e.target.style.borderColor = "rgba(255, 255, 255, 0.2)";
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.background = "rgba(255, 255, 255, 0.05)";
+              e.target.style.color = "#aaa";
+              e.target.style.borderColor = "rgba(255, 255, 255, 0.1)";
+            }}
+          >
+            <span style={{ fontSize: "1.1rem" }}>👔</span>
+            <span>Addetti ai Lavori</span>
+          </button>
+
+        </div>
+
+        {/* FOOTER */}
+        <p style={{
+          textAlign: "center",
+          color: "#666",
+          fontSize: "0.75rem",
+          marginTop: "30px",
+          fontWeight: "400"
+        }}>
+          Versione 4.0 • © 2025
+        </p>
+
+      </div>
     </div>
   );
 }
